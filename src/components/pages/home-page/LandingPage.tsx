@@ -6,13 +6,5 @@ import ShopByCategory from './ShopByCategory';
 import NewInStoreSection from './NewInStoreSection';
 
 export default function LandingPage() {
-	return (
-		<div className="min-h-screen">
-			<ShopByCategory/>
-			<NewInStoreSection/>
-			<BannerSection/>
-			<FlashBestSelling />
-			{/* <TestPage /> */}
-		</div>
-	);
+	return <div className="min-h-screen container mx-auto">Welcome</div>;
 }

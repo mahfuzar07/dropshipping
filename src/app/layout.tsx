@@ -14,7 +14,7 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import { scripts } from '@/lib/script/Script';
 import ClientAuthHydrator from '@/providers/ClientAuthHydrator';
 
-import { loadSiteConfigs } from '@/config/config';
+// import { loadSiteConfigs } from '@/config/config';
 import getFullImageUrl from '@/lib/utils/getFullImageUrl';
 
 /* -------------------------------------------------------------------------- */
@@ -54,40 +54,40 @@ const emily = Emilys_Candy({
 /*                              DYNAMIC METADATA                              */
 /* -------------------------------------------------------------------------- */
 
-export async function generateMetadata(): Promise<Metadata> {
-	try {
-		const { metaConfig, storeConfig } = await loadSiteConfigs();
+// export async function generateMetadata(): Promise<Metadata> {
+// 	try {
+// 		const { metaConfig, storeConfig } = await loadSiteConfigs();
 
-		return {
-			title: {
-				default: `${metaConfig.metaTitle || 'Twinkle Bud'} | ${metaConfig.metaTagline || 'Screen-Safe Learning & Creative Fun for Kids'}`,
-				template: `%s | ${metaConfig.metaTitle || 'Twinkle Bud'}`,
-			},
-			description: metaConfig.metaDescription || '',
-			keywords: metaConfig.metaKeywords || [],
-			alternates: {
-				canonical: metaConfig.canonicalUrl || undefined,
-			},
-			icons: storeConfig.storeIcon
-				? { icon: [{ url: getFullImageUrl(storeConfig.storeIcon) }] }
-				: undefined,
-		};
-	} catch (err) {
-		console.error('[Metadata] loadSiteConfigs failed:', err);
+// 		return {
+// 			title: {
+// 				default: `${metaConfig.metaTitle || 'Twinkle Bud'} | ${metaConfig.metaTagline || 'Screen-Safe Learning & Creative Fun for Kids'}`,
+// 				template: `%s | ${metaConfig.metaTitle || 'Twinkle Bud'}`,
+// 			},
+// 			description: metaConfig.metaDescription || '',
+// 			keywords: metaConfig.metaKeywords || [],
+// 			alternates: {
+// 				canonical: metaConfig.canonicalUrl || undefined,
+// 			},
+// 			icons: storeConfig.storeIcon
+// 				? { icon: [{ url: getFullImageUrl(storeConfig.storeIcon) }] }
+// 				: undefined,
+// 		};
+// 	} catch (err) {
+// 		console.error('[Metadata] loadSiteConfigs failed:', err);
 
-		return {
-			title: 'Twinkle Bud',
-			description: '',
-		};
-	}
-}
+// 		return {
+// 			title: 'Twinkle Bud',
+// 			description: '',
+// 		};
+// 	}
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                                 ROOT LAYOUT                                */
 /* -------------------------------------------------------------------------- */
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-	const { googleMetaConfig } = await loadSiteConfigs();
+	// const { googleMetaConfig } = await loadSiteConfigs();
 
 	return (
 		<html lang="en" suppressHydrationWarning>
@@ -112,7 +112,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 					<Toaster position="top-center" theme="light" className="bg-white" />
 				</ReactQueryProvider>
 
-				{googleMetaConfig.googleAnalyticsId && <GoogleAnalytics gaId={googleMetaConfig.googleAnalyticsId} />}
+				{/* {googleMetaConfig.googleAnalyticsId && <GoogleAnalytics gaId={googleMetaConfig.googleAnalyticsId} />} */}
 			</body>
 		</html>
 	);

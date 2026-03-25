@@ -1,4 +1,4 @@
-import SettingsForm from '@/components/pages/admin/general-settings/SettingsForm';
+// import SettingsForm from '@/components/pages/admin/general-settings/SettingsForm';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function SettingCreatePage() {
 	return (
 		<div className="">
-			<SettingsForm />
+			{/* <SettingsForm /> */}
 		</div>
 	);
 }

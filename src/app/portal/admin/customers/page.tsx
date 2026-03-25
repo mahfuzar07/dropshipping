@@ -1,4 +1,4 @@
-import CustomersTable from '@/components/pages/admin/customers/CustomersTable';
+// import CustomersTable from '@/components/pages/admin/customers/CustomersTable';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function CustomerPage() {
 	return (
 		<div className="">
-			<CustomersTable />
+			{/* <CustomersTable /> */}
 		</div>
 	);
 }

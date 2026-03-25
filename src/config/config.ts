@@ -57,81 +57,81 @@ export const FULL_BASE_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.en
 /*                               API FUNCTIONS                                */
 /* -------------------------------------------------------------------------- */
 
-async function getSiteSettings(): Promise<APIResponse> {
-	if (!FULL_BASE_API_URL) {
-		throw new Error('NEXT_PUBLIC_API_URL is not defined');
-	}
+// async function getSiteSettings(): Promise<APIResponse> {
+// 	if (!FULL_BASE_API_URL) {
+// 		throw new Error('NEXT_PUBLIC_API_URL is not defined');
+// 	}
 
-	const url = `${FULL_BASE_API_URL}${apiEndpoint.settings.siteSettings}`;
+// 	const url = `${FULL_BASE_API_URL}${apiEndpoint.settings.siteSettings}`;
 
-	console.log('[SiteSettings] Fetching:', url);
+// 	console.log('[SiteSettings] Fetching:', url);
 
-	const res = await fetch(url, {
-		cache: 'no-store',
-	});
+// 	const res = await fetch(url, {
+// 		cache: 'no-store',
+// 	});
 
-	if (!res.ok) {
-		const text = await res.text();
-		console.error('[SiteSettings] API Error:', res.status, text);
-		throw new Error('Failed to fetch site settings');
-	}
+// 	if (!res.ok) {
+// 		const text = await res.text();
+// 		console.error('[SiteSettings] API Error:', res.status, text);
+// 		throw new Error('Failed to fetch site settings');
+// 	}
 
-	return res.json();
-}
+// 	return res.json();
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                           PUBLIC LOADER FUNCTION                            */
 /* -------------------------------------------------------------------------- */
 
-export async function loadSiteConfigs() {
-	const data = await getSiteSettings();
-	const settingsData = data?.payload ?? {};
+// export async function loadSiteConfigs() {
+// 	const data = await getSiteSettings();
+// 	const settingsData = data?.payload ?? {};
 
-	const storeConfig: StoreConfig = {
-		storeName: settingsData?.storeName ?? '',
-		storeLogo: settingsData?.storeLogo ?? '',
-		storeIcon: settingsData?.storeIcon ?? '',
-		contactPhone: settingsData?.contactPhone ?? '',
-		contactEmail: settingsData?.contactEmail ?? '',
-		address: settingsData?.address ?? '',
-	};
+// 	const storeConfig: StoreConfig = {
+// 		storeName: settingsData?.storeName ?? '',
+// 		storeLogo: settingsData?.storeLogo ?? '',
+// 		storeIcon: settingsData?.storeIcon ?? '',
+// 		contactPhone: settingsData?.contactPhone ?? '',
+// 		contactEmail: settingsData?.contactEmail ?? '',
+// 		address: settingsData?.address ?? '',
+// 	};
 
-	const metaConfig: MetaConfig = {
-		metaTitle: settingsData?.metaTitle ?? '',
-		metaTagline: settingsData?.metaTagline ?? '',
-		canonicalUrl: settingsData?.canonicalUrl ?? '',
-		metaKeywords: Array.isArray(settingsData?.metaKeywords) ? settingsData.metaKeywords : [],
-		metaDescription: settingsData?.metaDescription ?? '',
-	};
+// 	const metaConfig: MetaConfig = {
+// 		metaTitle: settingsData?.metaTitle ?? '',
+// 		metaTagline: settingsData?.metaTagline ?? '',
+// 		canonicalUrl: settingsData?.canonicalUrl ?? '',
+// 		metaKeywords: Array.isArray(settingsData?.metaKeywords) ? settingsData.metaKeywords : [],
+// 		metaDescription: settingsData?.metaDescription ?? '',
+// 	};
 
-	const googleMetaConfig: GoogleMetaConfig = {
-		googleAnalyticsId: settingsData?.googleAnalyticsId ?? '',
-		googleAdsConversionId: settingsData?.googleAdsConversionId ?? '',
-		facebookPixelId: settingsData?.facebookPixelId ?? '',
-		metaPixelToken: settingsData?.metaPixelToken ?? '',
-	};
+// 	const googleMetaConfig: GoogleMetaConfig = {
+// 		googleAnalyticsId: settingsData?.googleAnalyticsId ?? '',
+// 		googleAdsConversionId: settingsData?.googleAdsConversionId ?? '',
+// 		facebookPixelId: settingsData?.facebookPixelId ?? '',
+// 		metaPixelToken: settingsData?.metaPixelToken ?? '',
+// 	};
 
-	const localizationConfig: LocalizationConfig = {
-		country: settingsData?.country ?? '',
-		language: settingsData?.language ?? '',
-		currency: settingsData?.currency ?? '',
-		theme: settingsData?.theme ?? '',
-	};
+// 	const localizationConfig: LocalizationConfig = {
+// 		country: settingsData?.country ?? '',
+// 		language: settingsData?.language ?? '',
+// 		currency: settingsData?.currency ?? '',
+// 		theme: settingsData?.theme ?? '',
+// 	};
 
-	const socialLinkConfig: SocialLinkConfig = {
-		facebookUrl: settingsData?.facebookUrl ?? '',
-		instagramUrl: settingsData?.instagramUrl ?? '',
-		youtubeUrl: settingsData?.youtubeUrl ?? '',
-		xUrl: settingsData?.xUrl ?? '',
-		whatsappNumber: settingsData?.whatsappNumber ?? '',
-	};
+// 	const socialLinkConfig: SocialLinkConfig = {
+// 		facebookUrl: settingsData?.facebookUrl ?? '',
+// 		instagramUrl: settingsData?.instagramUrl ?? '',
+// 		youtubeUrl: settingsData?.youtubeUrl ?? '',
+// 		xUrl: settingsData?.xUrl ?? '',
+// 		whatsappNumber: settingsData?.whatsappNumber ?? '',
+// 	};
 
-	return {
-		storeConfig,
-		metaConfig,
-		googleMetaConfig,
-		localizationConfig,
-		socialLinkConfig,
-		raw: settingsData, // debug / future use
-	};
-}
+// 	return {
+// 		storeConfig,
+// 		metaConfig,
+// 		googleMetaConfig,
+// 		localizationConfig,
+// 		socialLinkConfig,
+// 		raw: settingsData,
+// 	};
+// }

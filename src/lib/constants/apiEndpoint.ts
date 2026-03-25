@@ -32,18 +32,4 @@ export const apiEndpoint = {
 		list: '/products',
 		detail: (id: string | number) => `/products/${id}`,
 	},
-	workspace: {
-		department: '/workspace/department',
-		departmentDetail: (id: string | number) => `/workspace/department/${id}`,
-		designation: '/workspace/designation',
-		designationDetail: (id: string | number) => `/workspace/designation/${id}`,
-		employee: '/employees/register',
-		employeeDetail: (id: string | number) => `/workspace/employee/${id}`,
-	},
-	employee: {
-		employeeUpsert: '/employees/register',
-		getAllEmployees: '/employees',
-		getAllEmployeesById: (id: string | number) => `/employees/${id}`,
-		verifyEmployeeQRCode: (id: string | number) => `/employees/verify-employee-by-qr-code/${id}`,
-	},
 };

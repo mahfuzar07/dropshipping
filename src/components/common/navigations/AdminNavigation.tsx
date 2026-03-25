@@ -130,7 +130,7 @@ export default function AdminNavigation({ currentPath, closeDrawer }: { currentP
 		<>
 			<div className="flex flex-col h-full w-full bg-dashboard-sidebar-background text-white">
 				<div className="py-5 text-center mb-3">
-					<h1 className="text-3xl font-bold text-[#F16A38]">Twinkle Bud</h1>
+					<h1 className="text-3xl font-bold text-[#F16A38]">Drop Shipping</h1>
 				</div>
 
 				<nav className="w-full space-y-4 py-5 pb-10 h-full overflow-y-auto scrollbar-hide">

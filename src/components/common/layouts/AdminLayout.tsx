@@ -180,7 +180,7 @@ export default function AdminLayout({ children, currentPath = '/admin/dashboard'
 					{children}
 
 					<div className="py-5 text-sm text-dashboard-muted-foreground absolute bottom-0 inset-x-0 text-center">
-						2026 © <span className="text-dashboard-primary">Twinkle Bud</span> - All right reserved!
+						2026 © <span className="text-dashboard-primary">Update Shipping</span> - All right reserved!
 					</div>
 				</main>
 			</div>

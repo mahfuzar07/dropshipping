@@ -1,4 +1,4 @@
-import Footer from '@/components/common/footer/Footer';
+// import Footer from '@/components/common/footer/Footer';
 import StoreHeader from '@/components/common/header/StoreHeader';
 import FooterNavigation from '@/components/common/navigations/FooterNavigation';
 
@@ -11,7 +11,7 @@ export default function HomeLayout({
 		<>
 			<StoreHeader />
 			<main className="">{children}</main>
-			<Footer/>
+			{/* <Footer/> */}
 			<FooterNavigation/>
 		</>
 	);

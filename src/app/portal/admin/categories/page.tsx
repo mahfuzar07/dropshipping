@@ -1,8 +1,6 @@
-import CategoryList from '@/components/pages/admin/category/CategoryList';
-import DashboardPageContent from '@/components/pages/admin/dashboard/DashboardPageContent';
+// import CategoryList from '@/components/pages/admin/category/CategoryList';
+
 import { Metadata } from 'next';
-import Link from 'next/link';
-import React from 'react';
 
 // Meta Data
 export const metadata: Metadata = {
@@ -11,9 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function CategoryPage() {
-	return (
-		<div className="">
-			<CategoryList />
-		</div>
-	);
+	return <div className="">{/* <CategoryList /> */}</div>;
 }
