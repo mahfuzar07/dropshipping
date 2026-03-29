@@ -200,4 +200,22 @@
 		-ms-overflow-style: none;
 		scrollbar-width: none;
 	}
+
+	.swiper-pagination-bullet {
+		width: 6px !important;
+		height: 6px !important;
+		background: rgba(255, 255, 255, 0.7) !important;
+		opacity: 0.5 !important;
+		border-radius: 50% !important;
+		transition: all 0.3s ease !important;
+	}
+
+	.swiper-pagination-bullet-active {
+		width: 16px !important;
+		height: 5px !important;
+		border-radius: 30% !important;
+		background: #ffffff !important;
+		opacity: 1 !important;
+		transform: scale(1.2) !important;
+	}
 }

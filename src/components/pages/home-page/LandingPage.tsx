@@ -4,7 +4,16 @@ import FlashBestSelling from './FlashBestSelling';
 import BannerSection from './BannerSection';
 import ShopByCategory from './ShopByCategory';
 import NewInStoreSection from './NewInStoreSection';
+import HeroSection from './HeroSection';
+import FeatureHighlights from './FeatureHighlights';
+import TopSelling from './TopSelling';
 
 export default function LandingPage() {
-	return <div className="min-h-screen container mx-auto">Welcome</div>;
+	return (
+		<div className="min-h-screen">
+			<HeroSection />
+			<FeatureHighlights/>
+			<TopSelling/>
+		</div>
+	);
 }

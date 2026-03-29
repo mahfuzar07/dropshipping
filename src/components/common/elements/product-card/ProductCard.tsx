@@ -8,6 +8,7 @@ type Product = {
 	title: string;
 	price: string;
 	image: string;
+	store: string;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -19,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
 			}}
 			className="group cursor-pointer"
 		>
-			<div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
+			<div className="relative aspect-[3/3] overflow-hidden rounded-xl bg-muted">
 				<Image src={product.image} alt={product.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
 			</div>
 
