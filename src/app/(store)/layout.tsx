@@ -9,8 +9,8 @@ export default function HomeLayout({
 }>) {
 	return (
 		<>
-			<StoreHeader />
-			<main className="">{children}</main>
+			{/* <StoreHeader /> */}
+			<main className="bg-gray-100">{children}</main>
 			{/* <Footer/> */}
 			<FooterNavigation/>
 		</>
