@@ -18,13 +18,13 @@ export default function ProductCard({ product }: { product: Product }) {
 				hidden: { opacity: 0, y: 20 },
 				show: { opacity: 1, y: 0 },
 			}}
-			className="group cursor-pointer"
+			className="group cursor-pointer bg-white overflow-hidden rounded-xl"
 		>
-			<div className="relative aspect-[3/3] overflow-hidden rounded-xl bg-muted">
+			<div className="relative aspect-[3/3]  bg-muted overflow-hidden">
 				<Image src={product.image} alt={product.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
 			</div>
 
-			<div className="mt-4 space-y-1">
+			<div className="mt-2 space-y-1 p-2">
 				<h3 className="text-sm font-semibold">{product.title}</h3>
 				<p className="text-sm text-primary font-medium">{product.price}</p>
 			</div>

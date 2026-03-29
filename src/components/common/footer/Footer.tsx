@@ -1,143 +1,228 @@
-'use client';
-
-import { MapPinHouse, Mail, Phone, Facebook, Twitter, Linkedin, Send } from 'lucide-react';
+import { Boxes, CreditCard, Headset, LayoutPanelTop, MapPinCheck, MessageCircleWarning } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import React from 'react';
 
-interface LinkItem {
-	title: string;
-	path: string;
-}
+const quickLinks = [
+	'About Us',
+	'Contact Us',
+	'Quotation Request',
+	'Intellectual Property',
+	'Sitemap',
+	'Track Order',
+	'Customs tariffs and fees',
+	'Shipping Policy',
+	'Micro Influencer',
+	'Brand Name Membership',
+	'Brand Name Warranty',
+	'Healthcare Disclaimer',
+];
+
+const brandLinks = [
+	'Download App',
+	'Brands List',
+	'Customer Reviews',
+	'Return Policy',
+	'Blog',
+	'FAQ',
+	'About Ucredit',
+	'Brand Name Affiliates',
+	'Brand Name Gift Cards',
+];
+
+const cities = ['Dhaka', 'Chittagong (Chattogram)', 'Khulna', 'Rajshahi', 'Sylhet', 'Barisal (Bagerhat)', 'Mymensingh', 'Rangpur'];
+
+const stores = ['USA', 'UK', 'Japan', 'Hong Kong', 'Korea', 'China', 'Turkey', 'Europe'];
+
+const payments = [
+	'https://www.Brand Name.com.bd/assets/images/payment/paypal.svg',
+	'https://www.Brand Name.com.bd/assets/images/payment/visa.svg',
+	'https://www.Brand Name.com.bd/assets/images/payment/mastercard.svg',
+];
 
 export default function Footer() {
-	const navItem = [
-		{ title: 'about us', url: '/about-us' },
-		{ title: 'projects', url: '/leilmall' },
-		{ title: 'blog', url: '/blogs' },
-		{ title: 'testimonial', url: '/testimonial' },
-		{ title: 'contact us', url: '/contact-us' },
-	];
-
-	const quickLinks: LinkItem[] = [
-		{ title: 'About Us', path: '/about-us' },
-		{ title: 'Team', path: '/team' },
-		{ title: 'Blog', path: '/blogs' },
-		{ title: 'Contact Us', path: '/contact-us' },
-	];
-
-	const customerService: LinkItem[] = [
-		{ title: 'Track Order', path: '/' },
-		{ title: 'Returns & Cancellations', path: '/' },
-		{ title: 'FAQ', path: '/' },
-	];
-
-	const socialLinks = [
-		{ Icon: Facebook, href: '#' },
-		{ Icon: Send, href: '#' },
-		{ Icon: Twitter, href: '#' },
-		{ Icon: Linkedin, href: '#' },
-	];
-
 	return (
-		<footer className="relative h-full bg-store-secondary-muted md:mt-20 mt-10">
-			<div
-				className="absolute w-full h-full -top-10  z-0 bg-store-secondary-muted"
-				style={{
-					WebkitMaskImage: "url('/assets/footer/wave-up.png')",
-					WebkitMaskRepeat: 'no-repeat',
-					WebkitMaskSize: 'contain',
-					WebkitMaskPosition: 'top',
-					maskImage: "url('/assets/footer/wave-up.png')",
-					maskRepeat: 'no-repeat',
-					maskSize: 'contain',
-					maskPosition: 'top',
-				}}
-			/>
+		<footer className="bg-white mt-12">
+			{/* Main Footer */}
+			<div className="container mx-auto px-6 pt-10 pb-8">
+				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+					{/* QUICK LINKS */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<MessageCircleWarning strokeWidth={2.75} className="text-slate-300" /> QUICK LINKS
+						</h3>
+						<ul className="space-y-4 text-md text-slate-600">
+							{quickLinks.map((item, i) => (
+								<li key={i}>
+									<a href="#" className="footer-link">
+										{item}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
 
-			<div className="max-w-7xl mx-auto px-5 py-8 relative">
-				{/* Main Footer Content */}
-				<div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:py-10 font-jost">
-					{/* TWINKLE BUD Section */}
-					<div className="md:col-span-2 max-w-md">
-						<div className="relative w-40 h-14">
-							<Link href="/">
-								<Image src="/" fill alt="TWINKLE-BUD" className="w-full h-full object-contain object-left" />
-							</Link>
+					{/* BRAND */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<LayoutPanelTop strokeWidth={2.75} className="text-slate-300" /> BRAND
+						</h3>
+						<ul className="space-y-4 text-md text-slate-600">
+							{brandLinks.map((item, i) => (
+								<li key={i}>
+									<a href="#" className="footer-link">
+										{item}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					{/* PAYMENT */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<CreditCard strokeWidth={2.75} className="text-slate-300" /> PAYMENT
+						</h3>
+						<div className="flex flex-col gap-3">
+							{payments.map((src, i) => (
+								<img key={i} src={src} className="h-8 w-auto" />
+							))}
 						</div>
-						<p className="text-gray-600 text-md my-2">
-							TWINKLE-BUD stands for Life Evergreen International LLC. A multinational conglomerate of businesses registered in the U.S. state of
-							Delaware with headquarters...
-						</p>
-						<p className="text-gray-600 text-md mt-1">
-							<strong>Address:</strong> 16182 Coastal Hwy, Lewes, DE 19958...
-						</p>
-						<p className="text-gray-600 text-md">
-							<strong>Phone:</strong> +1 302 504 4573
-						</p>
-						<p className="text-gray-600 text-md">
-							<strong>Email:</strong> contact@twinklebud.com
-						</p>
 					</div>
 
-					{/* Quick Links */}
-					<div className="md:col-span-1">
-						<h3 className="text-xl font-semibold mb-4 text-gray-800">Quick links</h3>
-						<ul className="space-y-2 text-md">
-							{quickLinks.map((link, index) => (
-								<li key={index}>
-									<a href={link.path} className="text-gray-600 hover:text-orange-600">
-										{link.title}
-									</a>
-								</li>
+					{/* SHIPPING */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<Boxes strokeWidth={2.75} className="text-slate-300" /> SHIPPING
+						</h3>
+
+						<div className="space-y-4 text-sm">
+							{[
+								{ title: 'Express Shipping', desc: 'Fast Delivery' },
+								{ title: 'Standard Shipping', desc: '10+ Business Days' },
+							].map((item, i) => (
+								<div key={i} className="flex gap-3">
+									<div className="text-2xl">📦</div>
+									<div>
+										<p className="font-medium">{item.title}</p>
+										<p className="text-gray-600">{item.desc}</p>
+									</div>
+								</div>
 							))}
-						</ul>
+						</div>
 					</div>
 
-					{/* Core Operations */}
-					<div className="md:col-span-1">
-						<h3 className="text-xl font-jost font-semibold mb-4 text-gray-800">Customer service</h3>
-						<ul className="space-y-2 text-md">
-							{customerService.map((link, index) => (
-								<li key={index}>
-									<a href={link.path} className="text-gray-600 hover:text-orange-600">
-										{link.title}
-									</a>
-								</li>
+					{/* CITIES */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<MapPinCheck strokeWidth={2.75} className="text-slate-300" /> CITIES COVERED
+						</h3>
+						<ul className="space-y-4 text-md text-slate-600">
+							{cities.map((city, i) => (
+								<li key={i}>{city}</li>
 							))}
-						</ul>
-					</div>
-
-					{/* Follow Us */}
-					<div className="md:col-span-1">
-						<h3 className="text-xl font-semibold capitalize mb-5 text-gray-800">Follow Us</h3>
-						<div className="flex space-x-8">
-							{socialLinks.map((link, index) => (
-								<a
-									key={index}
-									href={link.href}
-									className="text-white flex-shrink-0 text-twinkle-accent hover:text-white transition-all w-8 h-8 rounded-full bg-twinkle-accent shadow ring-12 ring-white flex items-center justify-center hover:bg-twinkle-accent transition-all"
-								>
-									<link.Icon size={14} className="" />
+							<li>
+								<a href="#" className="text-blue-600 hover:underline">
+									View More Cities →
 								</a>
-							))}
+							</li>
+						</ul>
+					</div>
+
+					{/* SUPPORT */}
+					<div>
+						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
+							<Headset strokeWidth={2.75} className="text-slate-300" />
+							24/7 Support
+						</h3>
+
+						<div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
+							<div className="flex gap-3">
+								<span className="text-2xl">💬</span>
+								<div>
+									<p className="font-semibold">24/7 Customer Support</p>
+									<p className="text-xs text-gray-600">Get your texts/emails answered in your native language</p>
+								</div>
+							</div>
+						</div>
+
+						<div className="mb-4">
+							<p className="font-medium text-sm">Customer Services</p>
+							<p className="text-sm font-semibold text-blue-600">+880 9638001086</p>
+						</div>
+
+						<div>
+							<p className="text-sm mb-2">Download our App</p>
+							<div className="grid grid-cols-2 gap-2">
+								<div className="relative w-full h-20">
+									<Image
+										src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+										alt="Download on the App Store"
+										fill
+										objectFit="contain"
+									/>
+								</div>
+								<div className="relative w-full h-20">
+									<Image
+										src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+										alt="Get it on Google Play"
+										fill
+										objectFit="contain"
+									/>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
+			</div>
 
-				{/* Footer Bottom */}
-				<div className="mt-10 pt-5 border-t border-gray-300 text-center flex md:flex-row flex-col gap-5 items-center justify-between">
-					<p className="text-gray-600 text-xs">Copyright © 2025 TWINKLE BUD. All Rights Reserved.</p>
-					<nav className="flex-1">
-						<ul className="flex flex-wrap items-center md:justify-end justify-center space-x-5">
-							{navItem.map((item, index) => (
-								<li key={index}>
-									<Link href={item.url} className="text-sm font-jost text-gray-800 font-semibold hover:text-orange-600 uppercase">
-										{item.title}
-									</Link>
-								</li>
-							))}
-						</ul>
-					</nav>
+			{/* Trust */}
+			<div className="border-t">
+				<div className="container mx-auto px-6 py-6 flex justify-between flex-wrap gap-6">
+					<div className="flex gap-8">
+						<img src="https://www.Brand Name.com.bd/assets/images/pci-dss.png" className="h-10" />
+						<div className="flex gap-2 items-center">
+							<img src="https://www.Brand Name.com.bd/assets/images/iso.png" className="h-10" />
+							<span className="text-sm font-semibold">27001:2022</span>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg">
+						<span>🇧🇩</span>
+						<span className="font-medium">Bangladesh</span>
+					</div>
+				</div>
+			</div>
+
+			{/* Stores */}
+			<div className="border-t bg-gray-50">
+				<div className="container mx-auto px-6 py-6">
+					<p className="font-medium text-md mb-3">Brand Name Popular Stores</p>
+
+					<div className="flex flex-wrap gap-3 text-sm">
+						{stores.map((store, i) => (
+							<React.Fragment key={i}>
+								<a href="#" className="footer-link">
+									Shop from {store}
+								</a>
+								{i !== stores.length - 1 && <span className="text-yellow-400">•</span>}
+							</React.Fragment>
+						))}
+					</div>
+				</div>
+			</div>
+
+			{/* Bottom */}
+			<div className="border-t">
+				<div className="container mx-auto px-6 py-5 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+					<div>Copyright © 2026 Brand Name Co. All rights reserved.</div>
+
+					<div className="flex gap-6 mt-4 md:mt-0">
+						{['Terms & Conditions', 'Privacy Policy', 'About Us', 'Contact Us'].map((item, i) => (
+							<a key={i} href="#" className="text-sm">
+								{item}
+							</a>
+						))}
+					</div>
 				</div>
 			</div>
 		</footer>

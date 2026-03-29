@@ -7,7 +7,7 @@ import NewInStoreSection from './NewInStoreSection';
 import HeroSection from './HeroSection';
 import FeatureHighlights from './FeatureHighlights';
 import TopSelling from './TopSelling';
-import Footer from './Footer';
+
 
 export default function LandingPage() {
 	return (
@@ -15,7 +15,7 @@ export default function LandingPage() {
 			<HeroSection />
 			<FeatureHighlights />
 			<TopSelling />
-			<Footer />
+
 		</div>
 	);
 }

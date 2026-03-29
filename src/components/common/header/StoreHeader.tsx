@@ -169,7 +169,7 @@ export default function StoreHeader() {
 				</div>
 			</header>
 
-			<div className="min-h-[100px]" />
+			<div className="md:min-h-[100px]" />
 		</>
 	);
 }

@@ -107,15 +107,17 @@ export default function HeroSection() {
 						/>
 
 						<button className="flex shadow items-center justify-center bg-orange-300 text-white  md:w-12 md:h-12 w-10 h-10 rounded-full">
-							<Search className='w-4 h-4 md:w-6 md:h-6'/>
+							<Search className="w-4 h-4 md:w-6 md:h-6" />
 						</button>
 					</div>
 
 					{/* Country selector */}
-					<div className="mt-3 flex justify-center gap-3 text-xs md:text-sm text-gray-100">
+					<div className="mt-3 flex items-center justify-center gap-5 text-xs md:text-sm text-gray-100">
 						<span>Order From:</span>
-						{['🇺🇸', '🇬🇧', '🇨🇳', '🇯🇵', '🇰🇷'].map((flag, i) => (
-							<span key={i}>{flag}</span>
+						{['🇧🇩', '🇺🇸', '🇬🇧', '🇨🇳','🇩🇪','🇵🇰',].map((flag, i) => (
+							<span className="text-xl" key={i}>
+								{flag}
+							</span>
 						))}
 					</div>
 				</div>
