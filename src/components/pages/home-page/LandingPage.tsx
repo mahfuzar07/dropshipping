@@ -7,13 +7,15 @@ import NewInStoreSection from './NewInStoreSection';
 import HeroSection from './HeroSection';
 import FeatureHighlights from './FeatureHighlights';
 import TopSelling from './TopSelling';
+import Footer from './Footer';
 
 export default function LandingPage() {
 	return (
 		<div className="min-h-screen">
 			<HeroSection />
-			<FeatureHighlights/>
-			<TopSelling/>
+			<FeatureHighlights />
+			<TopSelling />
+			<Footer />
 		</div>
 	);
 }
