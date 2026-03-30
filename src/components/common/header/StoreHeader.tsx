@@ -12,42 +12,47 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import NotificationContent from './dropdown-content/NotificationContent';
 import ProfileContent from './dropdown-content/ProfileContent';
 import ServiceContent from './dropdown-content/ServiceContent';
+import CategoryPopover from '@/components/ui/custom/CategoryPopover';
+import CategoryMenu from './CategoryMenu';
 
-const CATEGORIES = [
+export const CATEGORIES = [
 	{
 		id: 1,
-		name: 'Level 1',
-		slug: 'l1',
+		name: 'Electronics',
+		slug: 'electronics',
 		children: [
 			{
 				id: 2,
-				name: 'Level 2',
-				slug: 'l2',
+				name: 'Mobiles',
+				slug: 'mobiles',
 				children: [
-					{
-						id: 3,
-						name: 'Level 3',
-						slug: 'l3',
-					},
+					{ id: 3, name: 'Android Phones', slug: 'android' },
+					{ id: 4, name: 'iPhone', slug: 'iphone' },
+				],
+			},
+			{
+				id: 5,
+				name: 'Laptops',
+				slug: 'laptops',
+				children: [
+					{ id: 6, name: 'Gaming Laptop', slug: 'gaming' },
+					{ id: 7, name: 'Ultrabook', slug: 'ultrabook' },
 				],
 			},
 		],
 	},
 	{
-		id: 2,
-		name: 'Level 1',
-		slug: 'l1',
+		id: 8,
+		name: 'Fashion',
+		slug: 'fashion',
 		children: [
 			{
-				id: 2,
-				name: 'Level 2',
-				slug: 'l2',
+				id: 9,
+				name: 'Men',
+				slug: 'men',
 				children: [
-					{
-						id: 3,
-						name: 'Level 3',
-						slug: 'l3',
-					},
+					{ id: 10, name: 'Shirts', slug: 'shirts' },
+					{ id: 11, name: 'Shoes', slug: 'shoes' },
 				],
 			},
 		],
@@ -142,7 +147,7 @@ export default function StoreHeader() {
 									<div className="relative hidden md:block overflow-hidden rounded-xl">
 										<h1>Brand Logo</h1>
 									</div>
-									<HoverPopover
+									<CategoryPopover
 										trigger={
 											<div className="relative cursor-pointer font-medium flex items-center gap-1.5 bg-slate-100 px-5 py-2 rounded hover:bg-slate-100">
 												Catgory
@@ -150,8 +155,8 @@ export default function StoreHeader() {
 											</div>
 										}
 									>
-										<h1>category</h1>
-									</HoverPopover>
+										<CategoryMenu categories={CATEGORIES} />
+									</CategoryPopover>
 								</div>
 							</div>
 
@@ -178,6 +183,16 @@ export default function StoreHeader() {
 							<div className="flex col-span-1 items-center justify-end gap-3 2xl:gap-5">
 								<HoverPopover
 									trigger={
+										<div className="flex gap-2 items-center text-slate-500 cursor-pointer ">
+											<User size={24} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
+											<span className="flex items-center gap-1.5">Profile</span>
+										</div>
+									}
+								>
+									<ProfileContent isAuthenticated={isAuthenticated} user={user} />
+								</HoverPopover>
+								<HoverPopover
+									trigger={
 										<div className="relative cursor-pointer">
 											<Bell size={22} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground mt-1" />
 											<div className="absolute -right-1 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-orange-300 flex items-center justify-center">
@@ -187,17 +202,6 @@ export default function StoreHeader() {
 									}
 								>
 									<NotificationContent />
-								</HoverPopover>
-
-								<HoverPopover
-									trigger={
-										<div className="flex gap-2 items-center text-slate-500 cursor-pointer ">
-											<User size={24} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
-											<span className="flex items-center gap-1.5">Profile</span>
-										</div>
-									}
-								>
-									<ProfileContent isAuthenticated={isAuthenticated} user={user} />
 								</HoverPopover>
 
 								<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>

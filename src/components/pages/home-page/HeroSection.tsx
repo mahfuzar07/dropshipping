@@ -2,9 +2,10 @@
 
 import React, { useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay, Pagination } from 'swiper/modules';
+import { Navigation, Autoplay, Pagination, EffectFade } from 'swiper/modules';
 import SwiperCore from 'swiper';
 import 'swiper/css';
+import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import Image from 'next/image';
@@ -44,8 +45,10 @@ export default function HeroSection() {
 	return (
 		<div className="relative w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[18/6] overflow-hidden">
 			<Swiper
-				modules={[Autoplay, Pagination, Navigation]}
-				spaceBetween={0}
+				modules={[Autoplay, Pagination, Navigation, EffectFade]}
+				effect={'fade'}
+				speed={1000}
+				spaceBetween={10}
 				slidesPerView={1}
 				autoplay={{
 					delay: 5000,
