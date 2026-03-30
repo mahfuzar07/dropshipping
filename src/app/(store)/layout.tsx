@@ -10,7 +10,7 @@ export default function HomeLayout({
 	return (
 		<>
 			<StoreHeader />
-			<main className="bg-gray-100 md:pb-0 pb-15">{children}</main>
+			<main className="bg-gray-100 ">{children}</main>
 			<Footer/>
 			<FooterNavigation/>
 		</>

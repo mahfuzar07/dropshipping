@@ -42,13 +42,13 @@ const products = [
 
 export default function TopSelling() {
 	return (
-		<div className="bg-gray-100 p-8">
-			<div className="container mx-auto">
+		<div className="bg-gray-100 py-8">
+			<div className="container mx-auto px-4">
 				{/* Title */}
 				<h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-tight">TOP SELLING</h2>
 
 				{/* Product Grid */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+				<div className="grid grid-cols-2 md:grid-cols-5 gap-4">
 					{products.map((product) => (
 						<ProductCard product={product} key={product.id}/>
 					))}

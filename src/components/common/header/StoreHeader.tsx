@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { Search, Heart, User, ShoppingBasket, Menu, Settings, Divide, ArrowBigDown, ArrowDown, ChevronDown } from 'lucide-react';
+import { Search, Heart, User, ShoppingBasket, Menu, Settings, Divide, ArrowBigDown, ArrowDown, ChevronDown, Smartphone, Headset, MapPin, Globe } from 'lucide-react';
 import Image from 'next/image';
 import {
 	DropdownMenu,
@@ -17,6 +17,8 @@ import { NAV_ITEMS } from '@/lib/constants/data';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import HoverPopover from '@/components/ui/custom/HoverPopover';
+import Link from 'next/link';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CATEGORIES = [
 	{
@@ -68,22 +70,68 @@ export default function StoreHeader() {
 	return (
 		<>
 			<header
-				className={`fixed top-0 min-h-[80px] left-0 right-0 z-50 transition-transform duration-300  shadow ${
-					isVisible ? 'translate-y-0' : '-translate-y-full'
-				}`}
+				className={`fixed md:min-h-[100px] top-0 left-0 right-0 z-50 transition-transform duration-300  shadow ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
 			>
-				<div className="bg-slate-50 flex items-center">
-					<div className="container relative mx-auto px-4 py-2">
+				<div className="bg-slate-50 items-center hidden md:flex ">
+					<div className="container relative mx-auto px-4 py-1">
 						<div className="flex items-center justify-between">
-							<div>
-								<button>Mobile App</button>
+							<div className="flex items-center gap-5">
+								<Link href="/" className="flex gap-1.5 items-center text-slate-500 cursor-pointer text-sm">
+									<Smartphone size={16} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
+									<span className="">Brand App</span>
+								</Link>
+
+								<Link href="/" className="flex gap-1.5 items-center text-slate-500 cursor-pointer text-sm">
+									<Headset size={16} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
+									<span className="">Support</span>
+								</Link>
+							</div>
+							<div className="flex items-center gap-5">
+								<div className="flex gap-3 items-center text-slate-500 cursor-pointer text-sm">
+									<div className="relative hidden md:block cursor-pointer">
+										<Heart size={22} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground" />
+										<div className="absolute -right-2 -top-1 h-4 w-4 rounded-full text-[10px] text-white bg-orange-300 flex items-center justify-center">
+											3
+										</div>
+									</div>
+									Wishlist
+								</div>
+
+								<Select>
+									<SelectTrigger className="w-25 border-none bg-transparent h-auto px-0 focus:ring-0 focus:ring-offset-0 shadow-none focus:border-none! focus:ring-transparent!">
+										<MapPin size={14} className="text-gray-500" />
+										<SelectValue placeholder="Ship To" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectItem value="bd">🇧🇩 Bangladesh</SelectItem>
+											<SelectItem value="in">🇮🇳 India</SelectItem>
+											<SelectItem value="pk">🇵🇰 Pakistan</SelectItem>
+											<SelectItem value="ae">🇦🇪 UAE</SelectItem>
+											<SelectItem value="cn">🇨🇳 China</SelectItem>
+										</SelectGroup>
+									</SelectContent>
+								</Select>
+								<Select>
+									<SelectTrigger className="w-26 border-none bg-transparent h-auto px-0 focus:ring-0 focus:ring-offset-0 shadow-none focus:border-none! focus:ring-transparent!">
+										<Globe size={14} className="text-gray-500" />
+										<SelectValue placeholder="Lang" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectItem value="apple">English</SelectItem>
+											<SelectItem value="banana">Bangla</SelectItem>
+											<SelectItem value="blueberry">Chinese</SelectItem>
+										</SelectGroup>
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<div className="bg-white flex items-center">
-					<div className="container relative mx-auto px-4 py-5">
+					<div className="container relative mx-auto px-4 py-4">
 						<div className="grid md:grid-cols-3 grid-cols-2 items-center ">
 							{/* Left - Logo + mobile menu btn */}
 							<div>
@@ -110,9 +158,9 @@ export default function StoreHeader() {
 
 								<HoverPopover
 									trigger={
-										<div className="flex gap-1.5 items-center text-slate-500 cursor-pointer">
+										<div className="flex gap-2 items-center text-slate-500 cursor-pointer">
 											<User size={22} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
-											<div className='flex items-center gap-1'>
+											<div className="flex items-center gap-1.5">
 												Profile
 												<ChevronDown size={18} />
 											</div>
@@ -139,7 +187,7 @@ export default function StoreHeader() {
 
 										<div className="my-3 border-t" />
 
-										<div className="flex flex-col gap-1">
+										<div className="flex flex-col gap-1 text-sm">
 											<div className="p-2 hover:bg-gray-100 rounded-md cursor-pointer flex items-center gap-2">
 												<User className="h-4 w-4" /> My Profile
 											</div>
@@ -150,16 +198,9 @@ export default function StoreHeader() {
 									</div>
 								</HoverPopover>
 
-								<div className="relative hidden md:block cursor-pointer">
-									<Heart size={22} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground" />
-									<div className="absolute -right-2 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-green-600 flex items-center justify-center">
-										3
-									</div>
-								</div>
-
 								<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
 									<ShoppingBasket size={26} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground" />
-									<div className="absolute -right-1 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-green-600 flex items-center justify-center">
+									<div className="absolute -right-1 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-orange-300 flex items-center justify-center">
 										3
 									</div>
 								</div>

@@ -42,7 +42,7 @@ export default function HeroSection() {
 	const nextRef = useRef<HTMLDivElement>(null);
 	const swiperRef = useRef<SwiperCore | null>(null);
 	return (
-		<div className="relative w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[11/4] 2xl:aspect-[17/6] overflow-hidden">
+		<div className="relative w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[18/6] overflow-hidden">
 			<Swiper
 				modules={[Autoplay, Pagination, Navigation]}
 				spaceBetween={0}
@@ -74,7 +74,7 @@ export default function HeroSection() {
 				onSlideChange={(swiper) => {
 					setActiveIndex(swiper.activeIndex);
 				}}
-				className="w-full h-full pt-1"
+				className="w-full h-full"
 			>
 				{slides.map((slide) => (
 					<SwiperSlide key={slide.id} className="rounded overflow-hidden">
@@ -82,7 +82,7 @@ export default function HeroSection() {
 							<Image src={slide.bg} alt={slide.title} fill objectFit="cover" objectPosition="top-center" priority={slide.id === 1} />
 							<div className="absolute inset-0 bg-black/30 transition-opacity duration-500" />
 
-							<div className="absolute inset-0 z-10 flex items-center justify-center text-center px-4">
+							<div className="absolute left-1/2 md:top-40 2xl:top-60 top-50 -translate-x-1/2 z-10 flex items-center justify-center text-center px-4">
 								<div className="text-white max-w-xl">
 									<h1 className="text-3xl md:text-5xl font-bold text-white">{slide.title}</h1>
 
@@ -106,15 +106,15 @@ export default function HeroSection() {
 							className="flex-1 outline-none text-sm md:text-base text-white placeholder:text-orange-100 bg-transparent"
 						/>
 
-						<button className="flex shadow items-center justify-center bg-orange-300 text-white  md:w-12 md:h-12 w-10 h-10 rounded-full">
-							<Search className="w-4 h-4 md:w-6 md:h-6" />
+						<button className="flex shadow items-center justify-center bg-orange-300 text-white  2xl:w-12 2xl:h-12 w-10 h-10 md:w-10 md:h-10 rounded-full">
+							<Search className="w-4 h-4 md:w-5 md:h-5 2xl:w-6 2xl:h-6" />
 						</button>
 					</div>
 
 					{/* Country selector */}
 					<div className="mt-3 flex items-center justify-center gap-5 text-xs md:text-sm text-gray-100">
 						<span>Order From:</span>
-						{['🇧🇩', '🇺🇸', '🇬🇧', '🇨🇳','🇩🇪','🇵🇰',].map((flag, i) => (
+						{['🇧🇩', '🇺🇸', '🇬🇧', '🇨🇳', '🇩🇪', '🇵🇰'].map((flag, i) => (
 							<span className="text-xl" key={i}>
 								{flag}
 							</span>

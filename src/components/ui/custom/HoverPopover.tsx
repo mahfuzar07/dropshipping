@@ -20,7 +20,7 @@ export default function HoverPopover({ trigger, children, className = '', width 
 			{trigger}
 
 			{/* Invisible bridge (flicker fix) */}
-			<div className="absolute top-full left-0 w-full h-5" />
+			<div className="absolute top-full left-0 w-full h-4" />
 
 			{/* Popover */}
 			<AnimatePresence>
@@ -31,7 +31,7 @@ export default function HoverPopover({ trigger, children, className = '', width 
 						exit={{ opacity: 0, y: -10 }}
 						transition={{ duration: 0.3, ease: 'easeOut' }}
 						className={`
-              absolute top-full mt-5 -z-1 ${width}
+              absolute top-full mt-4 -z-1 ${width}
               ${align === 'right' ? 'right-0' : 'left-0'}
               rounded-b-xl bg-white shadow
               ${className}

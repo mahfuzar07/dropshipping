@@ -41,10 +41,10 @@ const payments = [
 
 export default function Footer() {
 	return (
-		<footer className="bg-white mt-12">
+		<footer className="bg-white md:mt-12 mt-5 md:pb-0 pb-15">
 			{/* Main Footer */}
-			<div className="container mx-auto px-6 pt-10 pb-8">
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+			<div className="container mx-auto px-4 pt-10 pb-8">
+				<div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-8">
 					{/* QUICK LINKS */}
 					<div>
 						<h3 className="font-semibold text-md tracking-wider mb-4 flex items-center gap-2 border-b pb-3">
@@ -213,10 +213,10 @@ export default function Footer() {
 
 			{/* Bottom */}
 			<div className="border-t">
-				<div className="container mx-auto px-6 py-5 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+				<div className="container mx-auto px-6 py-5 flex flex-col md:flex-row justify-between md:items-center text-sm text-gray-600">
 					<div>Copyright © 2026 Brand Name Co. All rights reserved.</div>
 
-					<div className="flex gap-6 mt-4 md:mt-0">
+					<div className="flex md:flex-row flex-col gap-6 mt-4 md:mt-0">
 						{['Terms & Conditions', 'Privacy Policy', 'About Us', 'Contact Us'].map((item, i) => (
 							<a key={i} href="#" className="text-sm">
 								{item}
