@@ -1,47 +1,17 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import {
-	Search,
-	Heart,
-	User,
-	ShoppingBasket,
-	Menu,
-	Settings,
-	Divide,
-	ArrowBigDown,
-	ArrowDown,
-	ChevronDown,
-	Smartphone,
-	Headset,
-	MapPin,
-	Globe,
-	Truck,
-	Bell,
-	ShoppingCart,
-	FileText,
-	Camera,
-	DollarSign,
-	ArrowRight,
-	Calculator,
-} from 'lucide-react';
-import Image from 'next/image';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Heart, User, ShoppingBasket, Menu, ChevronDown, Smartphone, Headset, Globe, Truck, Bell } from 'lucide-react';
+
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
-import { NAV_ITEMS } from '@/lib/constants/data';
-import { Button } from '@/components/ui/button';
-import { AnimatePresence, motion } from 'framer-motion';
+
 import HoverPopover from '@/components/ui/custom/HoverPopover';
 import Link from 'next/link';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import NotificationContent from './dropdown-content/NotificationContent';
+import ProfileContent from './dropdown-content/ProfileContent';
+import ServiceContent from './dropdown-content/ServiceContent';
 
 const CATEGORIES = [
 	{
@@ -168,74 +138,20 @@ export default function StoreHeader() {
 								{/* <div className="relative hidden md:block h-18 w-30 overflow-hidden rounded-xl">
 								<Image src="/assets/brand.png" alt="brand" fill className="object-contain transition-transform duration-300 group-hover:scale-105" />
 							</div> */}
-							<div className='flex items-center gap-8'>
-								<div className="relative hidden md:block overflow-hidden rounded-xl">
-									<h1>Brand Logo</h1>
-								</div>
-								<HoverPopover
-									trigger={
-										<div className="relative cursor-pointer font-medium flex items-center gap-1.5 bg-slate-100 px-5 py-2 rounded hover:bg-slate-100">
-											Catgory
-											<ChevronDown size={18} />
-										</div>
-									}
-								>
-									<div className="w-[300px] bg-white rounded-2xl shadow-2xl p-6">
-										{/* Services Grid */}
-										<div className="grid grid-cols-1 gap-4">
-											{/* Item */}
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center group-hover:scale-105 transition">
-													<ShoppingCart size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-green-600 transition">Buy & Ship For Me</h4>
-													<p className="text-sm text-gray-500">Customized buying and shipping.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Truck size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">Ship For Me</h4>
-													<p className="text-sm text-gray-500">Hassle-free shipping solutions.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<FileText size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">Request For Quotation</h4>
-													<p className="text-sm text-gray-500">Precise quotation management.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Camera size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-pink-600 transition">Image Lens</h4>
-													<p className="text-sm text-gray-500">Intelligent image-based search.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Calculator size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-yellow-600 transition">Cost Calculator</h4>
-													<p className="text-sm text-gray-500">Accurate financial planning tools.</p>
-												</div>
-											</div>
-										</div>
+								<div className="flex items-center gap-8">
+									<div className="relative hidden md:block overflow-hidden rounded-xl">
+										<h1>Brand Logo</h1>
 									</div>
-								</HoverPopover>
+									<HoverPopover
+										trigger={
+											<div className="relative cursor-pointer font-medium flex items-center gap-1.5 bg-slate-100 px-5 py-2 rounded hover:bg-slate-100">
+												Catgory
+												<ChevronDown size={18} />
+											</div>
+										}
+									>
+										<h1>category</h1>
+									</HoverPopover>
 								</div>
 							</div>
 
@@ -254,73 +170,7 @@ export default function StoreHeader() {
 										</div>
 									}
 								>
-									<div className="w-[700px] bg-white rounded-2xl shadow-2xl p-6">
-										{/* Services Grid */}
-										<div className="grid grid-cols-2 gap-4">
-											{/* Item */}
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center group-hover:scale-105 transition">
-													<ShoppingCart size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-green-600 transition">Buy & Ship For Me</h4>
-													<p className="text-sm text-gray-500">Customized buying and shipping.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Truck size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">Ship For Me</h4>
-													<p className="text-sm text-gray-500">Hassle-free shipping solutions.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<FileText size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">Request For Quotation</h4>
-													<p className="text-sm text-gray-500">Precise quotation management.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Camera size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-pink-600 transition">Image Lens</h4>
-													<p className="text-sm text-gray-500">Intelligent image-based search.</p>
-												</div>
-											</div>
-
-											<div className="group flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
-												<div className="w-11 h-11 bg-slate-100 text-orange-400 rounded flex items-center justify-center">
-													<Calculator size={20} />
-												</div>
-												<div>
-													<h4 className="font-semibold text-gray-900 group-hover:text-yellow-600 transition">Cost Calculator</h4>
-													<p className="text-sm text-gray-500">Accurate financial planning tools.</p>
-												</div>
-											</div>
-										</div>
-
-										{/* Bottom Section */}
-										<div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-											<div>
-												<h3 className="text-lg font-semibold text-gray-900">Associate Services</h3>
-												<p className="text-sm text-gray-500">Explore our associate services to level up your business</p>
-											</div>
-
-											<button className="flex items-center gap-1 text-sm font-medium text-green-600 hover:gap-2 transition">
-												Explore <ArrowRight size={16} />
-											</button>
-										</div>
-									</div>
+									<ServiceContent />
 								</HoverPopover>
 							</nav>
 
@@ -336,54 +186,7 @@ export default function StoreHeader() {
 										</div>
 									}
 								>
-									<div className="w-80">
-										{/* Header */}
-										<div className="flex items-center justify-between px-4 py-3 border-b">
-											<p className="font-semibold text-sm">Notifications</p>
-											<button className="text-xs text-blue-500 hover:underline">Mark all as read</button>
-										</div>
-
-										{/* Notification List */}
-										<div className="max-h-80 overflow-y-auto">
-											{/* Item 1 (unread) */}
-											<div className="flex gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer bg-orange-50">
-												<Bell size={22} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground mt-1" />
-												<div className="flex-1">
-													<p className="text-sm">
-														<span className="font-medium">John Doe</span> placed a new order
-													</p>
-													<p className="text-xs text-muted-foreground mt-1">2 min ago</p>
-												</div>
-											</div>
-
-											{/* Item 2 */}
-											<div className="flex gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer">
-												<Bell size={22} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground mt-1" />
-												<div className="flex-1">
-													<p className="text-sm">
-														Your product <span className="font-medium">iPhone 15</span> was shipped
-													</p>
-													<p className="text-xs text-muted-foreground mt-1">1 hour ago</p>
-												</div>
-											</div>
-
-											{/* Item 3 */}
-											<div className="flex gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer">
-												<Bell size={22} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground mt-1" />
-												<div className="flex-1">
-													<p className="text-sm">
-														New message from <span className="font-medium">Support Team</span>
-													</p>
-													<p className="text-xs text-muted-foreground mt-1">Yesterday</p>
-												</div>
-											</div>
-										</div>
-
-										{/* Footer */}
-										<div className="text-center py-2 border-t">
-											<button className="text-sm text-blue-500 hover:underline">View all notifications</button>
-										</div>
-									</div>
+									<NotificationContent />
 								</HoverPopover>
 
 								<HoverPopover
@@ -394,35 +197,7 @@ export default function StoreHeader() {
 										</div>
 									}
 								>
-									<div className="px-3 py-5">
-										{isAuthenticated ? (
-											<div className="flex items-center gap-3 p-2">
-												<div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-													<User className="h-5 w-5 text-primary" />
-												</div>
-												<div>
-													<p className="text-sm font-semibold">Welcome back 👋</p>
-													<p className="text-xs text-muted-foreground">{user?.phone}</p>
-												</div>
-											</div>
-										) : (
-											<div className="flex flex-col gap-2">
-												<Button>Sign In</Button>
-												<Button variant="outline">Registration</Button>
-											</div>
-										)}
-
-										<div className="my-3 border-t" />
-
-										<div className="flex flex-col gap-1 text-sm">
-											<div className="p-2 hover:bg-gray-100 rounded-md cursor-pointer flex items-center gap-2">
-												<User className="h-4 w-4" /> My Profile
-											</div>
-											<div className="p-2 hover:bg-gray-100 rounded-md cursor-pointer flex items-center gap-2">
-												<Settings className="h-4 w-4" /> Settings
-											</div>
-										</div>
-									</div>
+									<ProfileContent isAuthenticated={isAuthenticated} user={user} />
 								</HoverPopover>
 
 								<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
