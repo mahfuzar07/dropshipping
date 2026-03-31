@@ -95,7 +95,7 @@ export default function WordlWideStore() {
 								<Link href={`/products/${product.id}`} className="group cursor-pointer bg-white overflow-hidden rounded-md h-full flex flex-col transition-all duration-300">
 									{/* Image Container - Fixed aspect ratio */}
 									<div className="relative w-full aspect-[8/5] overflow-hidden flex-shrink-0 bg-white">
-										<Image src={product.image} alt={product.title} fill className="object-contain transition-transform " />
+										<Image src={product.image} alt={product.title} fill className="object-cover transition-transform " />
 									</div>
 
 									<div className="flex-1 flex flex-col lg:px-5 2xl:px-8 py-3 pt-4">
