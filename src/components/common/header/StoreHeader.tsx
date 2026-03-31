@@ -183,8 +183,8 @@ export default function StoreHeader() {
 							<div className="flex col-span-1 items-center justify-end gap-3 2xl:gap-5">
 								<HoverPopover
 									trigger={
-										<div className="flex gap-2 items-center text-slate-500 cursor-pointer ">
-											<User size={24} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
+										<div className="flex gap-1 items-center text-slate-500 cursor-pointer ">
+											<User size={20} strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition" />
 											<span className="flex items-center gap-1.5">Profile</span>
 										</div>
 									}

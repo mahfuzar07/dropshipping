@@ -100,7 +100,7 @@ export default function HeroSection() {
 			</Swiper>
 
 			{/* Search Box */}
-			<div className="absolute left-1/2 bottom-20 -translate-x-1/2 w-full px-4 z-10">
+			<div className="absolute left-1/2 bottom-20 -translate-x-1/2  w-full px-4 z-10">
 				<div className="bg-white/30 backdrop-blur-xl p-5 max-w-3xl mx-auto rounded-xl shadow-xl">
 					<div className="bg-white/10 rounded-full flex items-center pl-4 pr-1 py-1 gap-3 border border-orange-300">
 						<input
