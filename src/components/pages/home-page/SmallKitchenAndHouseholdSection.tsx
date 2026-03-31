@@ -38,7 +38,7 @@ export default function SmallKitchenAndHouseholdSection() {
 								</button>
 							</div>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
 							{kitchenAppliances.map((item) => (
 								<div
 									key={item.id}
@@ -67,7 +67,7 @@ export default function SmallKitchenAndHouseholdSection() {
 								</button>
 							</div>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
 							{householdSupplies.map((item) => (
 								<div
 									key={item.id}

@@ -11,6 +11,7 @@ import NewLaunch from './NewLaunch';
 import GiftIdeas from './GiftIdeas';
 import SmallKitchenAndHouseholdSection from './SmallKitchenAndHouseholdSection';
 import LatestDeal from './LatestDeal';
+import WordlWideStore from './WordlWideStore';
 
 export default function LandingPage() {
 	return (
@@ -19,6 +20,7 @@ export default function LandingPage() {
 			<FeatureHighlights />
 			<TopSelling />
 			<GiftIdeas />
+			<WordlWideStore/>
 			<SmallKitchenAndHouseholdSection />
 			<LatestDeal />
 			<NewLaunch />

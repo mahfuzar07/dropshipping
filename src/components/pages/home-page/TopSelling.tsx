@@ -63,8 +63,8 @@ export default function TopSelling() {
 				{/* Swiper */}
 				<Swiper
 					modules={[Navigation, Autoplay]}
-					spaceBetween={16}
-					slidesPerView={5}
+					spaceBetween={12}
+					// slidesPerView={5}
 					navigation={{
 						prevEl: prevRef.current,
 						nextEl: nextRef.current,
@@ -74,7 +74,7 @@ export default function TopSelling() {
 						disableOnInteraction: false,
 					}}
 					breakpoints={{
-						640: { slidesPerView: 3 },
+						200: { slidesPerView: 2 },
 						768: { slidesPerView: 4 },
 						1024: { slidesPerView: 5 },
 						1280: { slidesPerView: 5 },

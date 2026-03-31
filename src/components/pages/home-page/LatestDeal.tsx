@@ -21,24 +21,24 @@ export default function LatestDeal() {
 				<h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-tight">LATEST DEALS</h2>
 
 				{/* MAIN GRID */}
-				<div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+				<div className="grid grid-cols-2 md:grid-cols-6 gap-3">
 					{/* ===== FIRST ROW ===== */}
 
 					{/* Product 1 */}
-					<div className="md:col-span-1">
+					<div className="md:col-span-1 order-2 md:order-none">
 						<ProductCard product={products[0]} />
 					</div>
 
 					{/* Product 2 */}
-					<div className="md:col-span-1">
+					<div className="md:col-span-1 order-3 md:order-none">
 						<ProductCard product={products[1]} />
 					</div>
-					<div className="md:col-span-1">
+					<div className="md:col-span-1 order-4 md:order-none">
 						<ProductCard product={products[2]} />
 					</div>
 
 					{/* BANNER */}
-					<div className="md:col-span-3">
+					<div className="md:col-span-3 col-span-2 order-1 md:order-none">
 						<div className="relative h-full min-h-[280px] md:min-h-[340px] lg:min-h-[350px] rounded-2xl overflow-hidden bg-gradient-to-b from-[#cfe3f4] to-[#f5e4d4] p-6 flex flex-col justify-center">
 							{/* Text Content */}
 							<div className="max-w-md z-10">
@@ -57,7 +57,7 @@ export default function LatestDeal() {
 					</div>
 				</div>
 				{/* ===== SECOND ROW (ALL PRODUCTS) ===== */}
-				<div className="grid grid-cols-1 md:grid-cols-5 gap-3 mt-5">
+				<div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
 					{products.slice(3).map((product) => (
 						<div key={product.id} className="">
 							<ProductCard product={product} />
