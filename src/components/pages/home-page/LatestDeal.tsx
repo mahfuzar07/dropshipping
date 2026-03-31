@@ -42,16 +42,15 @@ export default function LatestDeal() {
 						<div className="relative h-full min-h-[280px] md:min-h-[340px] lg:min-h-[350px] rounded-2xl overflow-hidden bg-gradient-to-b from-[#cfe3f4] to-[#f5e4d4] p-6 flex flex-col justify-center">
 							{/* Text Content */}
 							<div className="max-w-md z-10">
-								<h3 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3">International Gifting Store</h3>
-								<p className="text-gray-600 font-semibold mb-6 text-lg leading-relaxed">
-									Buy Your Favorite Gifts Online & Send Abroad to Your Loved Ones
-								</p>
-								<button className="bg-blue-900 hover:bg-blue-800 text-white px-12 py-3 rounded text-sm font-medium transition-all">Gift Now</button>
+								<h3 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3">Daily Deals Best Offers From BD </h3>
+								<p className="text-gray-600 font-semibold mb-3 text-lg leading-relaxed">Get Upto 15% Off on Your Favorite Products.</p>
+								<p className="text-gray-600 font-semibold mb-6 text-lg leading-relaxed">USE CODE: NEWYEAR.</p>
+								<button className="bg-blue-900 hover:bg-blue-800 text-white px-12 py-3 rounded text-sm font-medium transition-all">Shop Now</button>
 							</div>
 
 							{/* Decorative Image */}
 							<div className="absolute right-4 h-full w-2/5 pointer-events-none">
-								<Image src="/assets/gift/giftcard-bg.webp" alt="International gifting" fill className="object-contain object-bottom" priority />
+								<Image src="/assets/deals/deals-bg.webp" alt="International gifting" fill className="object-contain object-bottom" priority />
 							</div>
 						</div>
 					</div>

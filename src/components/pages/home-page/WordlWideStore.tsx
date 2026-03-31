@@ -98,8 +98,8 @@ export default function WordlWideStore() {
 										<Image src={product.image} alt={product.title} fill className="object-contain transition-transform " />
 									</div>
 
-									<div className="flex-1 flex flex-col px-5 py-3 pt-4">
-										<h3 className="text-xs lg:text-sm 2xl:text-md text-center leading-tight mb-3 flex-grow">
+									<div className="flex-1 flex flex-col lg:px-5 2xl:px-8 py-3 pt-4">
+										<h3 className="text-xs md:text-sm 2xl:text-md text-center leading-tight mb-3 flex-grow">
 											Buy Imported Products from
 											<strong> {product.title}</strong>
 										</h3>

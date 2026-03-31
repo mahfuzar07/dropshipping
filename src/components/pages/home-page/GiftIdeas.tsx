@@ -36,12 +36,14 @@ export default function GiftIdeas() {
 				{/* Main Grid */}
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 					{/* LEFT: Gift Banner - Made to match height */}
-					<div className="md:col-span-2">
+					<div className="md:col-span-2 col-span-4">
 						<div className="relative h-full min-h-[280px] md:min-h-[340px] lg:min-h-[350px] rounded-2xl overflow-hidden bg-gradient-to-b from-[#cfe3f4] to-[#f5e4d4] p-6 flex flex-col justify-center">
 							{/* Text Content */}
 							<div className="max-w-md z-10">
 								<h3 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3">International Gifting Store</h3>
-								<p className="text-gray-600 font-semibold mb-6 text-lg leading-relaxed">Buy Your Favorite Gifts Online & Send Abroad to Your Loved Ones</p>
+								<p className="text-gray-600 font-semibold mb-6 text-lg leading-relaxed">
+									Buy Your Favorite Gifts Online & Send Abroad to Your Loved Ones
+								</p>
 								<button className="bg-blue-900 hover:bg-blue-800 text-white px-12 py-3 rounded text-sm font-medium transition-all">Gift Now</button>
 							</div>
 
@@ -53,7 +55,7 @@ export default function GiftIdeas() {
 					</div>
 
 					{/* RIGHT: Product Cards - Now properly stretch to same height */}
-					<div className="md:col-span-2 grid grid-cols-2 2xl:grid-cols-3 gap-3">
+					<div className="grid grid-cols-2 2xl:grid-cols-3 gap-3 md:col-span-2 col-span-4">
 						{products.map((product) => (
 							<ProductCard key={product.id} product={product} />
 						))}
