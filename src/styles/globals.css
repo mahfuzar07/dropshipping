@@ -218,4 +218,9 @@
 		opacity: 1 !important;
 		transform: scale(1.2) !important;
 	}
+
+	.swiper-wrapper {
+		display: flex;
+		align-items: center;
+	}
 }

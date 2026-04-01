@@ -19,10 +19,10 @@ export default function ProductCard({ product }: { product: Product }) {
 				hidden: { opacity: 0, y: 20 },
 				show: { opacity: 1, y: 0 },
 			}}
-			className="group cursor-pointer bg-white overflow-hidden rounded h-full flex flex-col transition-all duration-300"
+			className="group cursor-pointer bg-white overflow-hidden rounded-xl h-full flex flex-col transition-all duration-300"
 		>
 			{/* Image Container - Fixed aspect ratio */}
-			<div className="relative aspect-square bg-muted overflow-hidden flex-shrink-0">
+			<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded-2xl">
 				<Image src={product.image} alt={product.title} fill className="object-cover transition-transform duration-600 ease-in-out group-hover:scale-105" />
 			</div>
 
