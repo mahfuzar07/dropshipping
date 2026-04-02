@@ -27,29 +27,30 @@ interface ProductInfoProps {
 	};
 }
 
+const sizes = [
+	{ size: 'S', price: 29568, stock: 12 },
+	{ size: 'M', price: 29568, stock: 15 },
+	{ size: 'L', price: 29568, stock: 0 },
+];
 export default function ProductInfo({ product }: ProductInfoProps) {
-	// ✅ States
-	const [quantity, setQuantity] = useState(1);
+	const [qty, setQty] = useState<{ [key: string]: number }>({
+		S: 0,
+		M: 0,
+		L: 0,
+	});
 	const [isFavorite, setIsFavorite] = useState(false);
 
-	// ✅ Handlers
-	const increaseQuantity = () => {
-		if (quantity < product.stockCount) {
-			setQuantity((prev) => prev + 1);
-		}
-	};
+	const updateQty = (key: string, type: 'inc' | 'dec', stock: number) => {
+		setQty((prev) => {
+			const current = prev[key];
 
-	const decreaseQuantity = () => {
-		if (quantity > 1) {
-			setQuantity((prev) => prev - 1);
-		}
-	};
-
-	const handleAddToCart = () => {
-		console.log('Added to cart:', {
-			productId: product.id,
-			quantity,
-			color: product.colors[product.selectedColorIndex]?.name,
+			if (type === 'inc' && current < stock) {
+				return { ...prev, [key]: current + 1 };
+			}
+			if (type === 'dec' && current > 0) {
+				return { ...prev, [key]: current - 1 };
+			}
+			return prev;
 		});
 	};
 
@@ -113,19 +114,48 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 			</div>
 
 			{/* Quantity */}
-			<div className="flex items-center gap-4">
-				<span>Quantity:</span>
-				<div className="flex items-center border rounded-lg">
-					<Button variant="ghost" size="icon" onClick={decreaseQuantity}>
-						<Minus className="h-4 w-4" />
-					</Button>
-
-					<span className="px-4">{quantity}</span>
-
-					<Button variant="ghost" size="icon" onClick={increaseQuantity} disabled={quantity >= product.stockCount}>
-						<Plus className="h-4 w-4" />
-					</Button>
+			<div className="w-full rounded-lg overflow-hidden border">
+				{/* Header */}
+				<div className="grid grid-cols-4 px-6 py-3 text-gray-600 font-medium border-b">
+					<div>Size</div>
+					<div>Price</div>
+					<div>Stock</div>
+					<div className="text-right">Quantity</div>
 				</div>
+
+				{/* Rows */}
+				{sizes.map((item) => (
+					<div key={item.size} className="grid grid-cols-4 px-6 py-4 items-center border-b last:border-none text-md">
+						<div className="font-medium">{item.size}</div>
+
+						<div>{item.price}</div>
+
+						<div>{item.stock}</div>
+
+						{/* Quantity */}
+						<div className="flex justify-end items-center gap-3">
+							<button
+								onClick={() => updateQty(item.size, 'dec', item.stock)}
+								className="w-6 h-6 flex items-center justify-center rounded-md border bg-white disabled:opacity-40"
+								disabled={qty[item.size] === 0}
+							>
+								<Minus size={14} />
+							</button>
+
+							<span className="w-6 text-center">{qty[item.size]}</span>
+
+							<button
+								onClick={() => updateQty(item.size, 'inc', item.stock)}
+								className={`w-6 h-6 flex items-center justify-center rounded-md border ${
+									item.stock === 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'
+								}`}
+								disabled={item.stock === 0}
+							>
+								<Plus size={14} />
+							</button>
+						</div>
+					</div>
+				))}
 			</div>
 		</div>
 	);
