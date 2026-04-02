@@ -55,7 +55,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-5">
 			<h1 className="text-3xl lg:text-4xl font-bold">{product.name}</h1>
 
 			{/* Rating */}
@@ -81,7 +81,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 			</div>
 
 			{/* Price */}
-			<div className="text-3xl font-bold">${product.price}</div>
+			<div className="text-4xl font-bold">${product.price}</div>
 
 			{/* Description */}
 			<p className="text-muted-foreground">{product.description}</p>
@@ -125,7 +125,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
 				{/* Rows */}
 				{sizes.map((item) => (
-					<div key={item.size} className="grid grid-cols-4 px-6 py-4 items-center border-b last:border-none text-md">
+					<div key={item.size} className="grid grid-cols-4 px-6 py-3 items-center border-b last:border-none text-md">
 						<div className="font-medium">{item.size}</div>
 
 						<div>{item.price}</div>
