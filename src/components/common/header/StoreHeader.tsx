@@ -68,7 +68,7 @@ export default function StoreHeader() {
 	return (
 		<>
 			<header
-				className={`fixed md:min-h-[100px] top-0 left-0 right-0 z-50 transition-transform duration-300  shadow ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
+				className={`sticky w-full md:min-h-[100px] top-0 left-0 right-0 z-50 transition-transform duration-300  shadow ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
 			>
 				<div className="bg-slate-100 items-center hidden md:flex ">
 					<div className="container relative mx-auto px-4 py-1">
@@ -216,7 +216,7 @@ export default function StoreHeader() {
 				</div>
 			</header>
 
-			<div className="md:min-h-[100px]" />
+			{/* <div className="md:min-h-[100px]" /> */}
 		</>
 	);
 }
