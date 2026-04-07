@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { X, Filter, ChevronDown, Star } from 'lucide-react';
-import { useProductFilterStore } from '@/z-store/useProductFilterStore';
+import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { motion } from 'framer-motion';
 

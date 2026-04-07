@@ -7,9 +7,12 @@ import Image from 'next/image';
 type Product = {
 	id: number;
 	title: string;
-	price: string;
+	price: number;
 	image: string;
 	store: string;
+	category: string;
+	discount?: boolean;
+	rating?: number;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -23,7 +26,12 @@ export default function ProductCard({ product }: { product: Product }) {
 		>
 			{/* Image Container - Fixed aspect ratio */}
 			<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded-2xl">
-				<Image src={product.image} alt={product.title} fill className="object-cover transition-transform duration-600 ease-in-out group-hover:scale-105" />
+				<Image
+					src={product.image}
+					alt={product.title}
+					fill
+					className="object-cover transition-transform duration-600 ease-in-out group-hover:scale-105"
+				/>
 			</div>
 
 			{/* Content - This will take the remaining height */}
