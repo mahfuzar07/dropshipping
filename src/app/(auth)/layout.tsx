@@ -10,7 +10,11 @@ export default function AuthLayout({
 	return (
 		<div className="min-h-screen flex relative">
 			{/* Background Image */}
-			<img src="/assets/background/auth-bg.png" alt="Global Shipping Background" className="absolute inset-0 w-full h-full object-cover" />
+			<img
+				src="/assets/background/auth-bg.png"
+				alt="Global Shipping Background"
+				className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+			/>
 
 			{/* Enhanced Overlay */}
 			<div className="absolute inset-0 bg-gradient-to-bl from-black/50 via-black/60 to-black/70" />
@@ -19,8 +23,8 @@ export default function AuthLayout({
 			<div className="w-full lg:w-5/12 flex items-center justify-center p-6 relative bg-white/5 backdrop-blur-xs">
 				<div className="w-full max-w-lg bg-white  rounded-xl shadow-xl md:p-10 p-5 border border-white/10">{children}</div>
 			</div>
-
 			{/* Right Side - Hero Section */}
+
 			<div className="hidden lg:flex lg:w-7/12 relative overflow-hidden">
 				{/* Main Content */}
 				<div className="relative z-10 flex flex-col justify-between p-16 w-full text-white">
