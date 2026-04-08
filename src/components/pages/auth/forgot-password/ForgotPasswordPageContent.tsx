@@ -86,7 +86,11 @@ export default function ForgotPasswordPageContent() {
 							<Input id="email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
 						</div>
 
-						<Button type="submit" disabled={isLoading} className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold">
+						<Button
+							type="submit"
+							disabled={isLoading}
+							className="w-full h-11 bg-orange-300 hover:bg-orange-400 text-primary-foreground  font-semibold"
+						>
 							{isLoading ? 'Sending code...' : 'Send Verification Code'}
 						</Button>
 					</form>
@@ -125,7 +129,7 @@ export default function ForgotPasswordPageContent() {
 						<Button
 							type="submit"
 							disabled={otp.join('').length !== 6}
-							className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full h-11  text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							Verify Code
 						</Button>
@@ -189,7 +193,7 @@ export default function ForgotPasswordPageContent() {
 						<Button
 							type="submit"
 							disabled={isLoading || newPassword !== confirmPassword || newPassword.length < 8}
-							className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full h-11  text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isLoading ? 'Resetting...' : 'Reset Password'}
 						</Button>
@@ -201,14 +205,14 @@ export default function ForgotPasswordPageContent() {
 			{step === 'success' && (
 				<>
 					<div className="text-center">
-						<div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-							<Check className="w-8 h-8 text-primary" />
+						<div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-600/10 mb-6">
+							<Check className="w-8 h-8 text-green-500" />
 						</div>
 						<h2 className="text-3xl font-bold text-foreground mb-2">Password Reset!</h2>
 						<p className="text-muted-foreground mb-8">Your password has been successfully reset. You can now sign in with your new password.</p>
 
 						<Link href="/sign-in">
-							<Button className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold">Back to Sign In</Button>
+							<Button className="w-full h-11  text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold">Back to Sign In</Button>
 						</Link>
 					</div>
 				</>
