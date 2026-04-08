@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Grid3X3, List } from 'lucide-react';
+import { Grid, Grid3X3, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
@@ -11,6 +11,7 @@ import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
 import { useProductStore } from '@/z-store/product/useProductStore';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 // Dummy products
 const ALL_PRODUCTS = Array.from({ length: 100 }, (_, i) => ({
@@ -150,12 +151,28 @@ export default function ProductsListPageContent() {
 						</span>
 
 						<div className="flex gap-3">
-							<Button variant="outline" onClick={() => setViewMode('grid')}>
+							{/* <Button variant="outline" onClick={() => setViewMode('grid')}>
 								<Grid3X3 />
 							</Button>
 							<Button variant="outline" onClick={() => setViewMode('list')}>
 								<List />
-							</Button>
+							</Button> */}
+							<ToggleGroup
+								type="single"
+								size="sm"
+								value={viewMode}
+								onValueChange={(value) => {
+									if (value) setViewMode(value as 'grid' | 'list');
+								}}
+							>
+								<ToggleGroupItem value="grid" className="data-[state=on]:bg-orange-300 border data-[state=on]:text-white cursor-pointer h-9">
+									<LayoutGrid />
+								</ToggleGroupItem>
+
+								<ToggleGroupItem value="list" className="data-[state=on]:bg-orange-300 border data-[state=on]:text-white cursor-pointer h-9">
+									<List />
+								</ToggleGroupItem>
+							</ToggleGroup>
 
 							<Select value={sortBy} onValueChange={setSortBy}>
 								<SelectTrigger className="w-40">

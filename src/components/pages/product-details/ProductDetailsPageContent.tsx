@@ -7,6 +7,7 @@ import ProductImageGallery from './ProductImageGallery';
 import ProductInfo from './ProductInfo';
 import ProductTabs from './ProductTabs';
 import CartSection from './CartSection';
+import SellerInfo from './SellerInfo';
 
 const demoProduct = {
 	id: 1,
@@ -92,9 +93,9 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 		product.variant[selectedColorIndex]?.additional_image || product.variant[selectedColorIndex]?.pivot?.additional_image || product.image;
 
 	return (
-		<div className="px-2 py-5">
-			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:mb-20 mb-12">
-				<div className="col-span-9 grid grid-cols-1 md:grid-cols-12 gap-8">
+		<div className="px-2 py-3">
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
+				<div className="col-span-9 grid grid-cols-1 md:grid-cols-12 gap-6">
 					<div className="col-span-5">
 						<ProductImageGallery
 							images={galleryImages}
@@ -125,7 +126,8 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 						/>
 					</div>
 
-					<div className="col-span-12">
+					<div className="col-span-12 bg-white rounded-lg p-5">
+						<SellerInfo/>
 						<ProductTabs
 							description={`Check out the ${product.name}. Available colors: ${colors.map((c) => c.name).join(', ')}.`}
 							specifications={product.pro_specification?.[0] || {}}
