@@ -1,26 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export default function SignInPageContent() {
-	const [showPassword, setShowPassword] = useState(false);
-	const [email, setEmail] = useState('john@example.com');
-	const [password, setPassword] = useState('password123');
-	const [isLoading, setIsLoading] = useState(false);
+import { useSession } from 'next-auth/react';
 
-	const handleSubmit = (e: React.FormEvent) => {
+export default function SignInPageContent() {
+	const { data: session, status } = useSession();
+
+	const [showPassword, setShowPassword] = useState(false);
+	const [email, setEmail] = useState('user101@bawsny.com');
+	const [password, setPassword] = useState('1234');
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState('');
+	const router = useRouter();
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
-		setTimeout(() => {
+		setError('');
+
+		try {
+			const result = await signIn('credentials', {
+				email,
+				password,
+				redirect: false,
+			});
+
+			if (result?.error) {
+				setError('Invalid email or password');
+			} else {
+				router.push('/'); // Redirect to home or dashboard
+			}
+		} catch (err) {
+			setError('An error occurred. Please try again.');
+		} finally {
 			setIsLoading(false);
-			alert('Sign in successful!');
-		}, 1000);
+		}
 	};
 
 	return (
@@ -30,6 +53,12 @@ export default function SignInPageContent() {
 				<p className="text-muted-foreground mt-2">Sign in to your account to continue shopping</p>
 			</div>
 
+			{error && (
+				<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+					<p className="text-red-600 text-sm">{error}</p>
+				</div>
+			)}
+
 			{/* Social Sign In */}
 			<div className="space-y-3 mb-6">
 				<button className="w-full h-12 rounded-lg border border-border hover:bg-secondary transition flex items-center justify-center gap-3">
@@ -37,9 +66,13 @@ export default function SignInPageContent() {
 					<span className="text-sm font-medium">Sign up with Facebook</span>
 				</button>
 
-				<button className="w-full h-12 rounded-lg border border-border hover:bg-secondary transition flex items-center justify-center gap-3">
+				<button
+					type="button"
+					className="w-full h-12 rounded-lg border border-border hover:bg-secondary transition flex items-center justify-center gap-3"
+					onClick={() => signIn('google', { callbackUrl: '/' })}
+				>
 					<img src="/assets/icons/google.png" alt="Google" className="w-5 h-5" />
-					<span className="text-sm font-medium">Sign up with Google</span>
+					<span className="text-sm font-medium">Sign in with Google</span>
 				</button>
 			</div>
 

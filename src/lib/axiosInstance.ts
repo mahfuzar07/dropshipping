@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { apiEndpoint } from './constants/apiEndpoint';
-import { FULL_BASE_API_URL } from '@/config/config';
+import { BACKEND_URL } from '@/config/config';
 
 let isRefreshing = false;
 let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = [];
@@ -16,18 +16,18 @@ const processQueue = (error: any, token: string | null = null) => {
 
 //client Api instance
 export const nextApi = axios.create({
-	baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+	baseURL: process.env.BACKEND_URL || 'http://localhost:8000',
 });
 
 // Public API
 export const api = axios.create({
-	baseURL: FULL_BASE_API_URL,
+	baseURL: BACKEND_URL,
 	withCredentials: true,
 });
 
 // Auth API with interceptor
 export const authApi = axios.create({
-	baseURL: FULL_BASE_API_URL,
+	baseURL: BACKEND_URL,
 	withCredentials: true,
 });
 

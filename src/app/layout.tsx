@@ -13,6 +13,7 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 
 import { scripts } from '@/lib/script/Script';
 import ClientAuthHydrator from '@/providers/ClientAuthHydrator';
+import NextAuthProvider from '@/providers/NextAuthProvider';
 
 // import { loadSiteConfigs } from '@/config/config';
 import getFullImageUrl from '@/lib/utils/getFullImageUrl';
@@ -105,12 +106,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 			<body cz-shortcut-listen="true" className={`${play.variable} ${emily.variable} ${hanken.variable} antialiased`}>
 				<ClientAuthHydrator />
 
-				<ReactQueryProvider>
-					{children}
-					<DrawerWrapper />
-					<ModalWrapper />
-					<Toaster position="top-center" theme="light" className="bg-white" />
-				</ReactQueryProvider>
+				<NextAuthProvider>
+					<ReactQueryProvider>
+						{children}
+						<DrawerWrapper />
+						<ModalWrapper />
+						<Toaster position="top-center" theme="light" className="bg-white" />
+					</ReactQueryProvider>
+				</NextAuthProvider>
 
 				{/* {googleMetaConfig.googleAnalyticsId && <GoogleAnalytics gaId={googleMetaConfig.googleAnalyticsId} />} */}
 			</body>

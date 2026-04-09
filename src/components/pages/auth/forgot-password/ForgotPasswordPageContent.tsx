@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Check } from 'lucide-react';
+import { passwordReset, sendOTP, verifyOTP } from '@/lib/api/auth';
+import { toast } from 'sonner';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password' | 'success';
 
@@ -19,11 +21,27 @@ export default function ForgotPasswordPageContent() {
 	const handleEmailSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
-		setTimeout(() => {
-			setIsLoading(false);
-			setStep('otp');
-		}, 1000);
+		sendOTP({
+			otp_identifier: email,
+		})
+			.then((response) => {
+				toast.success(response.message || 'Verification code sent! Check your email.');
+				setStep('otp');
+			})
+			.finally(() => {
+				setIsLoading(false);
+			});
+		// setTimeout(() => {
+		// 	setIsLoading(false);
+		// 	setStep('otp');
+		// }, 1000);
 	};
+
+	// passwordReset({
+	// 	reset_identifier: email,
+	// 	password: newPassword,
+	// 	confirm_password: confirmPassword,
+	// });
 
 	const handleOtpChange = (index: number, value: string) => {
 		if (value.length > 1) return;
@@ -46,19 +64,56 @@ export default function ForgotPasswordPageContent() {
 
 	const handleOtpSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (otp.join('').length === 6) {
-			setStep('password');
-		}
+		verifyOTP({
+			otp_identifier: email,
+			otp: otp.join(''),
+			otp_type: 'Reset Password',
+		})
+			.then((response) => {
+				toast.success(response.message || 'OTP verified! You can now reset your password.');
+				if (otp.join('').length === 6) {
+					setStep('password');
+				}
+			})
+			.catch((err) => {
+				const errorMessage = err.response?.data?.message || err.message || 'OTP verification failed. Please try again.';
+				toast.error(errorMessage);
+			})
+			.finally(() => {
+				// setIsLoading(false);
+			});
+		// setTimeout(() => {
+		// 	toast.success('OTP verified! You can now reset your password.');
+		// 	if (otp.join('').length === 6) {
+		// 		setStep('password');
+		// 	}
+		// }, 1000);
 	};
 
 	const handlePasswordSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (newPassword === confirmPassword && newPassword.length >= 8) {
 			setIsLoading(true);
-			setTimeout(() => {
-				setIsLoading(false);
-				setStep('success');
-			}, 1000);
+			passwordReset({
+				reset_identifier: email,
+				password: newPassword,
+				confirm_password: confirmPassword,
+			})
+				.then((response) => {
+					toast.success(response.message || 'Password reset successful! You can now sign in with your new password.');
+					setStep('success');
+				})
+				.catch((err) => {
+					const errorMessage = err.response?.data?.message || err.message || 'Password reset failed. Please try again.';
+					toast.error(errorMessage);
+				})
+				.finally(() => {
+					setIsLoading(false);
+				});
+			// setTimeout(() => {
+			// 	setIsLoading(false);
+			// 	setStep('success');
+			// }, 1000);
 		}
 	};
 

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { signupUser, verifyOTP } from '@/lib/api/auth';
+import { toast } from 'sonner';
 
 export default function SignUpPageContent() {
 	const router = useRouter();
@@ -14,15 +16,19 @@ export default function SignUpPageContent() {
 	const [showPassword, setShowPassword] = useState(false);
 
 	// Step 1 - Form Data
-
 	const [email, setEmail] = useState('john@example.com');
+	const [firstName, setFirstName] = useState('John');
 	const [password, setPassword] = useState('SecurePass123!');
 	const [confirmPassword, setConfirmPassword] = useState('SecurePass123!');
+	const [agreedToTerms, setAgreedToTerms] = useState(true);
 
 	// Step 2 - OTP Data
 	const [otp, setOtp] = useState(['1', '2', '3', '4', '5', '6']);
 	const [timeLeft, setTimeLeft] = useState(120);
-	const [isVerifying, setIsVerifying] = useState(false);
+
+	// Loading and error states
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState('');
 
 	// Password validation
 	const passwordRequirements = {
@@ -36,10 +42,38 @@ export default function SignUpPageContent() {
 
 	const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
 
-	const handleStep1Submit = (e: React.FormEvent) => {
+	const handleStep1Submit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (email && allRequirementsMet) {
+		setError('');
+
+		if (!email || !firstName || !allRequirementsMet || !agreedToTerms) {
+			setError('Please fill all fields and agree to terms');
+			return;
+		}
+
+		setIsLoading(true);
+		try {
+			const response = await signupUser({
+				email,
+				password,
+				first_name: firstName,
+				user_type: 'CUSTOMER',
+				is_staff: false,
+			});
+			// console.log('Signup response:', response.status);
+			// if (response.status) {
+			toast.success(response.message || 'Signup successful! Check your email for OTP.');
 			setStep(2);
+			// } else {
+			// 	setError(response.message || 'Signup failed. Please try again.');
+			// 	toast.error(response.message || 'Signup failed');
+			// }
+		} catch (err: any) {
+			const errorMessage = err.response?.data?.message || err.message || 'Signup failed. Please try again.';
+			setError(errorMessage);
+			toast.error(errorMessage);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -64,12 +98,37 @@ export default function SignUpPageContent() {
 	};
 
 	const handleOtpVerify = async () => {
-		setIsVerifying(true);
-		// Simulate verification
-		setTimeout(() => {
-			setIsVerifying(false);
-			router.push('/');
-		}, 1500);
+		setIsLoading(true);
+		setError('');
+		try {
+			const otpCode = otp.join('');
+			if (otpCode.length !== 6) {
+				setError('Please enter all 6 digits');
+				setIsLoading(false);
+				return;
+			}
+
+			const response = await verifyOTP({
+				otp_identifier: email,
+				otp: otpCode,
+				otp_type: 'Registration',
+			});
+
+			if (response.status) {
+				toast.success(response.message || 'Email verified successfully!');
+				// Redirect to home or dashboard
+				router.push('/');
+			} else {
+				setError(response.message || 'OTP verification failed. Please try again.');
+				toast.error(response.message || 'Verification failed');
+			}
+		} catch (err: any) {
+			const errorMessage = err.response?.data?.message || err.message || 'OTP verification failed. Please try again.';
+			setError(errorMessage);
+			toast.error(errorMessage);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -110,11 +169,36 @@ export default function SignUpPageContent() {
 
 					{/* Sign Up Form */}
 					<form onSubmit={handleStep1Submit} className="space-y-4">
+						{error && <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
+
 						<div>
 							<label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
 								Email Address
 							</label>
-							<Input id="email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
+							<Input
+								id="email"
+								type="email"
+								placeholder="your@email.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								className="h-11"
+								disabled={isLoading}
+							/>
+						</div>
+
+						<div>
+							<label htmlFor="firstName" className="block text-sm font-medium text-foreground mb-2">
+								First Name
+							</label>
+							<Input
+								id="firstName"
+								type="text"
+								placeholder="John"
+								value={firstName}
+								onChange={(e) => setFirstName(e.target.value)}
+								className="h-11"
+								disabled={isLoading}
+							/>
 						</div>
 
 						<div>
@@ -129,11 +213,13 @@ export default function SignUpPageContent() {
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									className="h-11 pr-10"
+									disabled={isLoading}
 								/>
 								<button
 									type="button"
 									onClick={() => setShowPassword(!showPassword)}
 									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									disabled={isLoading}
 								>
 									{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
 								</button>
@@ -151,6 +237,7 @@ export default function SignUpPageContent() {
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
 								className="h-11"
+								disabled={isLoading}
 							/>
 						</div>
 
@@ -186,7 +273,12 @@ export default function SignUpPageContent() {
 						</div>
 
 						<div className="flex items-center gap-2 mt-2">
-							<Checkbox className="peer w-4 h-4 rounded border-border data-[state=checked]:bg-orange-300 data-[state=checked]:border-orange-300" />
+							<Checkbox
+								checked={agreedToTerms}
+								onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+								className="peer w-4 h-4 rounded border-border data-[state=checked]:bg-orange-300 data-[state=checked]:border-orange-300"
+								disabled={isLoading}
+							/>
 							<span className="text-xs text-muted-foreground">
 								I agree to the <button className="text-primary hover:underline">Terms of Service</button> and{' '}
 								<button className="text-primary hover:underline">Privacy Policy</button>
@@ -195,10 +287,10 @@ export default function SignUpPageContent() {
 
 						<Button
 							type="submit"
-							disabled={!email || !allRequirementsMet}
+							disabled={!email || !firstName || !allRequirementsMet || !agreedToTerms || isLoading}
 							className="w-full h-11 bg-orange-300 hover:bg-orange-400 text-primary-foreground font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							Continue
+							{isLoading ? 'Creating Account...' : 'Sign Up'}
 						</Button>
 					</form>
 				</>
@@ -207,6 +299,8 @@ export default function SignUpPageContent() {
 			{/* Step 2 - OTP Verification */}
 			{step === 2 && (
 				<div className="space-y-6">
+					{error && <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
+
 					<div>
 						<p className="text-muted-foreground mb-4">Enter the 6-digit code we sent to your email</p>
 
@@ -221,7 +315,8 @@ export default function SignUpPageContent() {
 									value={digit}
 									onChange={(e) => handleOtpChange(index, e.target.value)}
 									onKeyDown={(e) => handleOtpKeyDown(index, e)}
-									className="w-12 h-14 text-center text-2xl font-bold border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+									disabled={isLoading}
+									className="w-12 h-14 text-center text-2xl font-bold border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
 								/>
 							))}
 						</div>
@@ -236,18 +331,27 @@ export default function SignUpPageContent() {
 
 					<Button
 						onClick={handleOtpVerify}
-						disabled={isVerifying || otp.join('').length !== 6}
+						disabled={isLoading || otp.join('').length !== 6}
 						className="w-full h-11  text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						{isVerifying ? 'Verifying...' : 'Verify Email'}
+						{isLoading ? 'Verifying...' : 'Verify Email'}
 					</Button>
 
 					<div className="text-center">
 						<p className="text-sm text-muted-foreground mb-2">Didn&apos;t receive the code?</p>
-						<button className="text-sm font-semibold text-primary hover:text-primary/80 transition">Resend Code</button>
+						<button className="text-sm font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50" disabled={isLoading}>
+							Resend Code
+						</button>
 					</div>
 
-					<button onClick={() => setStep(1)} className="w-full text-sm font-medium text-muted-foreground hover:text-foreground transition">
+					<button
+						onClick={() => {
+							setStep(1);
+							setError('');
+						}}
+						disabled={isLoading}
+						className="w-full text-sm font-medium text-muted-foreground hover:text-foreground transition disabled:opacity-50"
+					>
 						← Back to Account Details
 					</button>
 				</div>
