@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Home, Briefcase, Pencil, Plus } from 'lucide-react';
 
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { deliveryAddress, getDeliveryAddress } from '@/lib/api/auth';
 
 /* ---------------- options ---------------- */
 
@@ -20,7 +22,7 @@ const zones = ['Mirpur 1', 'Mirpur 2'];
 
 interface Address {
 	id: string;
-	fullName: string;
+	full_name: string;
 	phone: string;
 	province: string;
 	city: string;
@@ -35,11 +37,12 @@ interface Address {
 /* ---------------- component ---------------- */
 
 export default function AddressBookPage() {
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [addresses, setAddresses] = useState<Address[]>([]);
 	const [isAdding, setIsAdding] = useState(false);
 
 	const [formData, setFormData] = useState<Omit<Address, 'id' | 'isDefaultBilling' | 'isDefaultShipping'>>({
-		fullName: '',
+		full_name: '',
 		phone: '',
 		province: '',
 		city: '',
@@ -51,10 +54,10 @@ export default function AddressBookPage() {
 
 	/* ---------- add address ---------- */
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!formData.fullName || !formData.phone || !formData.address) return;
+		if (!formData.full_name || !formData.phone || !formData.address) return;
 
 		const newAddress: Address = {
 			...formData,
@@ -65,9 +68,18 @@ export default function AddressBookPage() {
 
 		setAddresses((prev) => [...prev, newAddress]);
 		setIsAdding(false);
-
+		console.log('New Address:', formData); // For debugging
+		try {
+			setIsSubmitting(true);
+			await deliveryAddress(formData);
+			toast.success('Address saved successfully!');
+		} catch (err) {
+			toast.error(err?.response?.data?.message || 'Failed to save address. Please try again.');
+		} finally {
+			setIsSubmitting(false);
+		}
 		setFormData({
-			fullName: '',
+			full_name: '',
 			phone: '',
 			province: '',
 			city: '',
@@ -98,6 +110,33 @@ export default function AddressBookPage() {
 		);
 	};
 
+	useEffect(() => {
+		const fetchUserAddress = async () => {
+			try {
+				const address = await getDeliveryAddress();
+				setAddresses(address?.results || []);
+				console.log('Fetched Address:', address); // For debugging
+				// setForm({
+				// 	first_name: profile.first_name || '',
+				// 	last_name: profile.last_name || '',
+				// 	email: profile.email || '',
+				// 	phone: profile.phone || '',
+				// 	address: profile.address || '',
+				// 	city: profile.city || '',
+				// 	state: profile.state || '',
+				// 	postal_code: profile.postal_code || '',
+				// 	country: profile.country || '',
+				// 	gender: profile.gender || '',
+				// });
+			} catch (err) {
+				toast.error('Failed to load profile data.');
+			} finally {
+				setIsSubmitting(false);
+			}
+		};
+		fetchUserAddress();
+	}, []);
+
 	return (
 		<div className="px-3 md:px-8 py-8">
 			{/* Header */}
@@ -120,7 +159,7 @@ export default function AddressBookPage() {
 						{addresses.map((addr) => (
 							<motion.div key={addr.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border p-4 rounded flex justify-between">
 								<div>
-									<p className="font-medium">{addr.fullName}</p>
+									<p className="font-medium">{addr.full_name}</p>
 									<p className="text-sm text-gray-500">
 										{addr.address}, {addr.zone}, {addr.city}
 									</p>
@@ -162,11 +201,11 @@ export default function AddressBookPage() {
 				</Button>
 			) : (
 				<form onSubmit={handleSubmit} className="space-y-4 border p-5 rounded">
-					<Input placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
+					<Input placeholder="Full Name" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
 
 					<Input placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
 
-					<div className='grid grid-cols-3 gap-5'>
+					<div className="grid grid-cols-3 gap-5">
 						{/* Province */}
 						<div className="space-y-2">
 							<Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
@@ -242,7 +281,10 @@ export default function AddressBookPage() {
 							Cancel
 						</Button>
 
-						<Button type="submit">Save</Button>
+						{/* <Button type="submit">Save</Button> */}
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting ? 'Saving...' : 'Save'}
+						</Button>
 					</div>
 				</form>
 			)}

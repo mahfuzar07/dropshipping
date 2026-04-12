@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSession } from 'next-auth/react';
 
 import { apiEndpoint } from './constants/apiEndpoint';
 import { BACKEND_URL } from '@/config/config';
@@ -29,6 +30,18 @@ export const api = axios.create({
 export const authApi = axios.create({
 	baseURL: BACKEND_URL,
 	withCredentials: true,
+});
+
+authApi.interceptors.request.use(async (config) => {
+	const session = await getSession();
+	const typedSession = session as any;
+	const token = typedSession?.accessToken ?? typedSession?.user?.access ?? typedSession?.user?.refresh;
+
+	if (token && config.headers) {
+		config.headers.Authorization = `Bearer ${token}`;
+	}
+
+	return config;
 });
 
 authApi.interceptors.response.use(

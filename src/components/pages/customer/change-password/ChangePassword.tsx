@@ -7,24 +7,23 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { apiEndpoint } from '@/lib/constants/apiEndpoint';
-import { useAppData } from '@/hooks/use-appdata';
-import { QueriesKey } from '@/lib/constants/queriesKey';
 import { Eye, EyeClosed, Key, KeyIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { changePassword } from '@/lib/api/auth';
 
 type ChangePasswordPayload = {
-	current_password: string;
+	old_password: string;
 	new_password: string;
-	new_password_confirmation: string;
+	confrim_password: string;
 };
 
 export default function ChangePassword() {
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [form, setForm] = useState<ChangePasswordPayload>({
-		current_password: '',
+		old_password: '',
 		new_password: '',
-		new_password_confirmation: '',
+		confrim_password: '',
 	});
 
 	const [show, setShow] = useState({
@@ -32,6 +31,20 @@ export default function ChangePassword() {
 		new: false,
 		confirm: false,
 	});
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+
+		try {
+			await changePassword(form);
+			toast.success('Password updated successfully!');
+		} catch (err) {
+			toast.error(err?.response?.data?.message || 'Failed to update password. Please try again.');
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
 	return (
 		<div className="px-3 md:px-8 py-8 md:py-10 rounded bg-background">
@@ -47,7 +60,7 @@ export default function ChangePassword() {
 				</div>
 			</motion.div>
 
-			<form>
+			<form onSubmit={handleSubmit}>
 				<Card className="shadow-none max-w-xl border-none p-0">
 					<CardHeader className="px-3">
 						<CardTitle className="font-serif text-md">Security Information</CardTitle>
@@ -55,17 +68,17 @@ export default function ChangePassword() {
 
 					<CardContent className="space-y-4 px-3">
 						{/* Current Password */}
-						<Label htmlFor="current_password" className="mb-1">
+						<Label htmlFor="old_password" className="mb-1">
 							Current Password
 						</Label>
 						<div className="relative">
 							<Input
 								type={show.current ? 'text' : 'password'}
-								value={form.current_password}
+								value={form.old_password}
 								onChange={(e) =>
 									setForm({
 										...form,
-										current_password: e.target.value,
+										old_password: e.target.value,
 									})
 								}
 							/>
@@ -104,17 +117,17 @@ export default function ChangePassword() {
 						</div>
 
 						{/* Confirm Password */}
-						<Label htmlFor="new_password_confirmation" className="mb-1">
+						<Label htmlFor="confrim_password" className="mb-1">
 							Confirm New Password
 						</Label>
 						<div className="relative">
 							<Input
 								type={show.confirm ? 'text' : 'password'}
-								value={form.new_password_confirmation}
+								value={form.confrim_password}
 								onChange={(e) =>
 									setForm({
 										...form,
-										new_password_confirmation: e.target.value,
+										confrim_password: e.target.value,
 									})
 								}
 							/>
@@ -133,7 +146,10 @@ export default function ChangePassword() {
 						</div>
 
 						<div className="pt-4">
-							<Button type="submit">'Update Password</Button>
+							{/* <Button type="submit">'Update Password</Button> */}
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? 'Updating...' : 'Update Password'}
+							</Button>
 						</div>
 					</CardContent>
 				</Card>

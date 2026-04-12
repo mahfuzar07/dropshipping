@@ -1,6 +1,7 @@
 export const QueriesKey = {
 	POST: 'post',
 	USER_LIST: 'user-list',
+	USER_PROFILE: 'user-profile',
 	SITE_SETTINGS: 'site-settings',
 	SITE_SETTINGS_GET: 'site-settings-get',
 	CATEGORIES: 'categories',

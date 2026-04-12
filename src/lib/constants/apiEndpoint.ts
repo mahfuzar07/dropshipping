@@ -1,3 +1,5 @@
+import { profile } from 'node:console';
+
 export const apiEndpoint = {
 	auth: {
 		customer: {
@@ -15,7 +17,14 @@ export const apiEndpoint = {
 		siteSettings: '/settings/site-settings',
 	},
 	users: {
-		list: '/users',
+		SIGN_UP: () => `/api/user/signup/`,
+		SIGN_IN: () => `/api/user/login/`,
+		OTP_verify: () => `api/user/otp-verified/`,
+		OTP_SEND: () => `api/user/send-otp/`,
+		PASSWORD_RESET: () => `api/user/reset-password/`,
+		PROFILE: () => '/api/user/profile/',
+		CHANGE_PASSWORD: () => '/api/user/change-password/',
+		DELIVERY_ADDRESS: () => '/api/user/delivery-addresses/',
 		detail: (id: string | number) => `/users/${id}`,
 		changePassword: (id: string | number) => `/users/${id}/change-password`,
 		update: (id: string | number) => `/users/${id}`,

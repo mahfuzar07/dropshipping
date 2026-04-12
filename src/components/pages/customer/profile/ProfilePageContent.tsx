@@ -12,15 +12,18 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { Input } from '@/components/ui/input';
 import { User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { updateProfile, getProfile } from '@/lib/api/auth';
 
 /* ======================
    🔹 Types
 ====================== */
 interface UserProfile {
 	id: number;
-	name: string;
+	first_name: string;
+	last_name: string;
 	email: string;
-	phone_number: string;
+	phone: string;
 	address: string;
 	city: string;
 	state?: string;
@@ -34,16 +37,58 @@ interface UserProfile {
    🔹 Page
 ====================== */
 export default function ProfilePageContent() {
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
 	const [form, setForm] = useState<Omit<UserProfile, 'id'>>({
-		name: '',
+		first_name: '',
+		last_name: '',
 		email: '',
-		phone_number: '',
+		phone: '',
 		address: '',
 		city: '',
 		state: '',
 		postal_code: '',
 		country: '',
 	});
+
+	useEffect(() => {
+		const fetchProfile = async () => {
+			try {
+				const profile = await getProfile();
+				setForm({
+					first_name: profile.first_name || '',
+					last_name: profile.last_name || '',
+					email: profile.email || '',
+					phone: profile.phone || '',
+					address: profile.address || '',
+					city: profile.city || '',
+					state: profile.state || '',
+					postal_code: profile.postal_code || '',
+					country: profile.country || '',
+					gender: profile.gender || '',
+				});
+			} catch (err) {
+				toast.error('Failed to load profile data.');
+			} finally {
+				setIsSubmitting(false);
+			}
+		};
+		fetchProfile();
+	}, []);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+
+		try {
+			await updateProfile(form);
+			toast.success('Profile updated successfully!');
+		} catch (err) {
+			toast.error('Failed to update profile.');
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
 	return (
 		<div className="px-3 md:px-8 py-8 md:py-10 rounded bg-background">
@@ -59,7 +104,7 @@ export default function ProfilePageContent() {
 				</div>
 			</motion.div>
 
-			<form>
+			<form onSubmit={handleSubmit}>
 				<AnimatePresence>
 					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 						<Card className="shadow-none">
@@ -73,16 +118,31 @@ export default function ProfilePageContent() {
 							<CardContent className="space-y-4">
 								<div className="grid md:grid-cols-2 gap-4">
 									<Input
-										value={form.name}
+										value={form.first_name}
+										placeholder="Enter Your First Name..."
 										onChange={(e) =>
 											setForm({
 												...form,
-												name: e.target.value,
+												first_name: e.target.value,
 											})
 										}
 									/>
 									<Input
+										value={form.last_name}
+										placeholder="Enter Your Last Name..."
+										onChange={(e) =>
+											setForm({
+												...form,
+												last_name: e.target.value,
+											})
+										}
+									/>
+								</div>
+
+								<div className="grid md:grid-cols-2 gap-4">
+									<Input
 										type="email"
+										placeholder="Enter Your Email..."
 										value={form.email}
 										onChange={(e) =>
 											setForm({
@@ -91,20 +151,31 @@ export default function ProfilePageContent() {
 											})
 										}
 									/>
-								</div>
-
-								<div className="grid md:grid-cols-2 gap-4">
 									<Input
-										value={form.phone_number}
+										placeholder="Enter Your Phone Number..."
+										value={form.phone}
 										onChange={(e) =>
 											setForm({
 												...form,
-												phone_number: e.target.value,
+												phone: e.target.value,
+											})
+										}
+									/>
+								</div>
+								<div className="grid md:grid-cols-2 gap-4">
+									<Input
+										value={form.gender}
+										placeholder="Enter Your Gender..."
+										onChange={(e) =>
+											setForm({
+												...form,
+												gender: e.target.value,
 											})
 										}
 									/>
 									<Input
 										value={form.address}
+										placeholder="Enter Your Address..."
 										onChange={(e) =>
 											setForm({
 												...form,
@@ -117,6 +188,7 @@ export default function ProfilePageContent() {
 								<div className="grid md:grid-cols-2 gap-4">
 									<Input
 										value={form.city}
+										placeholder="Enter Your City..."
 										onChange={(e) =>
 											setForm({
 												...form,
@@ -126,6 +198,7 @@ export default function ProfilePageContent() {
 									/>
 									<Input
 										value={form.state}
+										placeholder="Enter Your State..."
 										onChange={(e) =>
 											setForm({
 												...form,
@@ -138,6 +211,7 @@ export default function ProfilePageContent() {
 								<div className="grid md:grid-cols-2 gap-4">
 									<Input
 										value={form.postal_code}
+										placeholder="Enter Your Postal Code..."
 										onChange={(e) =>
 											setForm({
 												...form,
@@ -147,6 +221,7 @@ export default function ProfilePageContent() {
 									/>
 									<Input
 										value={form.country}
+										placeholder="Enter Your Country..."
 										onChange={(e) =>
 											setForm({
 												...form,
@@ -157,7 +232,9 @@ export default function ProfilePageContent() {
 								</div>
 
 								<div className="pt-4">
-									<Button type="submit">Update Profile</Button>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting ? 'Updating...' : 'Update Profile'}
+									</Button>
 								</div>
 							</CardContent>
 						</Card>
