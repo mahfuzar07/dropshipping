@@ -5,6 +5,11 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
 
 /* ---------------- types ---------------- */
 
@@ -41,26 +46,26 @@ const formatOrderDate = (dateString: string) => {
 
 /* ---------------- dummy data ---------------- */
 
-const orders: OrderItem[] = [
-	{
-		id: 1,
-		reference_no: 'ORD-12345',
-		created_at: new Date().toISOString(),
-		total_price: 2500,
-		payment_status: 1,
-		total_qty: 2,
-		sale_status: 1,
-	},
-	{
-		id: 2,
-		reference_no: 'ORD-67890',
-		created_at: new Date().toISOString(),
-		total_price: 4200,
-		payment_status: 1,
-		total_qty: 3,
-		sale_status: 5,
-	},
-];
+// const orders: OrderItem[] = [
+// 	{
+// 		id: 1,
+// 		reference_no: 'ORD-12345',
+// 		created_at: new Date().toISOString(),
+// 		total_price: 2500,
+// 		payment_status: 1,
+// 		total_qty: 2,
+// 		sale_status: 1,
+// 	},
+// 	{
+// 		id: 2,
+// 		reference_no: 'ORD-67890',
+// 		created_at: new Date().toISOString(),
+// 		total_price: 4200,
+// 		payment_status: 1,
+// 		total_qty: 3,
+// 		sale_status: 5,
+// 	},
+// ];
 
 const productList = [
 	{
@@ -90,7 +95,7 @@ function OrderRow({ order }: { order: OrderItem }) {
 			<div className="bg-gray-50 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
 				<div>
 					<p className="text-sm text-gray-600">Order ID</p>
-					<p className="font-medium">{order.reference_no}</p>
+					<p className="font-medium">{order.order_number}</p>
 				</div>
 
 				<div>
@@ -100,27 +105,27 @@ function OrderRow({ order }: { order: OrderItem }) {
 
 				<div>
 					<p className="text-sm text-gray-600">Total</p>
-					<p>৳{order.total_price}</p>
+					<p>৳{order.total}</p>
 				</div>
 
 				<div className="text-right">
-					<span className={`px-3 py-1 rounded-full text-sm ${statusClass}`}>{statusText}</span>
+					<span className={`px-3 py-1 rounded-full text-sm ${statusClass}`}>{order?.status}</span>
 				</div>
 			</div>
 
 			{/* body */}
 			<div className="p-5 space-y-4">
-				{productList.map((item, idx) => (
+				{order?.items?.map((item, idx) => (
 					<div key={idx} className="flex items-center gap-4">
 						<div className="relative w-16 h-16 bg-gray-100 rounded overflow-hidden">
-							<Image src={item.product_image} alt="" fill className="object-cover" />
+							<Image src={item?.product?.image} alt="" fill className="object-cover" />
 						</div>
 
 						<div className="flex-1">
-							<Link href={item.product_url} className="font-medium hover:text-orange-400">
-								{item.product_name}
+							<Link href={item?.product?.url} className="font-medium hover:text-orange-400">
+								{item?.product?.title}
 							</Link>
-							<p className="text-sm text-gray-500">Qty: {item.qty}</p>
+							<p className="text-sm text-gray-500">Qty: {item.quantity}</p>
 							<p className="text-sm text-gray-500">৳{item.total}</p>
 						</div>
 					</div>
@@ -140,6 +145,19 @@ function OrderRow({ order }: { order: OrderItem }) {
 /* ---------------- Page ---------------- */
 
 export default function OrdersPageContent() {
+	const { data: orderResponse, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.USER_ORDERS],
+		api: apiEndpoint.orders.ORDERS(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const orders = orderResponse?.results || [];
+
 	return (
 		<div className="px-3 md:px-8 py-8 md:py-10 bg-background">
 			{/* Header */}

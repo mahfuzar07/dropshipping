@@ -7,4 +7,5 @@ export const QueriesKey = {
 	DELIVERY_ADDRESS: 'delivery-address',
 	DELIVERY_ADDRESS_SET_DEFAULT: 'delivery-address-set-default',
 	DELIVERY_ADDRESS_LIST: 'delivery-address-list',
+	USER_ORDERS: 'user-orders',
 };

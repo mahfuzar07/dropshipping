@@ -32,6 +32,10 @@ export const apiEndpoint = {
 		remove: (id: string | number) => `/users/${id}`,
 		create: '/users',
 	},
+	orders: {
+		ORDERS: () => `/api/order/orders/`,
+		ORDERS_DETAILS: (id: string | number) => `/api/order/orders/${id}/`,
+	},
 	categories: {
 		category: '/category',
 		tree: '/category',

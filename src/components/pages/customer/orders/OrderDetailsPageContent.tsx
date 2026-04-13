@@ -5,6 +5,11 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingBag, MapPin, CreditCard } from 'lucide-react';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { toast } from 'sonner';
 
 const order = {
 	reference_no: '123456',
@@ -47,9 +52,22 @@ const getStatusInfo = (status: number) => {
 	return statusMap[status] || { text: 'Unknown', className: 'bg-gray-100 text-gray-700' };
 };
 
-export default function OrderDetailsPageContent() {
+export default function OrderDetailsPageContent({ orderId }: { orderId: string }) {
 	const { text: statusText, className: statusClass } = getStatusInfo(order.sale_status);
 	const orderItem = order.total_qty;
+
+	const { data: orderResponse, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.USER_ORDERS, orderId],
+		api: apiEndpoint.orders.ORDERS_DETAILS(orderId),
+		auth: true,
+		responseType: 'single',
+		enabled: !!orderId,
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	console.log('Order Details:', orderResponse); // Debug log for order details
 
 	return (
 		<div className="px-3 md:px-8 py-8 md:py-10 rounded bg-background">
