@@ -25,6 +25,7 @@ export const apiEndpoint = {
 		PROFILE: () => '/api/user/profile/',
 		CHANGE_PASSWORD: () => '/api/user/change-password/',
 		DELIVERY_ADDRESS: () => '/api/user/delivery-addresses/',
+		DELIVERY_ADDRESS_SET_DEFAULT: (id: string | number) => `/api/user/delivery-addresses/${id}/set_default/`,
 		detail: (id: string | number) => `/users/${id}`,
 		changePassword: (id: string | number) => `/users/${id}/change-password`,
 		update: (id: string | number) => `/users/${id}`,

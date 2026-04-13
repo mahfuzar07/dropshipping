@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export interface Address {
-	id: string;
+	id: number | string;
 	fullName: string;
 	phone: string;
 	province: string;
@@ -25,7 +25,7 @@ interface AddressStore {
 
 export const useAddressStore = create<AddressStore>((set) => ({
 	addresses: [],
-	
+
 	addAddress: (newAddress) =>
 		set((state) => ({
 			addresses: [...state.addresses, { ...newAddress, id: Date.now().toString() }],

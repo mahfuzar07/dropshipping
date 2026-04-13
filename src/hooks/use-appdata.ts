@@ -104,9 +104,23 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 
 	// Mutation
 	const mutation = useMutation({
-		mutationFn: async ({ method, id, payload }: { method: Method; id?: string | number; payload?: Partial<T> | FormData }) => {
+		mutationFn: async ({
+			method,
+			id,
+			payload,
+			action,
+		}: {
+			method: Method;
+			id?: string | number;
+			payload?: Partial<T> | FormData;
+			action?: string;
+		}) => {
 			let url = path.replace(/\/$/, '');
+
 			if (id !== undefined) url += `/${id}`;
+			if (action) url += `/${action}`;
+
+			url += '/';
 
 			const isFormData = payload instanceof FormData;
 

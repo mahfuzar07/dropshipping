@@ -37,8 +37,6 @@ export default function AddressPageContent() {
 	const [isAdding, setIsAdding] = useState(false);
 	const [shippingOpen, setShippingOpen] = useState(false);
 	const [billingOpen, setBillingOpen] = useState(false);
-	const [selectedShippingId, setSelectedShippingId] = useState(addresses.find((a) => a.isDefaultShipping)?.id || '');
-	const [selectedBillingId, setSelectedBillingId] = useState(addresses.find((a) => a.isDefaultBilling)?.id || '');
 
 	const [formData, setFormData] = useState({
 		fullName: '',
@@ -65,9 +63,10 @@ export default function AddressPageContent() {
 	const addressList = addressresponse?.results || [];
 
 	console.log('Address List:', addressList);
+	const [selectedShippingId, setSelectedShippingId] = useState(addressList?.[0]?.id || '');
 
 	const { create: submitAddress, isMutating: isAddressLoading } = useAppData<APIResponse, 'single'>({
-		key: [QueriesKey.DELIVERY_ADDRESS],
+		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
 		api: apiEndpoint.users.DELIVERY_ADDRESS(),
 		auth: true,
 		responseType: 'single',
@@ -92,6 +91,22 @@ export default function AddressPageContent() {
 		},
 	});
 
+	const { create: defaultAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.DELIVERY_ADDRESS_SET_DEFAULT, selectedShippingId],
+		api: apiEndpoint.users.DELIVERY_ADDRESS_SET_DEFAULT(selectedShippingId),
+		auth: true,
+		responseType: 'single',
+		enabled: false,
+		onSuccess: () => {
+			toast.success('Address added successfully!');
+			setIsAdding(false);
+		},
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
 	// ✅ Submit Handler
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -108,7 +123,7 @@ export default function AddressPageContent() {
 		});
 
 		const data = new FormData();
-		data.append('fullName', formData.fullName);
+		data.append('full_name', formData.fullName);
 		data.append('phone', formData.phone);
 		data.append('province', formData.province);
 		data.append('city', formData.city);
@@ -120,19 +135,8 @@ export default function AddressPageContent() {
 	};
 
 	const handleSetDefaultShipping = () => {
-		if (selectedShippingId) {
-			setDefaultShipping(selectedShippingId);
-			toast.success('Default shipping address updated!');
-			setShippingOpen(false);
-		}
-	};
-
-	const handleSetDefaultBilling = () => {
-		if (selectedBillingId) {
-			setDefaultBilling(selectedBillingId);
-			toast.success('Default billing address updated!');
-			setBillingOpen(false);
-		}
+		if (!selectedShippingId) return;
+		defaultAddress(selectedShippingId); // trigger API
 	};
 
 	return (
@@ -161,8 +165,8 @@ export default function AddressPageContent() {
 							<RadioGroup value={selectedShippingId} onValueChange={setSelectedShippingId} className="space-y-4 mt-4">
 								{addressList.map((addr) => (
 									<div key={addr.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50">
-										<RadioGroupItem value={addr.id} id={`shipping-${addr.id}`} />
-										<Label htmlFor={`shipping-${addr.id}`} className="flex-1 cursor-pointer">
+										<RadioGroupItem value={addr.id} id={addr.id} />
+										<Label htmlFor={addr.id} className="flex-1 cursor-pointer">
 											<p className="font-medium">{addr.fullName}</p>
 											<p className="text-sm text-muted-foreground">
 												{addr.address}, {addr.zone}, {addr.city}
@@ -185,49 +189,6 @@ export default function AddressPageContent() {
 									Cancel
 								</Button>
 								<Button onClick={handleSetDefaultShipping} disabled={!selectedShippingId}>
-									Confirm
-								</Button>
-							</div>
-						</DialogContent>
-					</Dialog>
-
-					<span className="text-muted-foreground">|</span>
-
-					<Dialog open={billingOpen} onOpenChange={setBillingOpen}>
-						<DialogTrigger asChild>
-							<button className="hover:text-primary transition-colors cursor-pointer">Make default billing address</button>
-						</DialogTrigger>
-						<DialogContent className="max-w-md">
-							<DialogHeader>
-								<DialogTitle>Select Default Billing Address</DialogTitle>
-							</DialogHeader>
-							<RadioGroup value={selectedBillingId} onValueChange={setSelectedBillingId} className="space-y-4 mt-4">
-								{addressList.map((addr) => (
-									<div key={addr.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50">
-										<RadioGroupItem value={addr.id} id={`billing-${addr.id}`} />
-										<Label htmlFor={`billing-${addr.id}`} className="flex-1 cursor-pointer">
-											<p className="font-medium">{addr.fullName}</p>
-											<p className="text-sm text-muted-foreground">
-												{addr.address}, {addr.zone}, {addr.city}
-											</p>
-											<p className="text-sm text-muted-foreground">{addr.phone}</p>
-											<span
-												className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-1 rounded-full ${
-													addr.label === 'HOME' ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white'
-												}`}
-											>
-												{addr.label === 'HOME' ? <HomeIcon /> : <BriefcaseBusiness />}
-												{addr.label}
-											</span>
-										</Label>
-									</div>
-								))}
-							</RadioGroup>
-							<div className="flex justify-end gap-3 mt-6">
-								<Button variant="outline" onClick={() => setBillingOpen(false)}>
-									Cancel
-								</Button>
-								<Button onClick={handleSetDefaultBilling} disabled={!selectedBillingId}>
 									Confirm
 								</Button>
 							</div>

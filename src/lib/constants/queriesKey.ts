@@ -5,5 +5,6 @@ export const QueriesKey = {
 	ORDER_LIST: 'order-list',
 	ORDER_DETAIL: 'order-detail',
 	DELIVERY_ADDRESS: 'delivery-address',
+	DELIVERY_ADDRESS_SET_DEFAULT: 'delivery-address-set-default',
 	DELIVERY_ADDRESS_LIST: 'delivery-address-list',
 };
