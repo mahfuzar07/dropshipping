@@ -60,6 +60,7 @@ export interface APIResponse {
 	payload: any;
 	status: string;
 	message: string;
+	results?: [];
 }
 
 export type CustomerProfile = {

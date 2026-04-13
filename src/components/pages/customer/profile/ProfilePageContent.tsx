@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { updateProfile, getProfile } from '@/lib/api/auth';
+import { APIResponse } from '@/types/types';
 
 /* ======================
    🔹 Types
@@ -50,6 +51,19 @@ export default function ProfilePageContent() {
 		postal_code: '',
 		country: '',
 	});
+
+	const { data: profileData, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.USER_PROFILE],
+		api: apiEndpoint.users.PROFILE(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	console.log('profileDataList', profileData);
 
 	useEffect(() => {
 		const fetchProfile = async () => {
