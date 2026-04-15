@@ -49,16 +49,16 @@ function OrderRow({ order }: { order: Order }) {
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			whileHover={{ y: -2 }}
 			transition={{ duration: 0.2 }}
-			className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+			className="bg-card border border-border rounded-3xl overflow-hidden"
 		>
 			{/* Order Header */}
 			<div className="px-6 py-5 bg-muted/60 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
 				<div className="flex items-center gap-4">
-					<div className="w-11 h-11 bg-primary/10 rounded-2xl flex items-center justify-center">
-						<Package className="w-6 h-6 text-primary" />
+					<div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
+						<Package className="text-orange-500 w-6 h-6" />
 					</div>
+
 					<div>
 						<p className="text-xs text-muted-foreground">Order ID</p>
 						<p className="font-semibold text-lg tracking-tight">#{order.order_number}</p>
@@ -143,13 +143,13 @@ function OrderRow({ order }: { order: Order }) {
 			</div>
 
 			{/* Footer Action */}
-			<div className="px-6 py-5 border-t bg-muted/30 flex justify-end">
+			<div className="px-6 py-5 border-t flex justify-end bg-white/50">
 				<Link
 					href={`/customer/orders/${order.id}`}
-					className="inline-flex items-center gap-3 px-7 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-2xl text-sm font-medium transition-all active:scale-[0.98]"
+					className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-300 to-amber-400 text-white text-sm font-medium shadow-md hover:shadow-lg hover:scale-[1.03] transition-all"
 				>
-					View Full Details
-					<ChevronRight size={20} />
+					View Details
+					<ChevronRight size={18} />
 				</Link>
 			</div>
 		</motion.div>
@@ -184,14 +184,16 @@ export default function OrdersPageContent() {
 	return (
 		<div className="px-4 md:px-8 py-10 md:py-14 bg-background min-h-screen font-hanken">
 			{/* Page Header */}
-			<motion.div initial={{ opacity: 0, y: -25 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-				<div className="flex items-center gap-5">
-					<div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl flex items-center justify-center shadow-lg">
-						<ShoppingBag className="w-11 h-11 text-white" />
+
+			<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 border-b pb-5">
+				<div className="flex items-center gap-3">
+					<div className="bg-slate-100 w-16 h-16 flex items-center justify-center rounded-full">
+						<ShoppingBag className="text-orange-400 w-8 h-8" />
 					</div>
+
 					<div>
-						<h1 className="text-4xl font-bold tracking-tight">My Orders</h1>
-						<p className="text-lg text-muted-foreground mt-2">Track, manage and review your recent purchases</p>
+						<h1 className="text-3xl font-medium">My Orders</h1>
+						<p className="text-muted-foreground">Track, manage and review your recent purchases</p>
 					</div>
 				</div>
 			</motion.div>
