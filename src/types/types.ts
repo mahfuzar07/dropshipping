@@ -127,3 +127,80 @@ export type Employee = {
 	createdAt: string;
 	updatedAt: string;
 };
+
+export interface OrderAddress {
+	id: number;
+	full_name: string;
+	address: string;
+	address_line2: string | null;
+	city: string;
+	district: string;
+	postal_code: string;
+	phone: string;
+	is_default: boolean;
+	created_at: string;
+	updated_at: string;
+	user: number;
+}
+
+export interface ProductPrice {
+	amount: string;
+	currency: string;
+	overseas: string;
+	unit: string;
+}
+
+export interface ProductVariant {
+	price: string;
+	size: string;
+	stock: string;
+}
+
+export interface OrderProduct {
+	_id: string;
+	image: string;
+	product_name: string;
+	title: string;
+	url: string;
+	moq: string;
+	sold: string;
+	is_ad: boolean;
+	offer_id: string;
+	price: ProductPrice;
+	variant: ProductVariant;
+	rating: any | null;
+	promotion: any | null;
+	seller_icon: any | null;
+}
+
+export interface OrderItem {
+	id: number;
+	product: OrderProduct;
+	quantity: number;
+	unit_price: string;
+	total: string;
+}
+
+export interface Order {
+	id: string;
+	order_number: string;
+	user: number;
+	status: 'pending' | 'delivered' | 'canceled' | string;
+	created_at: string;
+	subtotal: string;
+	shipping_charge: string;
+	discount_amount: string;
+	total: string;
+	payment_type?: string;
+	notes: string | null;
+	coupon: any | null;
+	address: OrderAddress;
+	items: OrderItem[];
+}
+
+// For API Response wrapper (if your useAppData wraps it)
+export interface APIOrderResponse {
+	success?: boolean;
+	message?: string;
+	data: Order;
+}
