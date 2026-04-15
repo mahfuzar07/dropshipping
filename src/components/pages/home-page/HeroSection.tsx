@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay, Pagination, EffectFade } from 'swiper/modules';
 import SwiperCore from 'swiper';
@@ -10,6 +10,11 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
 const slides = [
 	{
@@ -42,6 +47,32 @@ export default function HeroSection() {
 	const prevRef = useRef<HTMLDivElement>(null);
 	const nextRef = useRef<HTMLDivElement>(null);
 	const swiperRef = useRef<SwiperCore | null>(null);
+	const [searchTerm, setSearchTerm] = useState<string>(''); // For the input field
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>(''); // For the API call
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 500);
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
+
+	const { data: searchProducts, isLoading: isLoadingSearch } = useAppData<APIResponse, 'single'>({
+		// Use the debounced term in the key so the cache is specific to the search
+		key: [QueriesKey.SEARCH_PRODUCTS, debouncedSearchTerm],
+		api: apiEndpoint.products.SEARCH_PRODUCTS(debouncedSearchTerm),
+		auth: true,
+		responseType: 'single',
+		// Only run if there is a search term (prevents empty calls on mount)
+		enabled: debouncedSearchTerm.length > 0,
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to load search products');
+		},
+	});
+
+	const products = searchProducts?.results || [];
+
 	return (
 		<div className="relative w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[18/6] overflow-hidden">
 			<Swiper
@@ -104,9 +135,11 @@ export default function HeroSection() {
 				<div className="bg-white/30 backdrop-blur-xl p-5 max-w-3xl mx-auto rounded-xl shadow-xl">
 					<div className="bg-white/10 rounded-full flex items-center pl-4 pr-1 py-1 gap-3 border border-orange-300">
 						<input
+							value={searchTerm}
 							type="text"
 							placeholder="Search from 300M+ premium products Around the World ..."
 							className="flex-1 outline-none text-sm md:text-base text-white placeholder:text-orange-100 bg-transparent"
+							onChange={(e) => setSearchTerm(e.target.value)}
 						/>
 
 						<button className="flex shadow items-center justify-center bg-orange-300 text-white  2xl:w-12 2xl:h-12 w-10 h-10 md:w-10 md:h-10 rounded-full">

@@ -49,6 +49,7 @@ export const apiEndpoint = {
 		GIFT_DEEAS_PRODUCTS: () => `/api/products/product-from-1688/?page=2&limit=3`,
 		CATEGORIES: () => `/api/products/categories-from-1688/`,
 		DETAILS: (id: string | number) => `/api/products/product-from-1688/${id}/`,
+		SEARCH_PRODUCTS: (key: string) => `/api/products/product-from-1688?search=${key}&page=1&limit=12`,
 		list: '/products',
 		detail: (id: string | number) => `/products/${id}`,
 	},
