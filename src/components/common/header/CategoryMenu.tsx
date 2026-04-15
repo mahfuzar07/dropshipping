@@ -47,7 +47,7 @@ export default function CategoryMenu({ categories }: { categories: Category[] })
 
 							return (
 								<Link
-									href={`/category/${item.slug}`}
+									href={`/category/${item.name}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
 									className={`flex group justify-between items-center px-4 py-2 cursor-pointer transition

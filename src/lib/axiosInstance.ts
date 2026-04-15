@@ -40,6 +40,8 @@ authApi.interceptors.request.use(async (config) => {
 	if (token && config.headers) {
 		config.headers.Authorization = `Bearer ${token}`;
 	}
+	config.headers['app-key'] = '25251bd9e264edec';
+	config.headers['secret-key'] = 'be3ac4d087938b1d109e90ee8260f0db4616f2d32230c6b17442d3dc9d8cd031';
 
 	return config;
 });
