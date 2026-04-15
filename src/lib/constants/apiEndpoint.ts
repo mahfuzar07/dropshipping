@@ -48,6 +48,7 @@ export const apiEndpoint = {
 		NEW_LAUNCH_PRODUCTS: () => `/api/products/product-from-1688/?page=2&limit=12`,
 		GIFT_DEEAS_PRODUCTS: () => `/api/products/product-from-1688/?page=2&limit=3`,
 		CATEGORIES: () => `/api/products/categories-from-1688/`,
+		DETAILS: (id: string | number) => `/api/products/product-from-1688/${id}/`,
 		list: '/products',
 		detail: (id: string | number) => `/products/${id}`,
 	},

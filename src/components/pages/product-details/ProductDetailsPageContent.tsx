@@ -8,6 +8,11 @@ import ProductInfo from './ProductInfo';
 import ProductTabs from './ProductTabs';
 import CartSection from './CartSection';
 import SellerInfo from './SellerInfo';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
 const demoProduct = {
 	id: 1,
@@ -68,6 +73,20 @@ const demoProduct = {
 
 export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
 	// For now using demo data (you can later uncomment the API call)
+
+	const { data: orderResponse, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.PRODUCT_DETAIL, productSlug],
+		api: apiEndpoint.products.DETAILS(productSlug),
+		auth: true,
+		responseType: 'single',
+		enabled: !!productSlug,
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	console.log('Order Details:', orderResponse); // Debug log for order details
+
 	const product = useMemo(() => demoProduct, []);
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 
@@ -127,7 +146,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 					</div>
 
 					<div className="col-span-12 bg-white rounded-lg p-5">
-						<SellerInfo/>
+						<SellerInfo />
 						<ProductTabs
 							description={`Check out the ${product.name}. Available colors: ${colors.map((c) => c.name).join(', ')}.`}
 							specifications={product.pro_specification?.[0] || {}}
@@ -137,7 +156,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 				</div>
 
 				<div className="col-span-3 sticky top-5 self-start">
-					<CartSection/>
+					<CartSection />
 				</div>
 			</div>
 		</div>
