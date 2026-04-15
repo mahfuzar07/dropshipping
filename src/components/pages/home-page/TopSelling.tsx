@@ -7,58 +7,77 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SwiperCore from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
-const products = [
-	{
-		id: 1,
-		title: 'Product 1',
-		image: '/assets/product/product-2.webp',
-		store: 'US',
-		price: '1233.00',
-	},
-	{ id: 2, title: 'Product 2', image: '/assets/product/product-5.png', store: 'US', price: '12.99' },
-	{
-		id: 3,
-		title: 'Product 3',
-		image: '/assets/product/product-6.png',
-		store: 'US',
-		price: '199.99',
-	},
-	{
-		id: 4,
-		title: 'Product 4',
-		image: '/assets/product/product-7.png',
-		store: 'US',
-		price: '2.99',
-	},
-	{
-		id: 5,
-		title: 'Product 5',
-		image: '/assets/product/product-2.webp',
-		store: 'US',
-		price: '2.99',
-	},
-	{
-		id: 6,
-		title: 'Product 6',
-		image: '/assets/product/product-3.webp',
-		store: 'US',
-		price: '2.99',
-	},
-	{
-		id: 7,
-		title: 'Product 7',
-		image: '/assets/product/product-1.webp',
-		store: 'US',
-		price: '2.99',
-	},
-];
+// const products = [
+// 	{
+// 		id: 1,
+// 		title: 'Product 1',
+// 		image: '/assets/product/product-2.webp',
+// 		store: 'US',
+// 		price: '1233.00',
+// 	},
+// 	{ id: 2, title: 'Product 2', image: '/assets/product/product-5.png', store: 'US', price: '12.99' },
+// 	{
+// 		id: 3,
+// 		title: 'Product 3',
+// 		image: '/assets/product/product-6.png',
+// 		store: 'US',
+// 		price: '199.99',
+// 	},
+// 	{
+// 		id: 4,
+// 		title: 'Product 4',
+// 		image: '/assets/product/product-7.png',
+// 		store: 'US',
+// 		price: '2.99',
+// 	},
+// 	{
+// 		id: 5,
+// 		title: 'Product 5',
+// 		image: '/assets/product/product-2.webp',
+// 		store: 'US',
+// 		price: '2.99',
+// 	},
+// 	{
+// 		id: 6,
+// 		title: 'Product 6',
+// 		image: '/assets/product/product-3.webp',
+// 		store: 'US',
+// 		price: '2.99',
+// 	},
+// 	{
+// 		id: 7,
+// 		title: 'Product 7',
+// 		image: '/assets/product/product-1.webp',
+// 		store: 'US',
+// 		price: '2.99',
+// 	},
+// ];
 
 export default function TopSelling() {
 	const [activeIndex, setActiveIndex] = useState<number>(0);
 	const prevRef = useRef<HTMLDivElement>(null);
 	const nextRef = useRef<HTMLDivElement>(null);
 	const swiperRef = useRef<SwiperCore | null>(null);
+
+	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.TOP_PRODUCTS],
+		api: apiEndpoint.products.TOP_PRODUCTS(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const products = topProducts?.results || [];
+
 	return (
 		<div className="bg-gray-100 py-8">
 			<div className="container mx-auto px-4 relative">
@@ -117,7 +136,7 @@ export default function TopSelling() {
 					}}
 				>
 					{products.map((product) => (
-						<SwiperSlide key={product.id}>
+						<SwiperSlide key={product._id}>
 							<ProductCard product={product} />
 						</SwiperSlide>
 					))}

@@ -4,15 +4,38 @@ import { motion } from 'framer-motion';
 import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
 
+// type Product = {
+// 	_id: number;
+// 	title: string;
+// 	price: { amount: number; currency: string };
+// 	image: string;
+// 	store: string;
+// 	category: string;
+// 	discount?: boolean;
+// 	rating?: string;
+// };
+
 type Product = {
-	id: number;
+	_id: string;
+	offer_id: string;
 	title: string;
-	price: number;
+	url: string;
 	image: string;
-	store: string;
-	category: string;
-	discount?: boolean;
-	rating?: number;
+
+	price: {
+		currency: string; // e.g. "¥"
+		amount: string; // e.g. "10"
+		unit: string; // e.g. ".80"
+		overseas: string; // e.g. "$1.59"
+	};
+
+	rating: string; // "5" (string from API)
+	sold: string; // "Hot selling"
+	promotion: string | null;
+	moq: string; // "MOQ 1"
+	seller_icon: string | null;
+	is_ad: boolean;
+	product_name: string;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -27,8 +50,8 @@ export default function ProductCard({ product }: { product: Product }) {
 			{/* Image Container - Fixed aspect ratio */}
 			<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded-2xl">
 				<Image
-					src={product.image}
-					alt={product.title}
+					src={product?.image || '/placeholder.png'}
+					alt={product?.title || 'Product'}
 					fill
 					className="object-cover transition-transform duration-600 ease-in-out group-hover:scale-105"
 				/>
@@ -37,22 +60,24 @@ export default function ProductCard({ product }: { product: Product }) {
 			{/* Content - This will take the remaining height */}
 			<div className="flex-1 flex flex-col p-3 pt-4">
 				{/* Title */}
-				<h3 className="text-sm font-semibold line-clamp-2 leading-tight mb-3 flex-grow">{product.title}</h3>
+				<h3 className="text-sm font-semibold line-clamp-2 leading-tight mb-3 flex-grow">{product?.title}</h3>
 
 				{/* Rating & Sold */}
 				<div className="flex items-center justify-between text-gray-500 text-xs mb-2">
 					<div className="flex items-center gap-1">
 						<Star size={15} className="fill-yellow-500 text-yellow-400" />
-						<span>4.7 (45)</span>
+						<span>{product?.rating || 'N/A'}</span>
 					</div>
-					<p>4K Sold</p>
+					{/* <p>4K Sold</p> */}
+					<p>{product?.sold}</p>
 				</div>
 
 				{/* Price */}
 				<div className="mt-auto">
 					<h3 className="text-xl font-bold text-primary flex items-center font-hanken">
-						<span className="font-hanken mr-0.5">৳</span>
-						{product.price}
+						<span className="mr-0.5">{product?.price?.currency || '৳'}</span>
+						{product?.price?.amount || '0'}
+						{product?.price?.unit || ''}
 					</h3>
 				</div>
 

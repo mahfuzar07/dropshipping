@@ -1,19 +1,38 @@
+'use client';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
+import { useAppData } from '@/hooks/use-appdata';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { APIResponse } from '@/types/types';
 import Image from 'next/image';
 import React from 'react';
+import { toast } from 'sonner';
 
-const products = [
-	{ id: 1, title: 'Product 1', image: '/assets/hero/slide-1.jpg', store: 'US', price: '1233.00' },
-	{ id: 2, title: 'Product 2', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-	{ id: 3, title: 'Product 3', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-	{ id: 4, title: 'Product 4', image: '/assets/hero/slide-1.jpg', store: 'US', price: '1233.00' },
-	{ id: 5, title: 'Product 5', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-	{ id: 6, title: 'Product 6', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-	{ id: 7, title: 'Product 7', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-	{ id: 8, title: 'Product 8', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
-];
+// const products = [
+// 	{ id: 1, title: 'Product 1', image: '/assets/hero/slide-1.jpg', store: 'US', price: '1233.00' },
+// 	{ id: 2, title: 'Product 2', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// 	{ id: 3, title: 'Product 3', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// 	{ id: 4, title: 'Product 4', image: '/assets/hero/slide-1.jpg', store: 'US', price: '1233.00' },
+// 	{ id: 5, title: 'Product 5', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// 	{ id: 6, title: 'Product 6', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// 	{ id: 7, title: 'Product 7', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// 	{ id: 8, title: 'Product 8', image: '/assets/hero/slide-1.jpg', store: 'US', price: '12.99' },
+// ];
 
 export default function LatestDeal() {
+	const { data: latestProducts, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.LATEST_PRODUCTS],
+		api: apiEndpoint.products.LATEST_PRODUCTS(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const products = latestProducts?.results || [];
+
 	return (
 		<div className="bg-gray-100 py-8">
 			<div className="container mx-auto px-4">
@@ -57,8 +76,8 @@ export default function LatestDeal() {
 				</div>
 				{/* ===== SECOND ROW (ALL PRODUCTS) ===== */}
 				<div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
-					{products.slice(3).map((product) => (
-						<div key={product.id} className="">
+					{products.slice(3).map((product: any) => (
+						<div key={product._id} className="">
 							<ProductCard product={product} />
 						</div>
 					))}

@@ -1,6 +1,12 @@
+'use client';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
+import { useAppData } from '@/hooks/use-appdata';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { APIResponse } from '@/types/types';
 import Image from 'next/image';
 import React from 'react';
+import { toast } from 'sonner';
 
 const products = [
 	{
@@ -27,6 +33,19 @@ const products = [
 ];
 
 export default function GiftIdeas() {
+	const { data: giftIdeasProducts, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.GIFT_DEEAS_PRODUCTS],
+		api: apiEndpoint.products.GIFT_DEEAS_PRODUCTS(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const products = giftIdeasProducts?.results || [];
+
 	return (
 		<div className="bg-gray-100 py-8 ">
 			<div className="container mx-auto px-4">
@@ -57,7 +76,7 @@ export default function GiftIdeas() {
 					{/* RIGHT: Product Cards - Now properly stretch to same height */}
 					<div className="grid grid-cols-2 2xl:grid-cols-3 gap-3 md:col-span-2 col-span-4">
 						{products.map((product) => (
-							<ProductCard key={product.id} product={product} />
+							<ProductCard key={product._id} product={product} />
 						))}
 					</div>
 				</div>

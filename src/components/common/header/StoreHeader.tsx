@@ -14,50 +14,55 @@ import ProfileContent from './dropdown-content/ProfileContent';
 import ServiceContent from './dropdown-content/ServiceContent';
 import CategoryPopover from '@/components/ui/custom/CategoryPopover';
 import CategoryMenu from './CategoryMenu';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
-export const CATEGORIES = [
-	{
-		id: 1,
-		name: 'Electronics',
-		slug: 'electronics',
-		children: [
-			{
-				id: 2,
-				name: 'Mobiles',
-				slug: 'mobiles',
-				children: [
-					{ id: 3, name: 'Android Phones', slug: 'android' },
-					{ id: 4, name: 'iPhone', slug: 'iphone' },
-				],
-			},
-			{
-				id: 5,
-				name: 'Laptops',
-				slug: 'laptops',
-				children: [
-					{ id: 6, name: 'Gaming Laptop', slug: 'gaming' },
-					{ id: 7, name: 'Ultrabook', slug: 'ultrabook' },
-				],
-			},
-		],
-	},
-	{
-		id: 8,
-		name: 'Fashion',
-		slug: 'fashion',
-		children: [
-			{
-				id: 9,
-				name: 'Men',
-				slug: 'men',
-				children: [
-					{ id: 10, name: 'Shirts', slug: 'shirts' },
-					{ id: 11, name: 'Shoes', slug: 'shoes' },
-				],
-			},
-		],
-	},
-];
+// export const CATEGORIES = [
+// 	{
+// 		id: 1,
+// 		name: 'Electronics',
+// 		slug: 'electronics',
+// 		children: [
+// 			{
+// 				id: 2,
+// 				name: 'Mobiles',
+// 				slug: 'mobiles',
+// 				children: [
+// 					{ id: 3, name: 'Android Phones', slug: 'android' },
+// 					{ id: 4, name: 'iPhone', slug: 'iphone' },
+// 				],
+// 			},
+// 			{
+// 				id: 5,
+// 				name: 'Laptops',
+// 				slug: 'laptops',
+// 				children: [
+// 					{ id: 6, name: 'Gaming Laptop', slug: 'gaming' },
+// 					{ id: 7, name: 'Ultrabook', slug: 'ultrabook' },
+// 				],
+// 			},
+// 		],
+// 	},
+// 	{
+// 		id: 8,
+// 		name: 'Fashion',
+// 		slug: 'fashion',
+// 		children: [
+// 			{
+// 				id: 9,
+// 				name: 'Men',
+// 				slug: 'men',
+// 				children: [
+// 					{ id: 10, name: 'Shirts', slug: 'shirts' },
+// 					{ id: 11, name: 'Shoes', slug: 'shoes' },
+// 				],
+// 			},
+// 		],
+// 	},
+// ];
 
 export default function StoreHeader() {
 	const { openDrawer, openModal } = useLayoutStore();
@@ -65,6 +70,21 @@ export default function StoreHeader() {
 	const isVisible = useScrollDirection();
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const [open, setOpen] = useState(true);
+
+	const { data: categoriesData, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.CATEGORIES],
+		api: apiEndpoint.products.CATEGORIES(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const CATEGORIES = categoriesData?.categories || [];
+	console.log('CATEGORIE---', CATEGORIES);
+
 	return (
 		<>
 			<header
