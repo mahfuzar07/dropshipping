@@ -7,12 +7,12 @@ export const metadata: Metadata = {
 	title: 'Order Details',
 };
 
-export default async function OrdersPage({ params }: { params: Promise<{ order_id: number }> }) {
+export default async function OrdersPage({ params }: { params: Promise<{ order_id: number | string }> }) {
 	const { order_id } = await params;
 	return (
 		<div className="">
 			<Suspense fallback={<LoadingSkeleton />}>
-				<OrderDetailsPageContent orderId={order_id} />
+				<OrderDetailsPageContent orderId={String(order_id)} />
 			</Suspense>
 		</div>
 	);

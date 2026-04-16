@@ -4,177 +4,252 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, MapPin, CreditCard } from 'lucide-react';
+import { ShoppingBag, MapPin, CreditCard, Calendar, Truck } from 'lucide-react';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
-import { APIResponse } from '@/types/types';
 import { toast } from 'sonner';
+import { Order } from '@/types/types';
 
-const order = {
-	reference_no: '123456',
-	created_at: new Date().toISOString(),
-	total_price: 59136,
-	total_qty: 2,
-	payment_type: 'cod',
-	shipping_type: 'home_delivery',
-	sale_status: 1,
-	name: 'John Doe',
-	phone_number: '01700000000',
-	address: 'Dhaka, Bangladesh',
-	city: 'Dhaka',
-	product_sale: [
-		{
-			product_name: 'Premium Panjabi',
-			product_image: '/assets/hero/slide-1.jpg',
-			qty: 1,
-			total: 29568,
-			product_url: '/',
-			order_variation_info: [{ color_name: 'Red' }],
+const getStatusInfo = (status: string) => {
+	const statusMap: Record<string, { text: string; className: string; iconColor: string }> = {
+		pending: {
+			text: 'Pending',
+			className: 'bg-yellow-100 text-yellow-800 border-yellow-400',
+			iconColor: 'text-yellow-500',
 		},
-		{
-			product_name: 'Stylish Shirt',
-			product_image: '/assets/hero/slide-1.jpg',
-			qty: 1,
-			total: 29568,
-			product_url: '/',
-			order_variation_info: [{ color_name: 'Black' }],
+		delivered: {
+			text: 'Delivered',
+			className: 'bg-green-100 text-green-800 border-green-400',
+			iconColor: 'text-green-500',
 		},
-	],
-};
-
-const getStatusInfo = (status: number) => {
-	const statusMap: Record<number, { text: string; className: string }> = {
-		1: { text: 'Pending', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-		5: { text: 'Delivered', className: 'bg-green-100 text-green-800 border-green-300' },
+		canceled: {
+			text: 'Canceled',
+			className: 'bg-red-100 text-red-800 border-red-400',
+			iconColor: 'text-red-500',
+		},
 	};
 
-	return statusMap[status] || { text: 'Unknown', className: 'bg-gray-100 text-gray-700' };
+	return (
+		statusMap[status?.toLowerCase()] || {
+			text: status || 'Unknown',
+			className: 'bg-gray-100 text-gray-700 border-gray-300',
+			iconColor: 'text-gray-500',
+		}
+	);
 };
 
 export default function OrderDetailsPageContent({ orderId }: { orderId: string }) {
-	const { text: statusText, className: statusClass } = getStatusInfo(order.sale_status);
-	const orderItem = order.total_qty;
-
-	const { data: orderResponse, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+	const { data: orderResponse, isLoading } = useAppData<any, 'single'>({
 		key: [QueriesKey.USER_ORDERS, orderId],
 		api: apiEndpoint.orders.ORDERS_DETAILS(orderId),
 		auth: true,
 		responseType: 'single',
 		enabled: !!orderId,
 		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to add address');
+			toast.error(error?.response?.data?.message || 'Failed to fetch order details');
 		},
 	});
 
-	console.log('Order Details:', orderResponse); // Debug log for order details
+	// Safe extraction
+	const order: Order | null = orderResponse?.data || orderResponse;
+
+	if (isLoading || !order) {
+		return (
+			<div className="min-h-[60vh] flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+					<p className="text-muted-foreground">Loading order details...</p>
+				</div>
+			</div>
+		);
+	}
+
+	const { text: statusText, className: statusClass, iconColor } = getStatusInfo(order.status);
+
+	const subtotal = Number(order.subtotal || 0);
+	const shipping = Number(order.shipping_charge || 0);
+	const discount = Number(order.discount_amount || 0);
+	const grandTotal = Number(order.total || 0);
+
+	const totalQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
 	return (
-		<div className="px-3 md:px-8 py-8 md:py-10 rounded bg-background">
+		<div className=" px-4 md:px-6 py-8 md:py-12 font-hanken">
 			{/* Header */}
-			<motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-				<div className="flex items-center justify-between flex-wrap gap-4">
-					<div className="flex items-center gap-3">
-						<div className="bg-slate-100 w-16 h-16 flex items-center justify-center rounded-full">
-							<ShoppingBag className="text-orange-400 w-7 h-7" />
+			<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+				<div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+					<div className="flex items-center gap-4">
+						<div className="bg-gradient-to-br from-orange-200 to-amber-500 w-20 h-20 flex items-center justify-center rounded-2xl">
+							<ShoppingBag className="text-white w-10 h-10" />
 						</div>
-
 						<div>
-							<h1 className="text-2xl font-semibold">Order ID : #{order.reference_no}</h1>
-							<p className="text-muted-foreground mt-1">Placed on {new Date(order.created_at).toLocaleDateString()}</p>
+							<h1 className="text-3xl font-bold tracking-tight">Order #{order.order_number}</h1>
+							<div className="flex items-center gap-2 text-muted-foreground mt-1">
+								<Calendar className="w-4 h-4" />
+								<span>
+									Placed on{' '}
+									{new Date(order.created_at).toLocaleDateString('en-US', {
+										year: 'numeric',
+										month: 'long',
+										day: 'numeric',
+									})}
+								</span>
+							</div>
 						</div>
 					</div>
 
-					<span className={`px-4 py-1.5 rounded-full text-sm border ${statusClass}`}>{statusText}</span>
-				</div>
-
-				{/* Summary */}
-				<div className="mt-6 bg-slate-50 rounded grid grid-cols-3 text-center">
-					<div className="border-r p-4">
-						<p className="text-sm text-muted-foreground">Total Amount</p>
-						<p className="text-xl font-medium text-primary">৳{order.total_price.toLocaleString()}</p>
-					</div>
-
-					<div className="border-r p-4">
-						<p className="text-sm text-muted-foreground">Total Items</p>
-						<p className="text-xl font-medium">{orderItem}</p>
-					</div>
-
-					<div className="p-4">
-						<p className="text-sm text-muted-foreground">Payment</p>
-						<p className="text-xl font-medium uppercase">{order.payment_type}</p>
+					<div className={`px-6 py-2.5 rounded-full text-sm font-medium border flex items-center gap-2 ${statusClass}`}>
+						<div className={`w-3 h-3 rounded-full ${iconColor.replace('text-', 'bg-')}`} />
+						{statusText}
 					</div>
 				</div>
 			</motion.div>
 
-			{/* Products */}
-			<div className="mb-8">
-				<h2 className="text-xl font-semibold mb-4 border-b pb-3">Ordered Items</h2>
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+				{/* ==================== LEFT: All Items (Multiple Products Support) ==================== */}
+				<div className="lg:col-span-7 space-y-3">
+					<div className="bg-card rounded-2xl border shadow-sm overflow-hidden">
+						<div className="px-6 py-5 border-b flex items-center justify-between bg-muted/30">
+							<h2 className="text-xl font-semibold flex items-center gap-2">Ordered Items ({totalQuantity})</h2>
+							<p className="text-sm text-muted-foreground">{order.items?.length || 0} type of product</p>
+						</div>
 
-				<div className="bg-card p-4 rounded-lg space-y-4">
-					{order.product_sale.map((item, index) => {
-						const color = item.order_variation_info?.[0]?.color_name;
+						<div className="divide-y divide-border">
+							{order.items?.map((item, index) => {
+								const product = item.product || {};
+								const variant = product.variant || {};
+								const imageUrl = product.image || '';
 
-						return (
-							<motion.div key={index} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="border-b pb-4 flex gap-4">
-								<div className="relative w-16 h-16 bg-muted rounded">
-									<Image src={item.product_image} alt="" fill className="object-cover" />
-								</div>
+								return (
+									<motion.div
+										key={item.id || `item-${index}`}
+										initial={{ opacity: 0, y: 15 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.06 }}
+										className="p-6 flex gap-5 hover:bg-muted/50 transition-colors"
+									>
+										{/* Product Image */}
+										<div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded-xl overflow-hidden border">
+											{imageUrl && <Image src={imageUrl} alt={product.title || 'Product'} fill className="object-cover" />}
+										</div>
 
-								<div className="flex-1">
-									<Link href={item.product_url} className="font-medium hover:text-orange-400">
-										{item.product_name}
-									</Link>
+										{/* Product Details */}
+										<div className="flex-1 min-w-0">
+											<Link
+												href={product.url || '#'}
+												target="_blank"
+												className="font-semibold text-base leading-tight hover:text-orange-600 transition-colors line-clamp-2"
+											>
+												{product.title}
+											</Link>
 
-									{color && <p className="text-sm text-muted-foreground">Color: {color}</p>}
+											{variant.size && (
+												<p className="text-sm text-muted-foreground mt-1.5">
+													Variant: <span className="font-medium">{variant.size}</span>
+												</p>
+											)}
 
-									<div className="flex justify-between text-sm mt-2">
-										<span>Qty: {item.qty}</span>
-										<span>৳{item.total.toLocaleString()}</span>
-									</div>
-								</div>
-							</motion.div>
-						);
-					})}
+											<div className="mt-4 flex justify-between items-end">
+												<div>
+													<span className="text-muted-foreground text-sm">Quantity:</span>{' '}
+													<span className="font-semibold text-base">{item.quantity}</span>
+												</div>
+												<div className="text-right">
+													<div className="font-semibold text-lg">৳{Number(item.total).toLocaleString()}</div>
+													<div className="text-xs text-muted-foreground">
+														each ৳{Number(item.unit_price).toLocaleString()} × {item.quantity}
+													</div>
+												</div>
+											</div>
+										</div>
+									</motion.div>
+								);
+							})}
+						</div>
+					</div>
 				</div>
-			</div>
 
-			{/* Address */}
-			<div className="space-y-5">
-				<h3 className="text-xl border-b pb-3 font-semibold flex items-center gap-2">
-					<MapPin className="w-5 h-5" />
-					Delivery Information
-				</h3>
+				{/* ==================== RIGHT: Summary, Address, Payment ==================== */}
+				<div className="lg:col-span-5 space-y-3">
+					{/* Price Summary */}
+					<div className="bg-card rounded-2xl border shadow p-6">
+						<h3 className="font-semibold text-lg mb-5">Price Summary</h3>
+						<div className="space-y-4 text-sm">
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">Subtotal</span>
+								<span>৳{subtotal.toLocaleString()}</span>
+							</div>
+							{shipping > 0 && (
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">Shipping Charge</span>
+									<span>৳{shipping.toLocaleString()}</span>
+								</div>
+							)}
+							{discount > 0 && (
+								<div className="flex justify-between text-green-600">
+									<span>Discount</span>
+									<span>- ৳{discount.toLocaleString()}</span>
+								</div>
+							)}
+							<div className="border-t pt-4 flex justify-between font-semibold text-base">
+								<span>Grand Total</span>
+								<span className="text-primary">৳{grandTotal.toLocaleString()}</span>
+							</div>
+						</div>
 
-				<div className="bg-card p-5 rounded">
-					<p>
-						<strong>Name:</strong> {order.name}
-					</p>
-					<p>
-						<strong>Address:</strong> {order.address}
-					</p>
-					<p>
-						<strong>Phone:</strong> {order.phone_number}
-					</p>
-				</div>
-			</div>
+						{/* 1688 Original Price */}
+						{order.items?.[0]?.product?.price && (
+							<div className="mt-6 pt-6 border-t text-xs text-muted-foreground">
+								<p>Original Price (1688):</p>
+								<p className="font-medium">
+									{order.items[0].product.price.currency}
+									{order.items[0].product.price.amount} ≈ {order.items[0].product.price.overseas}
+								</p>
+							</div>
+						)}
+					</div>
 
-			{/* Payment */}
-			<div className="mt-8">
-				<h3 className="text-xl border-b pb-3 font-semibold flex items-center gap-2">
-					<CreditCard className="w-5 h-5" />
-					Payment Information
-				</h3>
+					{/* Delivery Information */}
+					<div className="bg-card rounded-2xl border shadow p-6">
+						<h3 className="font-semibold text-lg mb-5 flex items-center gap-2">
+							<MapPin className="w-5 h-5 text-orange-500" />
+							Delivery Information
+						</h3>
+						<div className="space-y-3 text-sm">
+							<p className="font-medium">{order.address?.full_name}</p>
+							<div>
+								<p className="text-muted-foreground">Address</p>
+								<p>{order.address?.address}</p>
+								{order.address?.address_line2 && <p>{order.address.address_line2}</p>}
+								<p>
+									{order.address?.district}, {order.address?.city} - {order.address?.postal_code}
+								</p>
+							</div>
+							<div>
+								<p className="text-muted-foreground">Phone</p>
+								<p className="font-medium">{order.address?.phone}</p>
+							</div>
+						</div>
+					</div>
 
-				<div className="p-5">
-					<p className="uppercase">{order.payment_type}</p>
+					{/* Payment Information */}
+					<div className="bg-card rounded-2xl border shadow p-6">
+						<h3 className="font-semibold text-lg mb-5 flex items-center gap-2">
+							<CreditCard className="w-5 h-5 text-orange-500" />
+							Payment Information
+						</h3>
+						<div className="uppercase font-medium text-lg tracking-wider">{order.payment_type || 'Cash on Delivery (COD)'}</div>
 
-					<div className="text-right mt-4">
-						<p className="text-muted-foreground">Grand Total</p>
-						<p className="text-xl font-bold text-primary">৳{order.total_price.toLocaleString()}</p>
+						<div className="mt-8 pt-6 border-t text-right">
+							<p className="text-xs text-muted-foreground">Total Payable Amount</p>
+							<p className="text-2xl font-bold text-primary">৳{grandTotal.toLocaleString()}</p>
+						</div>
 					</div>
 				</div>
 			</div>
+
+			<div className="text-center text-xs text-muted-foreground mt-16">Any questions regarding this order? Please contact our support team.</div>
 		</div>
 	);
 }
