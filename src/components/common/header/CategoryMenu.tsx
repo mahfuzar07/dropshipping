@@ -5,34 +5,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
-interface Category {
-	id: number;
+// unified type (recursive)
+export interface MenuCategory {
+	id: string;
 	name: string;
 	slug: string;
-	subcategories?: Category[];
+	subcategories?: MenuCategory[];
 }
 
-export default function CategoryMenu({ categories }: { categories: Category[] }) {
-	const [activePath, setActivePath] = useState<Category[]>([]);
+export default function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
+	const [activePath, setActivePath] = useState<MenuCategory[]>([]);
 
-	const handleHover = (level: number, item: Category) => {
+	const handleHover = (level: number, item: MenuCategory) => {
 		const newPath = activePath.slice(0, level);
 		newPath[level] = item;
 		setActivePath(newPath);
 	};
 
 	// build columns dynamically
-	const columns: Category[][] = [];
+	const columns: MenuCategory[][] = [];
 	columns.push(categories);
 
 	activePath.forEach((item) => {
-		if (item.subcategories) {
+		if (item.subcategories && item.subcategories.length > 0) {
 			columns.push(item.subcategories);
 		}
 	});
 
 	return (
-		<div className="flex  bg-white shadow-xl rounded border overflow-hidden text-sm">
+		<div className="flex bg-white shadow-xl rounded-b border overflow-y-hidden text-sm h-[50vh]">
 			{columns.map((col, level) => (
 				<AnimatePresence key={level}>
 					<motion.div
@@ -40,27 +41,24 @@ export default function CategoryMenu({ categories }: { categories: Category[] })
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 20 }}
 						transition={{ duration: 0.2 }}
-						className="w-[240px] border-r last:border-r-0"
+						className="w-[240px] h-full overflow-y-auto border-r last:border-r-0"
 					>
 						{col.map((item) => {
-							const isActive = activePath[level]?.name === item.name;
+							const isActive = activePath[level]?.id === item.id;
 
 							return (
 								<Link
-									href={`/category/${item.name}`}
+									href={`/category/${item.slug}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
-									className={`flex group justify-between items-center px-4 py-2 cursor-pointer transition
-										${isActive ? 'bg-orange-300 text-white font-medium' : ''}
-									`}
+									className={`flex group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
+									${isActive ? 'bg-orange-300 text-white font-medium' : 'hover:bg-gray-100'}
+								`}
 								>
 									<span>{item.name}</span>
 
 									{item.subcategories && (
-										<ChevronRight
-											size={16}
-											className={` group-hover:text-white ${isActive ? 'bg-orange-300 text-white font-medium' : 'text-gray-500'}`}
-										/>
+										<ChevronRight size={16} className={`${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
 									)}
 								</Link>
 							);
