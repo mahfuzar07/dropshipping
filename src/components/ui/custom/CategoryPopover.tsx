@@ -15,7 +15,7 @@ export default function CategoryPopover({ trigger, children, className = '', wid
 	const [open, setOpen] = useState(false);
 
 	return (
-		<div className="relative inline-block" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+		<div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
 			{/* Trigger */}
 			{trigger}
 

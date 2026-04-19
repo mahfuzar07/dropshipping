@@ -33,7 +33,7 @@ export default function CategoryMenu({ categories }: { categories: MenuCategory[
 	});
 
 	return (
-		<div className="flex bg-white shadow-xl rounded-b border overflow-y-hidden text-sm h-[50vh]">
+		<div className="flex bg-white shadow-xl rounded-b border overflow-hidden text-sm h-[50vh]">
 			{columns.map((col, level) => (
 				<AnimatePresence key={level}>
 					<motion.div
