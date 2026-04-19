@@ -9,7 +9,7 @@ interface Category {
 	id: number;
 	name: string;
 	slug: string;
-	children?: Category[];
+	subcategories?: Category[];
 }
 
 export default function CategoryMenu({ categories }: { categories: Category[] }) {
@@ -26,8 +26,8 @@ export default function CategoryMenu({ categories }: { categories: Category[] })
 	columns.push(categories);
 
 	activePath.forEach((item) => {
-		if (item.children) {
-			columns.push(item.children);
+		if (item.subcategories) {
+			columns.push(item.subcategories);
 		}
 	});
 
@@ -43,7 +43,7 @@ export default function CategoryMenu({ categories }: { categories: Category[] })
 						className="w-[240px] border-r last:border-r-0"
 					>
 						{col.map((item) => {
-							const isActive = activePath[level]?.id === item.id;
+							const isActive = activePath[level]?.name === item.name;
 
 							return (
 								<Link
@@ -56,7 +56,7 @@ export default function CategoryMenu({ categories }: { categories: Category[] })
 								>
 									<span>{item.name}</span>
 
-									{item.children && (
+									{item.subcategories && (
 										<ChevronRight
 											size={16}
 											className={` group-hover:text-white ${isActive ? 'bg-orange-300 text-white font-medium' : 'text-gray-500'}`}
