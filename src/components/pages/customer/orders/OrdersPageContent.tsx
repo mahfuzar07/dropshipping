@@ -114,12 +114,20 @@ function OrderRow({ order }: { order: Order }) {
 
 							<div className="flex-1 min-w-0 pt-1">
 								<Link
+									href={`/product/${product.offer_id}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
+								>
+									{product.title || product.title}
+								</Link>
+								{/* <Link
 									href={product.url || '#'}
 									target="_blank"
 									className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
 								>
 									{product.title || product.title}
-								</Link>
+								</Link> */}
 
 								{variant.size && (
 									<p className="text-sm text-muted-foreground mt-1">
