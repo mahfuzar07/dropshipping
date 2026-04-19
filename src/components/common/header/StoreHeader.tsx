@@ -20,49 +20,24 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 
-// export const CATEGORIES = [
-// 	{
-// 		id: 1,
-// 		name: 'Electronics',
-// 		slug: 'electronics',
-// 		children: [
-// 			{
-// 				id: 2,
-// 				name: 'Mobiles',
-// 				slug: 'mobiles',
-// 				children: [
-// 					{ id: 3, name: 'Android Phones', slug: 'android' },
-// 					{ id: 4, name: 'iPhone', slug: 'iphone' },
-// 				],
-// 			},
-// 			{
-// 				id: 5,
-// 				name: 'Laptops',
-// 				slug: 'laptops',
-// 				children: [
-// 					{ id: 6, name: 'Gaming Laptop', slug: 'gaming' },
-// 					{ id: 7, name: 'Ultrabook', slug: 'ultrabook' },
-// 				],
-// 			},
-// 		],
-// 	},
-// 	{
-// 		id: 8,
-// 		name: 'Fashion',
-// 		slug: 'fashion',
-// 		children: [
-// 			{
-// 				id: 9,
-// 				name: 'Men',
-// 				slug: 'men',
-// 				children: [
-// 					{ id: 10, name: 'Shirts', slug: 'shirts' },
-// 					{ id: 11, name: 'Shoes', slug: 'shoes' },
-// 				],
-// 			},
-// 		],
-// 	},
-// ];
+// single item inside subcategory
+export interface CategoryItem {
+	[key: string]: any;
+}
+
+// main category
+export interface Category {
+	id: number;
+	name: string;
+	slug: string;
+	icon: string;
+	subcategories: Category[];
+}
+
+// full API response
+export interface CategoriesResponse {
+	categories: Category[];
+}
 
 export default function StoreHeader() {
 	const { openDrawer, openModal } = useLayoutStore();
@@ -71,7 +46,7 @@ export default function StoreHeader() {
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const [open, setOpen] = useState(true);
 
-	const { data: categoriesData, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+	const { data: categoriesData, isLoading: isLoadingAddress } = useAppData<CategoriesResponse, 'single'>({
 		key: [QueriesKey.CATEGORIES],
 		api: apiEndpoint.products.CATEGORIES(),
 		auth: true,
@@ -83,7 +58,6 @@ export default function StoreHeader() {
 	});
 
 	const CATEGORIES = categoriesData?.categories || [];
-	console.log('CATEGORIE---', CATEGORIES);
 
 	return (
 		<>
