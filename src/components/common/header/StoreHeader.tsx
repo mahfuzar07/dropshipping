@@ -39,6 +39,33 @@ export interface CategoriesResponse {
 	categories: Category[];
 }
 
+export interface MenuCategory {
+	id: string;
+	name: string;
+	slug: string;
+	subcategories?: MenuCategory[];
+}
+
+function normalizeCategories(rawCategories: any[]): MenuCategory[] {
+	return rawCategories.map((cat) => ({
+		id: cat.id,
+		name: cat.name,
+		slug: cat.id,
+
+		subcategories: cat.subcategories?.map((sub: any, i: number) => ({
+			id: `${cat.id}-${i}`,
+			name: sub.name,
+			slug: sub.name.toLowerCase().replace(/\s+/g, '-'),
+
+			subcategories: sub.items?.map((item: any, j: number) => ({
+				id: `${cat.id}-${i}-${j}`,
+				name: item.name,
+				slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+			})),
+		})),
+	}));
+}
+
 export default function StoreHeader() {
 	const { openDrawer, openModal } = useLayoutStore();
 	const { logout, isAuthenticated, user } = useAuthStore();
@@ -58,6 +85,9 @@ export default function StoreHeader() {
 	});
 
 	const CATEGORIES = categoriesData?.categories || [];
+	console.log('CATEGORIES', CATEGORIES);
+
+	const normalizedCategories = normalizeCategories(CATEGORIES);
 
 	return (
 		<>
@@ -149,7 +179,7 @@ export default function StoreHeader() {
 											</div>
 										}
 									>
-										<CategoryMenu categories={CATEGORIES} />
+										<CategoryMenu categories={normalizedCategories} />
 									</CategoryPopover>
 								</div>
 							</div>
