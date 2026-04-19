@@ -4,10 +4,16 @@ const nextConfig: NextConfig = {
 	images: {
 		remotePatterns: [
 			{
-				protocol: 'https',
-				hostname: 'via.placeholder.com',
-				pathname: '/**',
+				protocol: 'http',
+				hostname: 'localhost',
+				port: '8001',
+				pathname: '/assets/images/**',
 			},
+			// {
+			// 	protocol: 'https',
+			// 	hostname: 'via.placeholder.com',
+			// 	pathname: '/**',
+			// },
 			{
 				protocol: 'https',
 				hostname: '*',
@@ -21,6 +27,7 @@ const nextConfig: NextConfig = {
 		],
 		minimumCacheTTL: 60,
 		formats: ['image/avif', 'image/webp'],
+		dangerouslyAllowLocalIP: true,
 	},
 };
 
