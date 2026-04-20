@@ -20,8 +20,6 @@ export default function SearchDrawer() {
 
 		const imageUrl = URL.createObjectURL(file);
 		setImagePreview(imageUrl);
-
-		console.log('Image selected:', file);
 	};
 
 	return (
