@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Plane, ShieldCheck, Clock, Search, TrendingDown, Lock, Ship, ScanEye } from 'lucide-react';
 
-export default function CartSection() {
+export default function CartSection({ product }: { product: any }) {
 	const [selectedShipping, setSelectedShipping] = useState<'air' | 'sea'>('air');
 
 	const airPrice = '৳780 / ৳1170 Per Kg';
 	const seaPrice = '৳170 / ৳400 Per Kg';
+
+	console.log('product in cart section', product);
+
 	return (
 		<div className="w-full mx-auto bg-white rounded-lg overflow-hidden shadow-sm">
 			{/* Top Bar */}
@@ -127,6 +130,9 @@ export default function CartSection() {
 					</Button>
 
 					<Button
+						onClick={(e) => {
+							console.log('cart click');
+						}}
 						variant="outline"
 						size="lg"
 						className="w-full border border-orange-300 text-orange-300 hover:bg-orange-500 hover:text-white font-medium py-3.5 rounded-xl transition"

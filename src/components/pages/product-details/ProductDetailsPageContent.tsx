@@ -74,7 +74,7 @@ const demoProduct = {
 export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
 	// For now using demo data (you can later uncomment the API call)
 
-	const { data: orderResponse, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+	const { data: productDetailsData, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.PRODUCT_DETAIL, productSlug],
 		api: apiEndpoint.products.DETAILS(productSlug),
 		auth: true,
@@ -85,7 +85,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 		},
 	});
 
-	console.log('Order Details:', orderResponse); // Debug log for order details
+	console.log('productDetailsData:', productDetailsData); // Debug log for order details
 
 	const product = useMemo(() => demoProduct, []);
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -156,7 +156,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 				</div>
 
 				<div className="col-span-3 sticky top-5 self-start">
-					<CartSection />
+					<CartSection product={productDetailsData?.product} />
 				</div>
 			</div>
 		</div>

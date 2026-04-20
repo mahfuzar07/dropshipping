@@ -85,7 +85,6 @@ export default function StoreHeader() {
 	});
 
 	const CATEGORIES = categoriesData?.categories || [];
-	console.log('CATEGORIES', CATEGORIES);
 
 	const normalizedCategories = normalizeCategories(CATEGORIES);
 
