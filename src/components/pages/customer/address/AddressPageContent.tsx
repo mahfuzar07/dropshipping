@@ -52,7 +52,7 @@ export default function AddressPageContent() {
 			address: addr.address,
 			city: addr.city,
 			phone: addr.phone,
-			label: 'HOME', // backend না থাকলে default
+			label: 'HOME',
 			isDefaultShipping: addr.is_default,
 			isDefaultBilling: addr.is_default,
 			zone: addr.city,
@@ -84,7 +84,7 @@ export default function AddressPageContent() {
 
 	const handleSetDefaultShipping = () => {
 		if (!selectedShippingId) return;
-		setDefaultAddress(Number(selectedShippingId));
+		setDefaultAddress({});
 	};
 
 	return (
