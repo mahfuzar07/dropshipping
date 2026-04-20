@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Star, Heart, Share2, ShoppingCart, Minus, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, Heart, Share2, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Color {
@@ -9,46 +9,64 @@ interface Color {
 	image: string;
 }
 
+interface VariantSize {
+	size_name: string;
+	price: string;
+	stock: string;
+}
+
+interface Variant {
+	color_name: string;
+	image: string;
+	sizes: VariantSize[];
+}
+
 interface ProductInfoProps {
 	product: {
-		id: number;
+		id: string;
 		name: string;
 		price: number;
+		overseas: string;
+		currency: string;
+		solded: string;
 		description: string;
 		inStock: boolean;
-		stockCount: number;
+		stockCount: number | null;
 		image: string;
+
 		colors: Color[];
-		sizes: string[];
+		variants: Variant[];
+
 		rating: number;
 		reviewCount: number;
+
 		selectedColorIndex: number;
 		setSelectedColorIndex: (index: number) => void;
 	};
 }
 
-const sizes = [
-	{ size: 'S', price: 29568, stock: 12 },
-	{ size: 'M', price: 29568, stock: 15 },
-	{ size: 'L', price: 29568, stock: 0 },
-];
 export default function ProductInfo({ product }: ProductInfoProps) {
-	const [qty, setQty] = useState<{ [key: string]: number }>({
-		S: 0,
-		M: 0,
-		L: 0,
-	});
+	const [selectedSize, setSelectedSize] = useState<string | null>(null);
+	const [qty, setQty] = useState<Record<string, number>>({});
 	const [isFavorite, setIsFavorite] = useState(false);
 
-	const updateQty = (key: string, type: 'inc' | 'dec', stock: number) => {
+	const selectedVariant = product.variants[product.selectedColorIndex];
+
+	/* 🔥 reset size when color changes */
+	useEffect(() => {
+		setSelectedSize(null);
+		setQty({});
+	}, [product.selectedColorIndex]);
+
+	const updateQty = (size: string, type: 'inc' | 'dec', stock: number) => {
 		setQty((prev) => {
-			const current = prev[key];
+			const current = prev[size] || 0;
 
 			if (type === 'inc' && current < stock) {
-				return { ...prev, [key]: current + 1 };
+				return { ...prev, [size]: current + 1 };
 			}
 			if (type === 'dec' && current > 0) {
-				return { ...prev, [key]: current - 1 };
+				return { ...prev, [size]: current - 1 };
 			}
 			return prev;
 		});
@@ -56,20 +74,23 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
 	return (
 		<div className="space-y-5">
-			<h1 className="text-3xl lg:text-4xl font-bold">{product.name}</h1>
+			<h1 className="text-3xl lg:text-2xl font-semibold font-hanken">{product.name}</h1>
 
 			{/* Rating */}
-
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<div className="flex items-center">
-						{[...Array(5)].map((_, i) => (
-							<Star key={i} className={`h-4 w-4 ${i < product.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-						))}
+					<div className="flex items-center gap-2">
+						<div className="flex items-center">
+							{[...Array(5)].map((_, i) => (
+								<Star key={i} className={`h-4 w-4 ${i < product.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+							))}
+						</div>
+						<span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>
 					</div>
-					<span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>
+					<p className="text-muted-foreground border-l pl-2">{product.solded}</p>
 				</div>
-				<div className="flex items-center gap-2 ">
+
+				<div className="flex gap-2">
 					<Button variant="outline" size="icon" onClick={() => setIsFavorite(!isFavorite)}>
 						<Heart className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
 					</Button>
@@ -80,24 +101,20 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 				</div>
 			</div>
 
-			{/* Price */}
-			<div className="text-4xl font-bold">${product.price}</div>
-
-			{/* Description */}
-			<p className="text-muted-foreground">{product.description}</p>
-
-			{/* Stock */}
-			<div className="flex items-center gap-2">
-				<div className={`h-2 w-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`} />
-				<span className={`${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
-					{product.inStock ? `${product.stockCount} in stock` : 'Out of stock'}
-				</span>
+			{/* 🔥 Dynamic Price */}
+			<div className="text-4xl font-bold">
+				{product.currency}
+				{selectedSize ? selectedVariant?.sizes.find((s) => s.size_name === selectedSize)?.price : product.price}
+			</div>
+			<div className="font-semibold text-foreground">
+				Overseas price : {selectedSize ? selectedVariant?.sizes.find((s) => s.size_name === selectedSize)?.price : product.overseas}
 			</div>
 
-			{/* Color Selection */}
+			{/* Color */}
 			<div>
-				<h3 className="font-semibold mb-2">Select Color: {product.colors[product.selectedColorIndex]?.name}</h3>
-				<div className="flex gap-3 items-center">
+				<h3 className="font-semibold mb-2">Color: {selectedVariant?.color_name}</h3>
+
+				<div className="flex gap-3">
 					{product.colors.map((color, index) => (
 						<button
 							key={color.name}
@@ -106,56 +123,51 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 							style={{
 								backgroundImage: `url(${color.image})`,
 								backgroundSize: 'cover',
-								backgroundPosition: 'center',
 							}}
 						/>
 					))}
 				</div>
 			</div>
 
-			{/* Quantity */}
+			{/* 🔥 Dynamic Size Table */}
 			<div className="w-full rounded-lg overflow-hidden border">
-				{/* Header */}
 				<div className="grid grid-cols-4 px-6 py-3 text-gray-600 font-medium border-b">
 					<div>Size</div>
 					<div>Price</div>
 					<div>Stock</div>
-					<div className="text-right">Quantity</div>
+					<div className="text-right">Qty</div>
 				</div>
 
-				{/* Rows */}
-				{sizes.map((item) => (
-					<div key={item.size} className="grid grid-cols-4 px-6 py-3 items-center border-b last:border-none text-md">
-						<div className="font-medium">{item.size}</div>
+				{selectedVariant?.sizes?.map((item) => {
+					const stock = Number(item.stock || 10);
 
-						<div>{item.price}</div>
+					return (
+						<div
+							key={item.size_name}
+							className={`grid grid-cols-4 px-6 py-3 items-center border-b ${selectedSize === item.size_name ? 'bg-gray-50' : ''}`}
+						>
+							<div className="font-medium cursor-pointer" onClick={() => setSelectedSize(item.size_name)}>
+								{item.size_name}
+							</div>
 
-						<div>{item.stock}</div>
+							<div>{item.price}</div>
 
-						{/* Quantity */}
-						<div className="flex justify-end items-center gap-3">
-							<button
-								onClick={() => updateQty(item.size, 'dec', item.stock)}
-								className="w-6 h-6 flex items-center justify-center rounded-md border bg-white disabled:opacity-40"
-								disabled={qty[item.size] === 0}
-							>
-								<Minus size={14} />
-							</button>
+							<div>{stock}</div>
 
-							<span className="w-6 text-center">{qty[item.size]}</span>
+							<div className="flex justify-end items-center gap-3">
+								<button onClick={() => updateQty(item.size_name, 'dec', stock)} className="w-6 h-6 flex items-center justify-center border rounded">
+									<Minus size={14} />
+								</button>
 
-							<button
-								onClick={() => updateQty(item.size, 'inc', item.stock)}
-								className={`w-6 h-6 flex items-center justify-center rounded-md border ${
-									item.stock === 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'
-								}`}
-								disabled={item.stock === 0}
-							>
-								<Plus size={14} />
-							</button>
+								<span className="w-6 text-center">{qty[item.size_name] || 0}</span>
+
+								<button onClick={() => updateQty(item.size_name, 'inc', stock)} className="w-6 h-6 flex items-center justify-center border rounded">
+									<Plus size={14} />
+								</button>
+							</div>
 						</div>
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</div>
 	);

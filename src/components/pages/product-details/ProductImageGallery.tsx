@@ -103,10 +103,10 @@ export default function ProductImageGallery({ images, productName, selectedImage
 			</div>
 
 			{/* Thumbnails */}
-			<div className="relative ">
+			<div className="relative overflow-hidden">
 				<Swiper
 					spaceBetween={12}
-					modules={[Navigation, Thumbs]}
+					modules={[Navigation]}
 					breakpoints={{
 						320: { slidesPerView: 3 },
 						480: { slidesPerView: 4 },
@@ -118,11 +118,16 @@ export default function ProductImageGallery({ images, productName, selectedImage
 						<SwiperSlide key={index}>
 							<div
 								onClick={() => selectImage(index)}
-								className={`aspect-square cursor-pointer relative rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+								className={`aspect-square relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 ${
 									selectedImage === index ? 'border-primary ring-2 ring-primary/30 shadow-md' : 'border-border hover:border-primary/50'
 								}`}
 							>
-								<Image fill src={image || '/placeholder.svg'} alt={`${productName} thumbnail ${index + 1}`} className="object-contain p-1" />
+								<Image
+									fill
+									src={image || '/placeholder.svg'}
+									alt={`${productName} thumbnail ${index + 1}`}
+									className="object-contain p-1 w-full h-full"
+								/>
 							</div>
 						</SwiperSlide>
 					))}

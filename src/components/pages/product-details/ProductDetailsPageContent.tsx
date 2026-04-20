@@ -1,4 +1,3 @@
-// ProductDetailsPageContent.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -9,154 +8,184 @@ import ProductTabs from './ProductTabs';
 import CartSection from './CartSection';
 import SellerInfo from './SellerInfo';
 import { useAppData } from '@/hooks/use-appdata';
-import { APIResponse } from '@/types/types';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 
-const demoProduct = {
-	id: 1,
-	name: 'Premium Hoodie',
-	slug: 'premium-hoodie',
-	image: '/assets/product/product-2.webp',
-	sell_price: '59.99',
-	qty: 15,
-	est_del_days: '3-5 days',
-	is_overseas: 0,
-	product_review: '4.5',
-	product_review_count: 124,
-	variant: [
-		{
-			id: 101,
-			name: 'Black Hoodie',
-			additional_image: '/assets/product/product-5.png',
-			pivot: {
-				color_name: 'Black',
-				item_code: 'PH-BLK',
-				qty: 8,
-				additional_image: '/assets/product/product-5.png',
-			},
-		},
-		{
-			id: 102,
-			name: 'Red Hoodie',
-			additional_image: '/assets/product/product-6.png',
-			pivot: {
-				color_name: 'Red',
-				item_code: 'PH-RED',
-				qty: 5,
-				additional_image: '/assets/product/product-6.png',
-			},
-		},
-		{
-			id: 103,
-			name: 'Blue Hoodie',
-			additional_image: '/assets/product/product-7.png',
-			pivot: {
-				color_name: 'Blue',
-				item_code: 'PH-BLU',
-				qty: 2,
-				additional_image: '/assets/product/product-7.png',
-			},
-		},
-	],
-	pro_specification: [
-		{
-			Material: '100% Premium Cotton',
-			'Fit Type': 'Regular Fit',
-			'Care Instructions': 'Machine wash cold, tumble dry low',
-			Origin: 'Bangladesh',
-			Weight: '320 GSM',
-		},
-	],
+/* ================= TYPES ================= */
+
+export interface VariantSize {
+	size_name: string;
+	price: string;
+	stock: string;
+}
+
+export interface Variant {
+	color_name: string;
+	image: string;
+	active: boolean;
+	sizes: VariantSize[];
+}
+
+export interface ProductDetails {
+	_id: string;
+	title: string;
+	image: string;
+	rating: string;
+	sold: string;
+
+	price: {
+		currency: string;
+		amount: string;
+		unit: string;
+		overseas: string;
+	};
+
+	details: {
+		extract_product_variants: Variant[];
+		extract_product_attributes: Record<string, string>;
+		extract_product_description: {
+			images: string[];
+		};
+	};
+}
+
+export interface ProductApiResponse {
+	updated: boolean;
+	product: ProductDetails;
+}
+
+/* ================= MAPPER ================= */
+
+const mapProductData = (product: ProductDetails) => {
+	const variants = product.details?.extract_product_variants || [];
+
+	const colors = variants.map((v) => ({
+		name: v.color_name,
+		image: v.image,
+	}));
+
+	const galleryImages = [product.image, ...variants.map((v) => v.image)];
+
+	return {
+		id: product._id,
+		name: product.title,
+		price: Number(product.price?.amount || 0),
+		overseasPrice: product.price?.overseas,
+		currency: product.price?.currency,
+		rating: Number(product.rating || 0),
+		reviewCount: 0,
+
+		image: product.image,
+		sold: product.sold,
+
+		colors,
+		variants,
+		galleryImages,
+
+		specifications: product.details?.extract_product_attributes || {},
+	};
 };
 
-export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
-	// For now using demo data (you can later uncomment the API call)
+/* ================= COMPONENT ================= */
 
-	const { data: productDetailsData, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
+	const { data, isLoading } = useAppData<ProductApiResponse, 'single'>({
 		key: [QueriesKey.PRODUCT_DETAIL, productSlug],
 		api: apiEndpoint.products.DETAILS(productSlug),
 		auth: true,
 		responseType: 'single',
 		enabled: !!productSlug,
 		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to add address');
+			toast.error(error?.response?.data?.message || 'Failed to load product');
 		},
 	});
 
-	console.log('productDetailsData:', productDetailsData); // Debug log for order details
+	const productRaw = data?.product;
 
-	const product = useMemo(() => demoProduct, []);
+	console.log('product details', productRaw);
+
+	const product = useMemo(() => {
+		if (!productRaw) return null;
+		return mapProductData(productRaw);
+	}, [productRaw]);
+
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+	const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-	// Gallery Images (Main image + all variant images)
-	const galleryImages = useMemo(() => {
-		const mainImage = product.image;
-		const variantImages = product.variant.map((v) => v.additional_image || v.pivot?.additional_image).filter(Boolean) as string[];
-		return [mainImage, ...variantImages];
-	}, [product]);
+	if (isLoading || !product) {
+		return <LoadingSkeleton />;
+	}
 
-	// Colors for selection
-	const colors = useMemo(
-		() =>
-			product.variant.map((v) => ({
-				name: v.pivot.color_name,
-				image: v.additional_image || v.pivot.additional_image || '',
-			})),
-		[product],
-	);
+	const selectedVariant = product.variants[selectedColorIndex];
 
-	// Main image shown in gallery (based on selected color)
-	const mainImage =
-		product.variant[selectedColorIndex]?.additional_image || product.variant[selectedColorIndex]?.pivot?.additional_image || product.image;
+	const sizes = selectedVariant?.sizes?.map((s) => s.size_name) || [];
+
+	const mainImage = selectedVariant?.image || product.image;
 
 	return (
 		<div className="px-2 py-3">
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
+				{/* LEFT */}
 				<div className="col-span-9 grid grid-cols-1 md:grid-cols-12 gap-6">
+					{/* IMAGE */}
 					<div className="col-span-5">
 						<ProductImageGallery
-							images={galleryImages}
+							images={product.galleryImages}
 							productName={product.name}
-							selectedImageIndex={selectedColorIndex + 1} // +1 because first image is main product image
+							selectedImageIndex={selectedColorIndex + 1}
 							onSelectImage={(index) => {
-								if (index > 0) setSelectedColorIndex(index - 1);
+								if (index > 0) {
+									setSelectedColorIndex(index - 1);
+								}
 							}}
 						/>
 					</div>
+
+					{/* INFO */}
 					<div className="col-span-7">
 						<ProductInfo
 							product={{
 								id: product.id,
 								name: product.name,
-								price: Number(product.sell_price),
-								description: `Estimated delivery: ${product.est_del_days}`,
-								inStock: product.qty > 0,
-								stockCount: product.qty,
-								colors,
+								price: product.price,
+								currency: product.currency,
+								overseas: product.overseasPrice,
+								solded: product.sold,
+								description: product.sold,
+								inStock: true,
+								stockCount: null,
+
+								colors: product.colors,
 								image: mainImage,
-								sizes: ['S', 'M', 'L', 'XL'], // You can make this dynamic later
-								rating: Number(product.product_review),
-								reviewCount: product.product_review_count,
+
+								variants: product.variants,
+
+								rating: product.rating,
+								reviewCount: product.reviewCount,
+
 								selectedColorIndex,
 								setSelectedColorIndex,
 							}}
 						/>
 					</div>
 
+					{/* TABS */}
 					<div className="col-span-12 bg-white rounded-lg p-5">
 						<SellerInfo />
-						<ProductTabs
-							description={`Check out the ${product.name}. Available colors: ${colors.map((c) => c.name).join(', ')}.`}
-							specifications={product.pro_specification?.[0] || {}}
-							reviews={[]} // You can add demo reviews later
-						/>
+						<ProductTabs description={product.name} specifications={product.specifications} reviews={[]} />
 					</div>
 				</div>
 
+				{/* RIGHT */}
 				<div className="col-span-3 sticky top-5 self-start">
-					<CartSection product={productDetailsData?.product} />
+					<CartSection
+						product={{
+							...product,
+							selectedVariant,
+							selectedSize,
+						}}
+					/>
 				</div>
 			</div>
 		</div>
