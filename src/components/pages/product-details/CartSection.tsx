@@ -2,14 +2,34 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Plane, ShieldCheck, Clock, Search, TrendingDown, Lock, Ship, ScanEye } from 'lucide-react';
+import { toast } from 'sonner';
+import { addToCard } from '@/lib/api/cart';
 
 export default function CartSection({ product }: { product: any }) {
 	const [selectedShipping, setSelectedShipping] = useState<'air' | 'sea'>('air');
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const airPrice = '৳780 / ৳1170 Per Kg';
 	const seaPrice = '৳170 / ৳400 Per Kg';
 
-	console.log('product in cart section', product);
+	// console.log('product in cart section', product);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+
+		const form = { product_id: product?.offer_id, variant: product?.selectedVariant, quantity: product?.qty || 1 };
+		console.log('cart click', form);
+		console.log('product', product);
+		try {
+			await addToCard(form);
+			toast.success('Product added to cart successfully!');
+		} catch (err) {
+			toast.error('Failed to add product to cart.');
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
 	return (
 		<div className="w-full mx-auto bg-white rounded-lg overflow-hidden shadow-sm">
@@ -131,7 +151,7 @@ export default function CartSection({ product }: { product: any }) {
 
 					<Button
 						onClick={(e) => {
-							console.log('cart click');
+							handleSubmit(e);
 						}}
 						variant="outline"
 						size="lg"

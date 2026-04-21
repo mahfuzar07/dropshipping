@@ -29,6 +29,7 @@ export interface Variant {
 
 export interface ProductDetails {
 	_id: string;
+	offer_id: string;
 	title: string;
 	image: string;
 	rating: string;
@@ -69,6 +70,7 @@ const mapProductData = (product: ProductDetails) => {
 
 	return {
 		id: product._id,
+		offer_id: product.offer_id,
 		name: product.title,
 		price: Number(product.price?.amount || 0),
 		overseasPrice: product.price?.overseas,
@@ -103,7 +105,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 
 	const productRaw = data?.product;
 
-	console.log('product details', productRaw);
+	// console.log('product details', productRaw);
 
 	const product = useMemo(() => {
 		if (!productRaw) return null;
@@ -112,6 +114,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 	const [selectedSize, setSelectedSize] = useState<string | null>(null);
+	const [qty, setQty] = useState<Record<string, number>>({});
 
 	if (isLoading || !product) {
 		return <LoadingSkeleton />;
@@ -122,6 +125,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 	const sizes = selectedVariant?.sizes?.map((s) => s.size_name) || [];
 
 	const mainImage = selectedVariant?.image || product.image;
+	// console.log('qty==', qty);
 
 	return (
 		<div className="px-2 py-3">
@@ -167,6 +171,8 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 								selectedColorIndex,
 								setSelectedColorIndex,
 							}}
+							qty={qty}
+							setQty={setQty}
 						/>
 					</div>
 
@@ -184,6 +190,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 							...product,
 							selectedVariant,
 							selectedSize,
+							qty,
 						}}
 					/>
 				</div>

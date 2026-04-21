@@ -43,11 +43,13 @@ interface ProductInfoProps {
 		selectedColorIndex: number;
 		setSelectedColorIndex: (index: number) => void;
 	};
+	qty: Record<string, number>;
+	setQty: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
 
-export default function ProductInfo({ product }: ProductInfoProps) {
+export default function ProductInfo({ product, qty, setQty }: ProductInfoProps) {
 	const [selectedSize, setSelectedSize] = useState<string | null>(null);
-	const [qty, setQty] = useState<Record<string, number>>({});
+	// const [qty, setQty] = useState<Record<string, number>>({});
 	const [isFavorite, setIsFavorite] = useState(false);
 
 	const selectedVariant = product.variants[product.selectedColorIndex];
