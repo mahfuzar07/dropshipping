@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Star, Heart, Share2, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
 
 interface Color {
 	name: string;
@@ -104,12 +105,9 @@ export default function ProductInfo({ product, qty, setQty }: ProductInfoProps) 
 			</div>
 
 			{/* 🔥 Dynamic Price */}
-			<div className="text-4xl font-bold">
-				{product.currency}
+			<div className="text-4xl font-bold font-hanken">
+				{getCurrencySymbol()}
 				{selectedSize ? selectedVariant?.sizes.find((s) => s.size_name === selectedSize)?.price : product.price}
-			</div>
-			<div className="font-semibold text-foreground">
-				Overseas price : {selectedSize ? selectedVariant?.sizes.find((s) => s.size_name === selectedSize)?.price : product.overseas}
 			</div>
 
 			{/* Color */}

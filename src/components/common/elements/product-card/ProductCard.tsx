@@ -5,6 +5,7 @@ import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
 
 // type Product = {
 // 	_id: number;
@@ -42,6 +43,7 @@ type Product = {
 
 export default function ProductCard({ product }: { product: Product }) {
 	if (!product) return null;
+
 	return (
 		<motion.div
 			variants={{
@@ -84,7 +86,7 @@ export default function ProductCard({ product }: { product: Product }) {
 					{/* Price */}
 					<div className="mt-auto">
 						<h3 className="text-xl font-bold text-primary flex items-center font-hanken">
-							<span className="mr-0.5">{product?.price?.currency || '৳'}</span>
+							<span className="mr-0.5">{getCurrencySymbol()}</span>
 							{product?.price?.amount || '0'}
 							{product?.price?.unit || ''}
 						</h3>
