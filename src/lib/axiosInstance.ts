@@ -17,7 +17,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 //client Api instance
 export const nextApi = axios.create({
-	baseURL: process.env.BACKEND_URL || 'http://localhost:8000',
+	baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
 });
 
 // Public API

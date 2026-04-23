@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
 		formats: ['image/avif', 'image/webp'],
 		dangerouslyAllowLocalIP: true,
 	},
+	// output: 'standalone',
 };
 
 export default nextConfig;
