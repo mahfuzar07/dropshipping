@@ -1,4 +1,3 @@
-import { ChangePassword } from '@/components/pages/customer/change-password/ChangePassword';
 import { api, authApi } from '@/lib/axiosInstance';
 import { apiEndpoint } from '../constants/apiEndpoint';
 
@@ -134,38 +133,3 @@ export const getProfile = async (): Promise<UserProfile> => {
 		throw error;
 	}
 };
-
-export const changePassword = async (payload: ChangePasswordPayload): Promise<CommonResponse> => {
-	try {
-		const response = await authApi.patch(apiEndpoint.users.CHANGE_PASSWORD(), payload);
-		return response.data;
-	} catch (error) {
-		throw error;
-	}
-};
-
-export const deliveryAddress = async (payload: DeliveryAddress): Promise<CommonResponse> => {
-	try {
-		const response = await authApi.post(apiEndpoint.users.DELIVERY_ADDRESS(), payload);
-		return response.data;
-	} catch (error) {
-		throw error;
-	}
-};
-
-export const getDeliveryAddress = async (): Promise<CommonResponse> => {
-	try {
-		const response = await authApi.get(apiEndpoint.users.DELIVERY_ADDRESS());
-		return response.data;
-	} catch (error) {
-		throw error;
-	}
-};
-
-// const authApi = {
-// 	signupUser,
-// 	verifyOTP,
-// 	passwordReset,
-// };
-
-// export default authApi;

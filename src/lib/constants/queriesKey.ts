@@ -1,7 +1,6 @@
-import { CATEGORIES } from '@/components/common/header/StoreHeader';
-
 export const QueriesKey = {
 	USER_PROFILE: 'user-profile',
+	CHANGE_PASSWORD: 'change-password',
 	CHECKOUT_PROCESS: 'checkout-process',
 	ADDRESS_LIST: 'address-list',
 	ORDER_LIST: 'order-list',

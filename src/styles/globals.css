@@ -52,15 +52,6 @@
 	/* Custom Store color variables */
 	--store-secondary: #e7eeef;
 	--store-secondary-muted: #f7f7f7;
-	/* Custom Dashboard color variables */
-	--dashboard-primary: oklch(70.5% 0.213 47.604);
-	--dashboard-primary-foreground: #f16a38;
-	--dashboard-muted: #5d7186;
-	--dashboard-muted-foreground: #778ba0;
-	--dashboard-background: #f9f7f7;
-	--dashboard-foreground: #313b5e;
-	--dashboard-sidebar-background: #262d34;
-	--dashboard-sidebar-foreground: #313b5e;
 }
 
 .dark {
@@ -151,15 +142,6 @@
 	/* Store color inlist */
 	--color-store-secondary: var(--store-secondary);
 	--color-store-secondary-muted: var(--store-secondary-muted);
-	/* dashborad color inlist */
-	--color-dashboard-primary: var(--dashboard-primary);
-	--color-dashboard-primary-foreground: var(--dashboard-primary-foreground);
-	--color-dashboard-background: var(--dashboard-background);
-	--color-dashboard-foreground: var(--dashboard-foreground);
-	--color-dashboard-muted: var(--dashboard-muted);
-	--color-dashboard-muted-foreground: var(--dashboard-muted-foreground);
-	--color-dashboard-sidebar-background: var(--dashboard-sidebar-background);
-	--color-dashboard-sidebar-foreground: var(--dashboard-sidebar-foreground);
 }
 
 @layer base {
