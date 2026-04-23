@@ -3,51 +3,42 @@ import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import { useAppData } from '@/hooks/use-appdata';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
-import { APIResponse } from '@/types/types';
-import Image from 'next/image';
-import React from 'react';
 import { toast } from 'sonner';
 
-// const products = [
-// 	{
-// 		id: 1,
-// 		title: 'DUDE Wipes DUDE Bombs Toilet Stank Eliminator - 2-in-1 Air Freshener and Toilet...',
-// 		image: '/assets/hero/slide-1.jpg',
-// 		store: 'US',
-// 		price: '1233.00',
-// 	},
-// 	{
-// 		id: 2,
-// 		title: 'Gain In-Wash Laundry Scent Booster Beads, Happy, 24 oz',
-// 		image: '/assets/hero/slide-1.jpg',
-// 		store: 'US',
-// 		price: '12.99',
-// 	},
-// 	{
-// 		id: 3,
-// 		title: 'SmoothSpine Triple Fusion Back Massager - The Official Smooth Spine Massager with...',
-// 		image: '/assets/hero/slide-1.jpg',
-// 		store: 'US',
-// 		price: '199.99',
-// 	},
-// 	{
-// 		id: 4,
-// 		title: 'Jell-O Cheesecake Instant Pudding & Pie Filling Mix, 3.4 oz Box',
-// 		image: '/assets/hero/slide-1.jpg',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// 	{
-// 		id: 5,
-// 		title: 'Jell-O Cheesecake Instant Pudding & Pie Filling Mix, 3.4 oz Box',
-// 		image: '/assets/hero/slide-1.jpg',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// ];
+type NewLaunchResponse = {
+	page: number;
+	limit: number;
+	total: number;
+	total_pages: number;
+	results: Product[];
+};
+
+type Product = {
+	_id: string;
+	offer_id: string;
+	title: string;
+	url: string;
+	image: string;
+
+	product_name: string;
+	promotion: string;
+	rating: string;
+	sold: string;
+
+	price: {
+		amount: string;
+		currency: string;
+		overseas: string;
+		unit: string;
+	};
+
+	seller_icon: string;
+	is_ad: boolean;
+	moq: null | number;
+};
 
 export default function NewLaunch() {
-	const { data: newLaunchProducts, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+	const { data: newLaunchProducts, isLoading: isLoadingAddress } = useAppData<NewLaunchResponse, 'single'>({
 		key: [QueriesKey.NEW_LAUNCH_PRODUCTS],
 		api: apiEndpoint.products.NEW_LAUNCH_PRODUCTS(),
 		auth: true,

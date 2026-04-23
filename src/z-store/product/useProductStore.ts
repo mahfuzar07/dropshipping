@@ -1,15 +1,28 @@
 import { create } from 'zustand';
 
-export interface Product {
-	id: number;
+type Product = {
+	_id: string;
+	offer_id: string;
 	title: string;
-	price: number;
+	url: string;
 	image: string;
-	store: string;
-	category: string;
-	discount?: boolean;
-	rating?: number;
-}
+
+	product_name: string;
+	promotion: string;
+	rating: string;
+	sold: string;
+
+	price: {
+		amount: string;
+		currency: string;
+		overseas: string;
+		unit: string;
+	};
+
+	seller_icon: string;
+	is_ad: boolean;
+	moq: null | number;
+};
 
 interface ProductState {
 	products: Product[];

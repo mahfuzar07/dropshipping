@@ -3,20 +3,8 @@
 import { motion } from 'framer-motion';
 import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
-
-// type Product = {
-// 	_id: number;
-// 	title: string;
-// 	price: { amount: number; currency: string };
-// 	image: string;
-// 	store: string;
-// 	category: string;
-// 	discount?: boolean;
-// 	rating?: string;
-// };
 
 type Product = {
 	_id: string;
@@ -26,16 +14,16 @@ type Product = {
 	image: string;
 
 	price: {
-		currency: string; // e.g. "¥"
-		amount: string; // e.g. "10"
-		unit: string; // e.g. ".80"
-		overseas: string; // e.g. "$1.59"
+		currency: string;
+		amount: string;
+		unit: string;
+		overseas: string;
 	};
 
-	rating: string; // "5" (string from API)
-	sold: string; // "Hot selling"
+	rating: string;
+	sold: string;
 	promotion: string | null;
-	moq: string; // "MOQ 1"
+	moq: null | number;
 	seller_icon: string | null;
 	is_ad: boolean;
 	product_name: string;

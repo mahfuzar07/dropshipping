@@ -29,17 +29,17 @@ let currentCurrency: CurrencyCode = 'BDT';
 /**
  * Initialize currency from site config (call once on app start)
  */
-export async function initCurrency() {
-	try {
-		const { localizationConfig } = await loadSiteConfigs();
-		const code = localizationConfig?.currency as CurrencyCode;
-		if (code && currencyMeta[code]) {
-			currentCurrency = code;
-		}
-	} catch (err) {
-		console.warn('Currency Failed to load site config, defaulting to BDT', err);
-	}
-}
+// export async function initCurrency() {
+// 	try {
+// 		const { localizationConfig } = await loadSiteConfigs();
+// 		const code = localizationConfig?.currency as CurrencyCode;
+// 		if (code && currencyMeta[code]) {
+// 			currentCurrency = code;
+// 		}
+// 	} catch (err) {
+// 		console.warn('Currency Failed to load site config, defaulting to BDT', err);
+// 	}
+// }
 
 /**
  * Get current currency code

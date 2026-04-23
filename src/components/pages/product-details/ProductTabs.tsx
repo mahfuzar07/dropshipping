@@ -4,7 +4,17 @@ import { Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-// import { Review } from '@/types/types';
+
+export interface Review {
+	id: string;
+	author: string;
+	avatar?: string;
+	rating: number;
+	verified: boolean;
+	date: string;
+	title: string;
+	content: string;
+}
 
 export interface ProductTabsProps {
 	description: string;

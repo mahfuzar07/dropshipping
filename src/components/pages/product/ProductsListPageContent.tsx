@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Grid, Grid3X3, LayoutGrid, List } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { LayoutGrid, List } from 'lucide-react';
+import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 import ProductFilterSidebar from './ProductFilterSidebar';
@@ -13,17 +13,28 @@ import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
-// Dummy products
-const ALL_PRODUCTS = Array.from({ length: 100 }, (_, i) => ({
-	id: i + 1,
-	title: `Product ${i + 1}`,
-	price: Math.floor(Math.random() * 1000),
-	image: '/assets/product/product-6.png',
-	store: `US-Store ${(i % 5) + 1}`,
-	category: 'Electronics',
-	discount: Math.random() < 0.3,
-	rating: Math.ceil(Math.random() * 5),
-}));
+/* ================= TYPES ================= */
+
+type Product = {
+	_id: string;
+	offer_id: string;
+	title: string;
+	url: string;
+	image: string;
+	product_name: string;
+	promotion: string;
+	rating: string;
+	sold: string;
+	price: {
+		amount: string;
+		currency: string;
+		overseas: string;
+		unit: string;
+	};
+	seller_icon: string;
+	is_ad: boolean;
+	moq: null | number;
+};
 
 export default function ProductsListPageContent() {
 	const {
@@ -46,77 +57,86 @@ export default function ProductsListPageContent() {
 
 	const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-	//  filter + paginate logic
-	const getFilteredData = () => {
-		let data = [...ALL_PRODUCTS];
+	/* ================= FILTER ================= */
+
+	const getFilteredData = useCallback(() => {
+		let data = [...products]; // ✅ FIX: dummy array remove (real store use)
 
 		if (selectedCategories.length) {
-			data = data.filter((p) => selectedCategories.includes(Number(p.category)));
+			data = data.filter((p: any) => selectedCategories.includes(Number(p.category)));
 		}
 
 		if (discountOnly) {
-			data = data.filter((p) => p.discount);
+			data = data.filter((p: any) => p.discount);
 		}
 
-		data = data.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+		data = data.filter((p: any) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
 		if (selectedRatings.length) {
-			data = data.filter((p) => selectedRatings.includes(p.rating));
+			data = data.filter((p: any) => selectedRatings.includes(p.rating));
 		}
 
-		// sort
 		if (sortBy === 'price-low') {
-			data.sort((a, b) => a.price - b.price);
+			data.sort((a: any, b: any) => a.price - b.price);
 		} else if (sortBy === 'price-high') {
-			data.sort((a, b) => b.price - a.price);
+			data.sort((a: any, b: any) => b.price - a.price);
 		}
 
 		return data;
-	};
+	}, [products, selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
 
-	//  fetch simulation with load more support
-	const fetchProducts = (isLoadMore = false) => {
-		if (isLoading) return;
+	/* ================= FETCH ================= */
 
-		setLoading(true);
+	const fetchProducts = useCallback(
+		(isLoadMore = false) => {
+			if (isLoading) return;
 
-		const filtered = getFilteredData();
+			setLoading(true);
 
-		const start = ((pagination.page_number || 1) - 1) * (pagination.page_size || 10);
-		const end = start + (pagination.page_size || 10);
+			const filtered = getFilteredData();
 
-		const paginated = filtered.slice(start, end);
+			const page = pagination.page_number ?? 1;
+			const size = pagination.page_size ?? 10;
 
-		setTimeout(() => {
-			if (isLoadMore) {
-				appendProducts(paginated);
-			} else {
-				setProducts(paginated);
-			}
+			const start = (page - 1) * size;
+			const end = start + size;
 
-			setPaginationData({
-				count: filtered.length,
-				page_number: pagination.page_number || 1,
-				page_size: pagination.page_size || 10,
-				total_pages: Math.ceil(filtered.length / (pagination.page_size || 10)),
-			});
+			const paginated = filtered.slice(start, end);
 
-			setLoading(false);
-		}, 100);
-	};
+			setTimeout(() => {
+				if (isLoadMore) {
+					appendProducts(paginated);
+				} else {
+					setProducts(paginated);
+				}
 
-	//  initial + filter change
+				setPaginationData({
+					count: filtered.length,
+					page_number: page,
+					page_size: size,
+					total_pages: Math.ceil(filtered.length / size),
+					hasMore: end < filtered.length,
+				});
+
+				setLoading(false);
+			}, 100);
+		},
+		[getFilteredData, isLoading, pagination],
+	);
+
+	/* ================= EFFECTS ================= */
+
 	useEffect(() => {
 		resetPagination();
 		clearProducts();
 	}, [selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
 
-	//  fetch whenever page changes
 	useEffect(() => {
 		fetchProducts(pagination.page_number !== 1);
 	}, [pagination.page_number]);
 
-	//  infinite scroll
+	/* ================= INFINITE SCROLL ================= */
+
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
@@ -127,23 +147,27 @@ export default function ProductsListPageContent() {
 			{ threshold: 0.1 },
 		);
 
-		if (loadMoreRef.current) {
-			observer.observe(loadMoreRef.current);
-		}
+		const el = loadMoreRef.current;
+		if (el) observer.observe(el);
 
-		return () => observer.disconnect();
-	}, [pagination.hasMore, isLoading]);
+		return () => {
+			if (el) observer.unobserve(el);
+			observer.disconnect();
+		};
+	}, [pagination.hasMore, isLoading, loadMoreProducts]);
+
+	/* ================= UI ================= */
 
 	return (
 		<div className="container mx-auto py-3">
 			<div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-				{/* Sidebar Filters */}
-				<div className="col-span-3 sticky top-5 self-start hidden md:block overflow-y-auto">
+				{/* Sidebar */}
+				<div className="col-span-3 sticky top-5 hidden md:block">
 					<ProductFilterSidebar />
 				</div>
 
-				{/* Products Section */}
-				<div className="col-span-9 rounded">
+				{/* Products */}
+				<div className="col-span-9">
 					{/* Toolbar */}
 					<div className="flex items-center justify-between mb-6">
 						<span className="text-md text-gray-600">
@@ -151,25 +175,11 @@ export default function ProductsListPageContent() {
 						</span>
 
 						<div className="flex gap-3">
-							{/* <Button variant="outline" onClick={() => setViewMode('grid')}>
-								<Grid3X3 />
-							</Button>
-							<Button variant="outline" onClick={() => setViewMode('list')}>
-								<List />
-							</Button> */}
-							<ToggleGroup
-								type="single"
-								size="sm"
-								value={viewMode}
-								onValueChange={(value) => {
-									if (value) setViewMode(value as 'grid' | 'list');
-								}}
-							>
-								<ToggleGroupItem value="grid" className="data-[state=on]:bg-orange-300 border data-[state=on]:text-white cursor-pointer h-9">
+							<ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)}>
+								<ToggleGroupItem value="grid">
 									<LayoutGrid />
 								</ToggleGroupItem>
-
-								<ToggleGroupItem value="list" className="data-[state=on]:bg-orange-300 border data-[state=on]:text-white cursor-pointer h-9">
+								<ToggleGroupItem value="list">
 									<List />
 								</ToggleGroupItem>
 							</ToggleGroup>
@@ -187,9 +197,9 @@ export default function ProductsListPageContent() {
 						</div>
 					</div>
 
-					{/* Products Grid / List */}
+					{/* Products */}
 					{isLoading && products.length === 0 ? (
-						<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
+						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<ProductCardSkeleton key={i} />
 							))}
@@ -198,13 +208,13 @@ export default function ProductsListPageContent() {
 						<>
 							<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
 								{products.map((product, i) => (
-									<motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+									<motion.div key={product._id || i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 										<ProductCard product={product} />
 									</motion.div>
 								))}
 							</div>
 
-							{/* Load More Skeleton */}
+							{/* loader */}
 							{isLoading && (
 								<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
 									{Array.from({ length: 4 }).map((_, i) => (
@@ -213,9 +223,9 @@ export default function ProductsListPageContent() {
 								</div>
 							)}
 
-							{/* Load More Observer */}
-							<div ref={loadMoreRef} className="py-10 text-center">
-								{pagination.hasMore}
+							{/* observer */}
+							<div ref={loadMoreRef} className="py-10 text-center text-sm text-muted-foreground">
+								{pagination.hasMore ? 'Loading more...' : 'No more products'}
 							</div>
 						</>
 					) : (

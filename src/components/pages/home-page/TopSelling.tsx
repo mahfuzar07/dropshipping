@@ -8,56 +8,41 @@ import SwiperCore from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { useAppData } from '@/hooks/use-appdata';
-import { APIResponse } from '@/types/types';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 
-// const products = [
-// 	{
-// 		id: 1,
-// 		title: 'Product 1',
-// 		image: '/assets/product/product-2.webp',
-// 		store: 'US',
-// 		price: '1233.00',
-// 	},
-// 	{ id: 2, title: 'Product 2', image: '/assets/product/product-5.png', store: 'US', price: '12.99' },
-// 	{
-// 		id: 3,
-// 		title: 'Product 3',
-// 		image: '/assets/product/product-6.png',
-// 		store: 'US',
-// 		price: '199.99',
-// 	},
-// 	{
-// 		id: 4,
-// 		title: 'Product 4',
-// 		image: '/assets/product/product-7.png',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// 	{
-// 		id: 5,
-// 		title: 'Product 5',
-// 		image: '/assets/product/product-2.webp',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// 	{
-// 		id: 6,
-// 		title: 'Product 6',
-// 		image: '/assets/product/product-3.webp',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// 	{
-// 		id: 7,
-// 		title: 'Product 7',
-// 		image: '/assets/product/product-1.webp',
-// 		store: 'US',
-// 		price: '2.99',
-// 	},
-// ];
+type TopSellingResponse = {
+	page: number;
+	limit: number;
+	total: number;
+	total_pages: number;
+	results: Product[];
+};
+
+type Product = {
+	_id: string;
+	offer_id: string;
+	title: string;
+	url: string;
+	image: string;
+
+	product_name: string;
+	promotion: string;
+	rating: string;
+	sold: string;
+
+	price: {
+		amount: string;
+		currency: string;
+		overseas: string;
+		unit: string;
+	};
+
+	seller_icon: string;
+	is_ad: boolean;
+	moq: null | number;
+};
 
 export default function TopSelling() {
 	const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -65,7 +50,7 @@ export default function TopSelling() {
 	const nextRef = useRef<HTMLDivElement>(null);
 	const swiperRef = useRef<SwiperCore | null>(null);
 
-	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<APIResponse, 'single'>({
+	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<TopSellingResponse, 'single'>({
 		key: [QueriesKey.TOP_PRODUCTS],
 		api: apiEndpoint.products.TOP_PRODUCTS(),
 		auth: true,
