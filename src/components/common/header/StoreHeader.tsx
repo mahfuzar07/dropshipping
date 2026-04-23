@@ -172,7 +172,7 @@ export default function StoreHeader() {
 									</div>
 									<CategoryPopover
 										trigger={
-											<div className="relative cursor-pointer font-medium flex items-center gap-1.5 bg-slate-50 px-5 py-2 rounded hover:bg-slate-100">
+											<div className="relative hidden cursor-pointer font-medium md:flex items-center gap-1.5 bg-slate-50 px-5 py-2 rounded hover:bg-slate-100">
 												Catgory
 												<ChevronDown size={18} />
 											</div>
