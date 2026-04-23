@@ -13,6 +13,8 @@ export const QueriesKey = {
 	LATEST_PRODUCTS: 'latest-products',
 	NEW_LAUNCH_PRODUCTS: 'new-launch-products',
 	GIFT_DEEAS_PRODUCTS: 'gift-ideas-products',
+	CART_DATA: 'cart-data',
+	ADD_CART: 'add-cart',
 	CATEGORIES: 'categories',
 	PRODUCT_DETAIL: 'product-detail',
 	SEARCH_PRODUCTS: 'search-products',

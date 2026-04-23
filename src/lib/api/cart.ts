@@ -26,6 +26,15 @@ export const addToCard = async (payload: addToCardPayload): Promise<CommonRespon
 	}
 };
 
+export const getCartData = async (): Promise<CommonResponse> => {
+	try {
+		const response = await authApi.get(apiEndpoint.cart.GET_CART());
+		return response.data;
+	} catch (error) {
+		throw error;
+	}
+};
+
 // const authApi = {
 // 	signupUser,
 // 	verifyOTP,
