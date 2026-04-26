@@ -14,7 +14,7 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
-import { APIResponse } from '@/types/types';
+import { CartItemSkeleton } from '../../loader/CartItemSkeleton';
 
 /* =========================
    Types
@@ -93,7 +93,6 @@ const parsePrice = (priceStr: string): number => {
 export default function CartDrawer() {
 	// loadingKey format: `${cartItemId}-${size}`
 	const [loadingKey, setLoadingKey] = useState<string | null>(null);
-
 	const { isDrawerOpen, closeDrawer } = useLayoutStore();
 
 	const { data, isLoading } = useAppData<CartResponse, 'single'>({
@@ -111,6 +110,7 @@ export default function CartDrawer() {
 	}, [data]);
 
 	const prevRowCount = useRef(activeRowCount);
+
 	useEffect(() => {
 		if (prevRowCount.current === 1 && activeRowCount === 0 && isDrawerOpen) closeDrawer();
 		prevRowCount.current = activeRowCount;
@@ -205,10 +205,6 @@ export default function CartDrawer() {
 		}
 	};
 
-	/* =========================
-     Render
-  ========================= */
-
 	return (
 		<Drawer open={isDrawerOpen} onOpenChange={closeDrawer} direction="right">
 			<DrawerContent className="h-full w-[400px] flex flex-col">
@@ -260,66 +256,72 @@ export default function CartDrawer() {
 												>
 													<Card className="overflow-hidden hover:bg-slate-50 transition-all duration-300 py-3 rounded border-none shadow-xs">
 														<CardContent className="py-0 px-2">
-															<div className="flex gap-3">
-																{/* Image */}
-																<div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
-																	<Image
-																		src={cartItem.product.image}
-																		alt={cartItem.product.product_name || cartItem.product.title}
-																		fill
-																		className="object-contain p-1"
-																	/>
-																</div>
-
-																{/* Info */}
-																<div className="flex-1 min-w-0">
-																	<div className="flex justify-between items-start mb-2">
-																		<div className="mt-1">
-																			<h3 className="font-semibold text-md">{cartItem.product.product_name || cartItem.product.title}</h3>
-																			<p className="text-xs text-muted-foreground mt-1">{size}</p>
-																		</div>
-																		<Button
-																			onClick={() => {
-																				removeVariant(cartItem, size);
-																			}}
-																			variant="ghost"
-																			size="sm"
-																		>
-																			<Trash2 className="w-4 h-4" />
-																		</Button>
+															{isUpdating ? (
+																<CartItemSkeleton />
+															) : (
+																<div className="flex gap-3">
+																	{/* Image */}
+																	<div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
+																		<Image
+																			src={cartItem.product.image}
+																			alt={cartItem.product.product_name || cartItem.product.title}
+																			fill
+																			className="object-contain p-1"
+																		/>
 																	</div>
 
-																	{/* Quantity + Price */}
-																	<div className="flex justify-between mt-4">
-																		<div className="flex border rounded-lg">
+																	{/* Info */}
+																	<div className="flex-1 min-w-0">
+																		<div className="flex justify-between items-start mb-2">
+																			<div className="mt-1">
+																				<h3 className="font-semibold text-md">{cartItem.product.product_name || cartItem.product.title}</h3>
+																				<p className="text-xs text-muted-foreground mt-1">{size}</p>
+																			</div>
 																			<Button
+																				onClick={() => {
+																					removeVariant(cartItem, size);
+																				}}
 																				variant="ghost"
 																				size="sm"
-																				disabled={qty <= 1 || isUpdating}
-																				onClick={() => quantityUpdate(cartItem, size, 'decrement')}
 																			>
-																				{isUpdating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Minus className="w-3 h-3" />}
-																			</Button>
-
-																			<Input value={qty} readOnly className="w-12 text-center border-0" />
-
-																			<Button
-																				variant="ghost"
-																				size="sm"
-																				disabled={isUpdating}
-																				onClick={() => quantityUpdate(cartItem, size, 'increment')}
-																			>
-																				{isUpdating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+																				<Trash2 className="w-4 h-4" />
 																			</Button>
 																		</div>
 
-																		<div className="text-right">
-																			<div className="font-medium text-sm">${(price * qty).toFixed(2)}</div>
-																			{qty > 1 && <div className="text-xs text-muted-foreground">${price.toFixed(2)} each</div>}
+																		{/* Quantity + Price */}
+																		<div className="flex justify-between mt-4">
+																			<div className="flex border rounded-lg">
+																				<Button
+																					variant="ghost"
+																					size="sm"
+																					disabled={qty <= 1 || isUpdating}
+																					onClick={() => quantityUpdate(cartItem, size, 'decrement')}
+																					className="h-full"
+																				>
+																					{isUpdating ? <Loader2 className=" animate-spin" /> : <Minus className="w-3 h-full" />}
+																				</Button>
+
+																				<Input value={qty} readOnly className="w-12 text-center border-0" />
+
+																				<Button
+																					variant="ghost"
+																					size="sm"
+																					disabled={isUpdating}
+																					onClick={() => quantityUpdate(cartItem, size, 'increment')}
+																					className="h-full"
+																				>
+																					{isUpdating ? <Loader2 className=" animate-spin" /> : <Plus className="w-3 h-full" />}
+																				</Button>
+																			</div>
+
+																			<div className="text-right">
+																				<div className="font-medium text-sm">${(price * qty).toFixed(2)}</div>
+																				{qty > 1 && <div className="text-xs text-muted-foreground">${price.toFixed(2)} each</div>}
+																			</div>
 																		</div>
 																	</div>
 																</div>
-															</div>
+															)}
 														</CardContent>
 													</Card>
 												</motion.div>
@@ -334,18 +336,21 @@ export default function CartDrawer() {
 				{/* Footer */}
 				{activeRowCount > 0 && (
 					<div className="border-t px-6 py-3 space-y-4">
-						<div className="flex justify-between">
+						<div className="flex justify-between font-hanken">
 							<span className="text-lg font-medium">Subtotal:</span>
 							<span className="text-lg font-medium">৳{(data?.total_price ?? 0).toLocaleString()}</span>
 						</div>
-						<Button variant="outline" asChild>
-							<Link href="/cart">VIEW CART</Link>
-						</Button>
-						<Button asChild>
-							<Link href="/checkout">
-								Proceed to Checkout <ArrowRight className="ml-2 w-4 h-4" />
-							</Link>
-						</Button>
+
+						<div className="flex items-center justify-end gap-2">
+							<Button variant="outline" asChild>
+								<Link href="/cart">VIEW CART</Link>
+							</Button>
+							<Button asChild>
+								<Link href="/checkout">
+									Proceed to Checkout <ArrowRight className="ml-2 w-4 h-4" />
+								</Link>
+							</Button>
+						</div>
 					</div>
 				)}
 			</DrawerContent>
