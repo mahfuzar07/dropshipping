@@ -1,140 +1,134 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
-import { useState, useCallback } from 'react';
-import FormField from '../FormField';
-import { MapPin } from 'lucide-react';
+import { HomeIcon, LocationEdit, MapPin, Phone, Plus } from 'lucide-react';
+import { useAppData } from '@/hooks/use-appdata';
+import { APIResponse } from '@/types/types';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 
-/* ================= TYPES ================= */
-
-type AddressKeys = 'firstName' | 'lastName' | 'email' | 'phone' | 'address' | 'city' | 'zip' | 'country';
-
-type ErrorState = Partial<Record<AddressKeys, string>>;
-
-/* ================= CONST ================= */
-
-const COUNTRIES = [
-	{ code: 'BD', name: 'Bangladesh' },
-	{ code: 'IN', name: 'India' },
-	{ code: 'PK', name: 'Pakistan' },
-	{ code: 'US', name: 'United States' },
-	{ code: 'GB', name: 'United Kingdom' },
-	{ code: 'CA', name: 'Canada' },
-	{ code: 'AU', name: 'Australia' },
-	{ code: 'SG', name: 'Singapore' },
-];
-
-/* ================= COMPONENT ================= */
+type AddressUI = {
+	id: number;
+	fullName: string;
+	address: string;
+	city: string;
+	phone: string;
+	label: 'HOME' | 'OFFICE';
+	isDefaultShipping: boolean;
+	isDefaultBilling: boolean;
+	zone: string;
+};
 
 export default function Step1Address() {
-	const { address, setAddress, nextStep } = useCheckoutStore();
+	const { nextStep, setAddress } = useCheckoutStore();
+	const { openModal } = useLayoutStore();
+	const { data: addressresponse } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
+		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		auth: true,
+		responseType: 'single',
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to fetch address');
+		},
+	});
 
-	const [errors, setErrors] = useState<ErrorState>({});
+	// ✅ Normalize API → UI
+	const addressList: AddressUI[] =
+		addressresponse?.results?.map((addr: any) => ({
+			id: addr.id,
+			fullName: addr.full_name,
+			address: addr.address,
+			city: addr.city,
+			phone: addr.phone,
+			label: 'HOME',
+			isDefaultShipping: addr.is_default,
+			isDefaultBilling: addr.is_default,
+			zone: addr.city,
+		})) || [];
 
-	const validate = (): ErrorState => {
-		const e: ErrorState = {};
+	// ✅ Get default (fallback প্রথমটা)
+	const defaultAddress = addressList.find((a) => a.isDefaultShipping) || addressList[0];
 
-		if (!address.firstName.trim()) e.firstName = 'Required';
-		if (!address.lastName.trim()) e.lastName = 'Required';
-		if (!address.email.includes('@')) e.email = 'Valid email required';
-		if (!address.phone.trim()) e.phone = 'Required';
-		if (!address.address.trim()) e.address = 'Required';
-		if (!address.city.trim()) e.city = 'Required';
-		if (!address.zip.trim()) e.zip = 'Required';
-		if (!address.country) e.country = 'Required';
-
-		return e;
-	};
-
+	// ✅ Continue handler
 	const handleNext = () => {
-		const e = validate();
-		if (Object.keys(e).length) {
-			setErrors(e);
+		if (!defaultAddress) {
+			toast.error('No address available');
 			return;
 		}
+
+		setAddress(defaultAddress);
 		nextStep();
 	};
 
-	const field = useCallback(
-		(key: AddressKeys) => ({
-			id: key,
-			value: address[key] ?? '',
-			onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-				setAddress({ [key]: e.target.value });
-				setErrors((prev) => ({ ...prev, [key]: '' }));
-			},
-			className: errors[key] ? 'border-red-400 focus-visible:ring-red-300' : '',
-		}),
-		[address, errors, setAddress],
-	);
-
 	return (
 		<div>
-			<h1 className="text-md font-semibold text-foreground mb-5 flex items-center gap-1.5">
-				<MapPin size={16} className=" shrink-0" />
-				Delivery information
+			<h1 className="text-lg font-semibold mb-5 flex items-center gap-2">
+				<MapPin size={18} />
+				Delivery Information
 			</h1>
 
-			<div className="space-y-4">
-				<div className="grid md:grid-cols-2 gap-3">
-					<FormField label="First Name" htmlFor="firstName" error={errors.firstName}>
-						<Input {...field('firstName')} placeholder="Rahim" />
-					</FormField>
-
-					<FormField label="Last Name" htmlFor="lastName" error={errors.lastName}>
-						<Input {...field('lastName')} placeholder="Uddin" />
-					</FormField>
+			<div className="flex w-full justify-end mt-5 mb-5">
+				<Button size="sm" className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">
+					Choose Address
+				</Button>
+				<div className="border-l pl-3 ml-3">
+					<Button size="sm" onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-orange-300 hover:bg-orange-500">
+						<Plus /> Add New
+					</Button>
 				</div>
-
-				<FormField label="Email Address" htmlFor="email" error={errors.email}>
-					<Input {...field('email')} type="email" placeholder="rahim@example.com" />
-				</FormField>
-
-				<FormField label="Phone Number" htmlFor="phone" error={errors.phone}>
-					<Input {...field('phone')} placeholder="+880 1XXX-XXXXXX" />
-				</FormField>
-
-				<FormField label="Street Address" htmlFor="address" error={errors.address}>
-					<Input {...field('address')} placeholder="House 12, Road 5, Block C" />
-				</FormField>
-
-				<div className="grid grid-cols-2 gap-3">
-					<FormField label="City" htmlFor="city" error={errors.city}>
-						<Input {...field('city')} placeholder="Dhaka" />
-					</FormField>
-
-					<FormField label="ZIP Code" htmlFor="zip" error={errors.zip}>
-						<Input {...field('zip')} placeholder="1212" />
-					</FormField>
-				</div>
-
-				<FormField label="Country" htmlFor="country" error={errors.country}>
-					<Select
-						value={address.country}
-						onValueChange={(v: string) => {
-							setAddress({ country: v });
-							setErrors((p) => ({ ...p, country: '' }));
-						}}
-					>
-						<SelectTrigger id="country" className={errors.country ? 'border-red-400' : ''}>
-							<SelectValue placeholder="Select country" />
-						</SelectTrigger>
-
-						<SelectContent>
-							{COUNTRIES.map((c) => (
-								<SelectItem key={c.code} value={c.code}>
-									{c.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</FormField>
 			</div>
 
-			<Button className="w-full mt-6 bg-orange-300 hover:bg-orange-400 text-white font-semibold tracking-wide h-12 rounded-xl" onClick={handleNext}>
+			{/* Card UI */}
+			{!defaultAddress ? (
+				<p className="text-center text-muted-foreground py-10">No address found.</p>
+			) : (
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					className="rounded-2xl w-full border bg-white transition p-5 flex flex-col gap-4"
+				>
+					{/* Top Row */}
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<div className="bg-orange-100 p-2 rounded-full">
+								<HomeIcon size={16} className="text-orange-500" />
+							</div>
+							<div>
+								<p className="font-semibold">{defaultAddress.fullName}</p>
+								<p className="text-xs text-muted-foreground">{defaultAddress.label}</p>
+							</div>
+						</div>
+
+						<button className="text-sm flex items-center gap-1 text-blue-600 hover:underline">
+							<LocationEdit size={14} /> Edit
+						</button>
+					</div>
+
+					{/* Address */}
+					<div className="text-sm text-muted-foreground leading-relaxed">
+						{defaultAddress.address}, {defaultAddress.city}
+					</div>
+
+					{/* Phone */}
+					<div className="flex items-center gap-2 text-sm">
+						<Phone size={14} />
+						{defaultAddress.phone}
+					</div>
+
+					{/* Badge */}
+					<div className="flex items-center gap-2">
+						<span className="text-[11px] bg-green-100 text-green-600 px-3 py-1.5 rounded-full font-medium">Default Shipping</span>
+					</div>
+				</motion.div>
+			)}
+
+			{/* Continue */}
+			<Button className="w-full mt-6 bg-orange-400 hover:bg-orange-500 text-white font-semibold h-12 rounded-xl" onClick={handleNext}>
 				Continue to Shipping →
 			</Button>
 		</div>

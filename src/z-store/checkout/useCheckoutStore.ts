@@ -58,7 +58,7 @@ interface CheckoutState {
 /* ================= STORE ================= */
 
 export const useCheckoutStore = create<CheckoutState>((set) => ({
-	step: 3,
+	step: 1,
 
 	address: {
 		firstName: '',

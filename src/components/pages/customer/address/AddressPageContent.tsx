@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BriefcaseBusiness, HomeIcon, LocationEdit, Plus } from 'lucide-react';
+import { BriefcaseBusiness, HomeIcon, LocationEdit, PencilLine, Plus, Trash2 } from 'lucide-react';
 
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
@@ -105,7 +105,7 @@ export default function AddressPageContent() {
 				<div className="flex justify-end mt-8">
 					<Dialog open={shippingOpen} onOpenChange={setShippingOpen}>
 						<DialogTrigger asChild>
-							<Button className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">Make default shipping address</Button>
+							<Button className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">Make default</Button>
 						</DialogTrigger>
 
 						<DialogContent className="max-w-xl">
@@ -127,7 +127,8 @@ export default function AddressPageContent() {
 
 											<div className="flex gap-2 mt-2">
 												<span className="text-xs px-2 py-1 rounded bg-orange-500 text-white flex items-center gap-1">
-													<HomeIcon size={14} /> {addr.label}
+													{addr.label === 'OFFICE' ? <BriefcaseBusiness size={14} /> : <HomeIcon size={14} />}
+													{addr.label}
 												</span>
 
 												{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold">✔ Default</span>}
@@ -150,7 +151,7 @@ export default function AddressPageContent() {
 
 					<div className="border-l pl-3 ml-3">
 						<Button onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-orange-300 hover:bg-orange-500">
-							<Plus className="mr-2" /> Add New Address
+							<Plus /> Add New Address
 						</Button>
 					</div>
 				</div>
@@ -170,27 +171,40 @@ export default function AddressPageContent() {
 								exit={{ opacity: 0 }}
 								className="grid items-center md:grid-cols-12 gap-4 px-4 py-5 border-b hover:bg-accent/30"
 							>
-								<div className="md:col-span-3">
-									<p className="font-medium">{addr.fullName}</p>
-									<span className="text-xs px-2 py-1 rounded bg-orange-500 text-white inline-flex items-center gap-1 mt-1">
-										<HomeIcon size={14} /> {addr.label}
-									</span>
+								<div className="md:col-span-4">
+									<div className="flex items-start gap-3">
+										<div className="bg-orange-100 p-2 rounded-full mt-1">
+											{addr.label === 'OFFICE' ? (
+												<BriefcaseBusiness size={16} className="text-blue-500" />
+											) : (
+												<HomeIcon size={16} className="text-orange-500" />
+											)}
+										</div>
+										<div>
+											<p className="font-semibold">{addr.fullName}</p>
+											<p className="text-xs text-muted-foreground">{addr.phone}</p>
+
+											{addr.isDefaultShipping && <span className="text-xs text-green-600 font-medium">Default Shipping</span>}
+										</div>
+									</div>
 								</div>
 
-								<div className="md:col-span-5">
+								<div className="md:col-span-6">
 									<p>{addr.address}</p>
 									<p className="text-sm text-muted-foreground">{addr.city}</p>
 								</div>
 
-								<div className="md:col-span-3">
-									<p>{addr.phone}</p>
-									{addr.isDefaultShipping && <p className="text-xs text-blue-600 font-medium mt-1">Default Shipping</p>}
-								</div>
+								<div className="md:col-span-2 flex justify-end gap-2">
+									<Button className="text-orange-400 bg-orange-100 hover:bg-orange-300 hover:text-white" size="sm">
+										<PencilLine size={12} />
+									</Button>
 
-								<div className="md:col-span-1 flex justify-end">
-									<button className="text-sm flex items-center gap-1 bg-slate-600 text-white px-2 py-1 rounded hover:bg-slate-500">
-										<LocationEdit size={14} /> Edit
-									</button>
+									<Button
+										size="sm"
+										className="bg-red-100 text-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50 !disabled:cursor-not-allowed"
+									>
+										<Trash2 size={12} />
+									</Button>
 								</div>
 							</motion.div>
 						))}

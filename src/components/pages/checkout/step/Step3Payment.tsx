@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
-import FormField from '../FormField';
+import FormField from '../../../common/elements/form-element/FormField';
 import { CreditCard, MoveLeft, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
