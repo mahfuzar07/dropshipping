@@ -1,18 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppData } from '@/hooks/use-appdata';
 import { APIResponse } from '@/types/types';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
-
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAddressStore } from '@/z-store/customers/useAddressStore';
 
 const provinces = [
 	{ value: 'Dhaka', label: 'Dhaka' },
@@ -24,29 +22,58 @@ const cities = [
 	{ value: 'Dhaka South', label: 'Dhaka South' },
 ];
 
-const zones = [
-	{ value: 'Mirpur 1', label: 'Mirpur 1' },
-	{ value: 'Mirpur 2', label: 'Mirpur 2' },
-];
+const normalize = (val?: string | null): string => {
+	if (!val) return '';
+	return val
+		.toLowerCase()
+		.split(' ')
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.join(' ');
+};
+
+const initFormData = (modalData?: any) => {
+	if (!modalData) {
+		return {
+			id: '',
+			fullName: '',
+			phone: '',
+			address: '',
+			addressLine2: '',
+			city: '',
+			district: '',
+			postalCode: '',
+			isDefault: false,
+		};
+	}
+
+	const cityNormalized = normalize(modalData.city);
+	const districtNormalized = normalize(modalData.district);
+
+	return {
+		id: String(modalData.id ?? ''),
+		fullName: modalData.fullName ?? modalData.full_name ?? '',
+		phone: modalData.phone ?? '',
+		address: modalData.address ?? '',
+		addressLine2: modalData.addressLine2 ?? modalData.address_line2 ?? '',
+		// ✅ array-এর সাথে match করো, না মিললে normalized value রাখো
+		city: cities.find((c) => c.value.toLowerCase() === cityNormalized.toLowerCase())?.value ?? cityNormalized,
+		district: provinces.find((p) => p.value.toLowerCase() === districtNormalized.toLowerCase())?.value ?? districtNormalized,
+		postalCode: modalData.postalCode ?? modalData.postal_code ?? '',
+		isDefault: modalData.isDefaultShipping ?? modalData.is_default ?? false,
+	};
+};
+
 interface Props {
 	modalData?: any;
 }
 
 export default function AddressForm({ modalData }: Props) {
 	const { closeModal } = useLayoutStore();
-	const { addAddress } = useAddressStore();
 
-	const [formData, setFormData] = useState({
-		id: '',
-		fullName: '',
-		phone: '',
-		address: '',
-		addressLine2: '',
-		city: '',
-		district: '',
-		postalCode: '',
-		isDefault: false,
-	});
+	// ✅ useEffect নেই — সরাসরি modalData দিয়ে initialize
+	const [formData, setFormData] = useState(() => initFormData(modalData));
+
+	const isEdit = Boolean(formData.id);
 
 	const { create: submitAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
@@ -62,7 +89,6 @@ export default function AddressForm({ modalData }: Props) {
 			toast.error(error?.response?.data?.message || 'Failed to add address');
 		},
 	});
-	const isEdit = Boolean(formData.id);
 
 	const { update: updateAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
@@ -82,81 +108,36 @@ export default function AddressForm({ modalData }: Props) {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!formData.fullName || !formData.phone || !formData.district || !formData.city || !formData.postalCode || !formData.address) {
+		if (!formData.fullName || !formData.phone || !formData.city || !formData.postalCode || !formData.address) {
 			toast.error('Please fill all required fields');
 			return;
 		}
 
-		// ✅ API Data
 		const data = new FormData();
 		data.append('full_name', formData.fullName);
 		data.append('phone', formData.phone);
 		data.append('district', formData.district);
 		data.append('city', formData.city);
-		data.append('address_line2', formData.postalCode);
 		data.append('address', formData.address);
+		data.append('address_line2', formData.addressLine2 ?? '');
 		data.append('postal_code', formData.postalCode);
-		data.append('is_default', formData.isDefault.toString());
+		data.append('is_default', String(formData.isDefault));
 
 		if (isEdit) {
 			updateAddress(Number(formData.id), data);
 		} else {
 			submitAddress(data);
 		}
-
-		// ✅ Local Store Sync
-		addAddress({
-			id: Date.now().toString(),
-			fullName: formData.fullName,
-			phone: formData.phone,
-			address: formData.address,
-			addressLine2: formData.addressLine2,
-			city: formData.city,
-			district: formData.district,
-			postalCode: formData.postalCode,
-			isDefaultShipping: formData.isDefault,
-		});
 	};
-
-	useEffect(() => {
-		if (modalData) {
-			setFormData({
-				id: modalData.id,
-				fullName: modalData.fullName,
-				phone: modalData.phone,
-				address: modalData.address,
-				addressLine2: modalData.addressLine2,
-				city: modalData.city,
-				district: modalData.district,
-				postalCode: modalData.postalCode,
-				isDefault: modalData.isDefaultShipping,
-			});
-		}
-	}, [modalData]);
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
-			{/* Name */}
-			<div>
-				<Input placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
-			</div>
+			<Input placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData((p) => ({ ...p, fullName: e.target.value }))} />
 
-			{/* Phone */}
-			<div>
-				<Input placeholder="Phone Number" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-			</div>
+			<Input placeholder="Phone Number" type="tel" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} />
 
-			{/* Province + City */}
 			<div className="grid grid-cols-2 gap-3">
-				<Select
-					value={formData.district}
-					onValueChange={(v) =>
-						setFormData((prev) => ({
-							...prev,
-							district: v,
-						}))
-					}
-				>
+				<Select value={formData.district} onValueChange={(v) => setFormData((p) => ({ ...p, district: v }))}>
 					<SelectTrigger>
 						<SelectValue placeholder="District" />
 					</SelectTrigger>
@@ -169,16 +150,7 @@ export default function AddressForm({ modalData }: Props) {
 					</SelectContent>
 				</Select>
 
-				<Select
-					value={formData.city}
-					
-					onValueChange={(v) =>
-						setFormData((prev) => ({
-							...prev,
-							city: v,
-						}))
-					}
-				>
+				<Select value={formData.city} onValueChange={(v) => setFormData((p) => ({ ...p, city: v }))}>
 					<SelectTrigger>
 						<SelectValue placeholder="City" />
 					</SelectTrigger>
@@ -192,31 +164,26 @@ export default function AddressForm({ modalData }: Props) {
 				</Select>
 			</div>
 
-			{/* Zone */}
-			<Input placeholder="Postal Code" value={formData.postalCode} onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })} />
+			<Input placeholder="Postal Code" value={formData.postalCode} onChange={(e) => setFormData((p) => ({ ...p, postalCode: e.target.value }))} />
 
-			{/* Address */}
-			<Input placeholder="House / Road / Block" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+			<Input placeholder="House / Road / Block" value={formData.address} onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value }))} />
 
-			{/* Landmark */}
 			<Input
-				placeholder="Address Line 2"
+				placeholder="Address Line 2 (Optional)"
 				value={formData.addressLine2}
-				onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+				onChange={(e) => setFormData((p) => ({ ...p, addressLine2: e.target.value }))}
 			/>
 
-			{/* Default checkbox */}
 			<div className="flex items-center gap-2">
-				<Checkbox checked={formData.isDefault} onCheckedChange={(val) => setFormData({ ...formData, isDefault: !!val })} />
+				<Checkbox checked={formData.isDefault} onCheckedChange={(val) => setFormData((p) => ({ ...p, isDefault: !!val }))} />
 				<label className="text-sm">Set as default address</label>
 			</div>
 
-			{/* Buttons */}
 			<div className="flex justify-end gap-2 pt-3">
 				<Button type="button" variant="outline" onClick={closeModal}>
 					Cancel
 				</Button>
-				<Button type="submit">Save Address</Button>
+				<Button type="submit">{isEdit ? 'Update Address' : 'Save Address'}</Button>
 			</div>
 		</form>
 	);

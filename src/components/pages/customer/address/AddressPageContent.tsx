@@ -111,7 +111,6 @@ export default function AddressPageContent() {
 		(id: AddressUI['id']) => {
 			const target = addressList.find((a) => Number(a.id) === Number(id));
 
-			// ❌ যদি default হয় → block
 			if (target?.isDefaultShipping) {
 				toast.error('Default address delete করতে চাইলে আগে অন্য একটা default করুন');
 				return;
