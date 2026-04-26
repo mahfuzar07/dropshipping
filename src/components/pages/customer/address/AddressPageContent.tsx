@@ -28,13 +28,9 @@ type AddressUI = {
 };
 
 export default function AddressPageContent() {
-	const [shippingOpen, setShippingOpen] = useState(false);
-	const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
-	const [defaultingId, setDefaultingId] = useState<number | null>(null);
 
 	const { openModal } = useLayoutStore();
-
 
 	const { data: addressresponse } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
@@ -45,7 +41,6 @@ export default function AddressPageContent() {
 			toast.error(error?.response?.data?.message || 'Failed to fetch address');
 		},
 	});
-
 
 	const addressList: AddressUI[] =
 		addressresponse?.results?.map((addr: any) => ({
@@ -61,41 +56,7 @@ export default function AddressPageContent() {
 			isDefaultShipping: addr.is_default,
 		})) || [];
 
-	// ✅ Dialog খোলার সময় current default select করো
-	useEffect(() => {
-		if (!shippingOpen) return;
-		if (addressList.length === 0) return;
-		const defaultAddr = addressList.find((a) => a.isDefaultShipping);
-		setSelectedShippingId(defaultAddr?.id ?? addressList[0].id);
-	}, [shippingOpen, addressresponse]);
-
 	// ✅ Set default
-	const { create: setDefaultAddress } = useAppData<APIResponse, 'single'>({
-		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS_SET_DEFAULT(Number(defaultingId)),
-		auth: true,
-		responseType: 'single',
-		enabled: false,
-		onSuccess: () => {
-			toast.success('Default address updated!');
-			setShippingOpen(false);
-			setDefaultingId(null);
-		},
-		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to update default address');
-			setDefaultingId(null);
-		},
-	});
-
-	useEffect(() => {
-		if (!defaultingId) return;
-		setDefaultAddress({});
-	}, [defaultingId]);
-
-	const handleSetDefaultShipping = () => {
-		if (!selectedShippingId) return;
-		setDefaultingId(selectedShippingId);
-	};
 
 	// ✅ Delete API
 	const { remove: removeAddress } = useAppData<APIResponse, 'single'>({
@@ -134,6 +95,13 @@ export default function AddressPageContent() {
 		[openModal],
 	);
 
+	const handleSelectAddress = useCallback(
+		(list: AddressUI[]) => {
+			openModal({ modalType: 'select-address-modal', modalData: list });
+		},
+		[openModal],
+	);
+
 	return (
 		<div className="px-3 md:px-8 py-8 md:py-10 rounded bg-background">
 			{/* Header */}
@@ -150,58 +118,9 @@ export default function AddressPageContent() {
 
 				<div className="flex justify-end mt-8 gap-3">
 					{/* Make Default Dialog */}
-					<Dialog open={shippingOpen} onOpenChange={setShippingOpen}>
-						<DialogTrigger asChild>
-							<Button className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">Make default</Button>
-						</DialogTrigger>
-
-						<DialogContent className="max-w-xl">
-							<DialogHeader>
-								<DialogTitle>Select Default Shipping Address</DialogTitle>
-							</DialogHeader>
-
-							{/* ✅ Shadcn RadioGroup বাদ — custom selection */}
-							<div className="space-y-3 mt-4">
-								{addressList.map((addr) => {
-									const isSelected = selectedShippingId === addr.id;
-									return (
-										<div
-											key={addr.id}
-											onClick={() => setSelectedShippingId(addr.id)}
-											className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all
-												${isSelected ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-accent/50'}`}
-										>
-											{/* Custom radio indicator */}
-											<div
-												className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center
-												${isSelected ? 'border-orange-400' : 'border-gray-300'}`}
-											>
-												{isSelected && <div className="w-2 h-2 rounded-full bg-orange-400" />}
-											</div>
-
-											<div className="flex-1">
-												<p className="font-medium">{addr.fullName}</p>
-												<p className="text-sm text-muted-foreground">
-													{addr.address}, {addr.city}
-												</p>
-												<p className="text-sm text-muted-foreground">{addr.phone}</p>
-												{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold mt-1 block">✔ Current Default</span>}
-											</div>
-										</div>
-									);
-								})}
-							</div>
-
-							<div className="flex justify-end gap-3 mt-6">
-								<Button variant="outline" onClick={() => setShippingOpen(false)}>
-									Cancel
-								</Button>
-								<Button onClick={handleSetDefaultShipping} disabled={!selectedShippingId || defaultingId !== null}>
-									{defaultingId ? 'Saving...' : 'Confirm'}
-								</Button>
-							</div>
-						</DialogContent>
-					</Dialog>
+					<Button onClick={() => handleSelectAddress(addressList)} className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">
+						Make default
+					</Button>
 
 					<div className="border-l pl-3">
 						<Button onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-orange-300 hover:bg-orange-500">
