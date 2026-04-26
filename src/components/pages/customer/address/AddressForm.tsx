@@ -55,7 +55,7 @@ const initFormData = (modalData?: any) => {
 		phone: modalData.phone ?? '',
 		address: modalData.address ?? '',
 		addressLine2: modalData.addressLine2 ?? modalData.address_line2 ?? '',
-		// ✅ array-এর সাথে match করো, না মিললে normalized value রাখো
+
 		city: cities.find((c) => c.value.toLowerCase() === cityNormalized.toLowerCase())?.value ?? cityNormalized,
 		district: provinces.find((p) => p.value.toLowerCase() === districtNormalized.toLowerCase())?.value ?? districtNormalized,
 		postalCode: modalData.postalCode ?? modalData.postal_code ?? '',
@@ -70,7 +70,6 @@ interface Props {
 export default function AddressForm({ modalData }: Props) {
 	const { closeModal } = useLayoutStore();
 
-	// ✅ useEffect নেই — সরাসরি modalData দিয়ে initialize
 	const [formData, setFormData] = useState(() => initFormData(modalData));
 
 	const isEdit = Boolean(formData.id);
@@ -121,7 +120,7 @@ export default function AddressForm({ modalData }: Props) {
 		data.append('address', formData.address);
 		data.append('address_line2', formData.addressLine2 ?? '');
 		data.append('postal_code', formData.postalCode);
-		data.append('is_default', String(formData.isDefault));
+		data.append('is_default', formData.isDefault);
 
 		if (isEdit) {
 			updateAddress(Number(formData.id), data);

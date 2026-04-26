@@ -3,8 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BriefcaseBusiness, HomeIcon, LocationEdit, PencilLine, Plus, Trash2 } from 'lucide-react';
@@ -14,10 +13,9 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { useAppData } from '@/hooks/use-appdata';
 import { APIResponse } from '@/types/types';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
-import { QueryClient } from '@tanstack/react-query';
 
 type AddressUI = {
-	id: number | null | string;
+	id: number;
 	fullName: string;
 	phone: string;
 	address: string;
@@ -33,10 +31,11 @@ export default function AddressPageContent() {
 	const [shippingOpen, setShippingOpen] = useState(false);
 	const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
+	const [defaultingId, setDefaultingId] = useState<number | null>(null);
 
 	const { openModal } = useLayoutStore();
 
-	// ✅ Fetch address list
+
 	const { data: addressresponse } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
 		api: apiEndpoint.users.DELIVERY_ADDRESS(),
@@ -47,51 +46,58 @@ export default function AddressPageContent() {
 		},
 	});
 
-	// ✅ Normalize API → UI
+
 	const addressList: AddressUI[] =
 		addressresponse?.results?.map((addr: any) => ({
-			id: addr.id,
+			id: Number(addr.id),
 			fullName: addr.full_name,
 			address: addr.address,
-			addressLine2: addr.address_line2,
-			city: addr.city,
-			district: addr.district,
-			postalCode: addr.postal_code,
+			addressLine2: addr.address_line2 ?? '',
+			city: addr.city ?? '',
+			district: addr.district ?? '',
+			postalCode: addr.postal_code ?? '',
 			phone: addr.phone,
 			label: addr.label ?? 'HOME',
 			isDefaultShipping: addr.is_default,
 		})) || [];
 
-	// ✅ Set default selected — stable dependency দিয়ে infinite re-render ঠেকানো
+	// ✅ Dialog খোলার সময় current default select করো
 	useEffect(() => {
+		if (!shippingOpen) return;
 		if (addressList.length === 0) return;
 		const defaultAddr = addressList.find((a) => a.isDefaultShipping);
-		const fallback = addressList[0];
-		setSelectedShippingId(Number(defaultAddr?.id ?? fallback.id));
-	}, [addressresponse]);
+		setSelectedShippingId(defaultAddr?.id ?? addressList[0].id);
+	}, [shippingOpen, addressresponse]);
 
-	// ✅ Set default API — dynamic id সহ
+	// ✅ Set default
 	const { create: setDefaultAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS_SET_DEFAULT(Number(selectedShippingId)),
+		api: apiEndpoint.users.DELIVERY_ADDRESS_SET_DEFAULT(Number(defaultingId)),
 		auth: true,
 		responseType: 'single',
 		enabled: false,
 		onSuccess: () => {
 			toast.success('Default address updated!');
 			setShippingOpen(false);
+			setDefaultingId(null);
 		},
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to update default address');
+			setDefaultingId(null);
 		},
 	});
 
+	useEffect(() => {
+		if (!defaultingId) return;
+		setDefaultAddress({});
+	}, [defaultingId]);
+
 	const handleSetDefaultShipping = () => {
 		if (!selectedShippingId) return;
-		setDefaultAddress({});
+		setDefaultingId(selectedShippingId);
 	};
 
-	// ✅ Delete API — dynamic endpoint দিয়ে
+	// ✅ Delete API
 	const { remove: removeAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
 		api: apiEndpoint.users.DELIVERY_ADDRESS(),
@@ -100,29 +106,27 @@ export default function AddressPageContent() {
 		enabled: false,
 		onSuccess: () => {
 			toast.success('Address removed successfully!');
+			setDeletingId(null);
 		},
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to remove address');
+			setDeletingId(null);
 		},
 	});
 
-	// ✅ Delete handler — id set করে তারপর remove call
 	const handleRemoveAddress = useCallback(
-		(id: AddressUI['id']) => {
-			const target = addressList.find((a) => Number(a.id) === Number(id));
-
+		(id: number) => {
+			const target = addressList.find((a) => a.id === id);
 			if (target?.isDefaultShipping) {
 				toast.error('Default address delete করতে চাইলে আগে অন্য একটা default করুন');
 				return;
 			}
-
-			setDeletingId(Number(id));
-			removeAddress(Number(id));
+			setDeletingId(id);
+			removeAddress(id);
 		},
 		[addressList, removeAddress],
 	);
 
-	// ✅ Edit handler
 	const handleEditAddress = useCallback(
 		(addr: AddressUI) => {
 			openModal({ modalType: 'edit-address-modal', modalData: addr });
@@ -144,8 +148,8 @@ export default function AddressPageContent() {
 					</div>
 				</div>
 
-				<div className="flex justify-end mt-8">
-					{/* ✅ Make Default Dialog */}
+				<div className="flex justify-end mt-8 gap-3">
+					{/* Make Default Dialog */}
 					<Dialog open={shippingOpen} onOpenChange={setShippingOpen}>
 						<DialogTrigger asChild>
 							<Button className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">Make default</Button>
@@ -156,38 +160,50 @@ export default function AddressPageContent() {
 								<DialogTitle>Select Default Shipping Address</DialogTitle>
 							</DialogHeader>
 
-							<RadioGroup
-								value={selectedShippingId !== null ? String(selectedShippingId) : ''}
-								onValueChange={(val) => setSelectedShippingId(Number(val))}
-								className="space-y-4 mt-4"
-							>
-								{addressList.map((addr) => (
-									<div key={addr.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent/50">
-										<RadioGroupItem value={String(addr.id)} id={`addr-${addr.id}`} />
-										<Label htmlFor={`addr-${addr.id}`} className="flex-1 cursor-pointer">
-											<p className="font-medium">{addr.fullName}</p>
-											<p className="text-sm text-muted-foreground">
-												{addr.address}, {addr.city}
-											</p>
-											<p className="text-sm text-muted-foreground">{addr.phone}</p>
-											{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold mt-1 block">✔ Default</span>}
-										</Label>
-									</div>
-								))}
-							</RadioGroup>
+							{/* ✅ Shadcn RadioGroup বাদ — custom selection */}
+							<div className="space-y-3 mt-4">
+								{addressList.map((addr) => {
+									const isSelected = selectedShippingId === addr.id;
+									return (
+										<div
+											key={addr.id}
+											onClick={() => setSelectedShippingId(addr.id)}
+											className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all
+												${isSelected ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-accent/50'}`}
+										>
+											{/* Custom radio indicator */}
+											<div
+												className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center
+												${isSelected ? 'border-orange-400' : 'border-gray-300'}`}
+											>
+												{isSelected && <div className="w-2 h-2 rounded-full bg-orange-400" />}
+											</div>
+
+											<div className="flex-1">
+												<p className="font-medium">{addr.fullName}</p>
+												<p className="text-sm text-muted-foreground">
+													{addr.address}, {addr.city}
+												</p>
+												<p className="text-sm text-muted-foreground">{addr.phone}</p>
+												{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold mt-1 block">✔ Current Default</span>}
+											</div>
+										</div>
+									);
+								})}
+							</div>
 
 							<div className="flex justify-end gap-3 mt-6">
 								<Button variant="outline" onClick={() => setShippingOpen(false)}>
 									Cancel
 								</Button>
-								<Button onClick={handleSetDefaultShipping} disabled={!selectedShippingId}>
-									Confirm
+								<Button onClick={handleSetDefaultShipping} disabled={!selectedShippingId || defaultingId !== null}>
+									{defaultingId ? 'Saving...' : 'Confirm'}
 								</Button>
 							</div>
 						</DialogContent>
 					</Dialog>
 
-					<div className="border-l pl-3 ml-3">
+					<div className="border-l pl-3">
 						<Button onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-orange-300 hover:bg-orange-500">
 							<Plus /> Add New Address
 						</Button>
@@ -232,7 +248,6 @@ export default function AddressPageContent() {
 								</div>
 
 								<div className="md:col-span-2 flex justify-end gap-2">
-									{/* ✅ Edit button with handler */}
 									<Button
 										className="text-orange-400 bg-orange-100 hover:bg-orange-300 hover:text-white"
 										size="sm"
@@ -241,12 +256,11 @@ export default function AddressPageContent() {
 										<PencilLine size={12} />
 									</Button>
 
-									{/* ✅ Delete button with loading state */}
 									<Button
 										size="sm"
 										className="bg-red-100 text-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
 										onClick={() => handleRemoveAddress(addr.id)}
-										disabled={deletingId === Number(addr.id)}
+										disabled={deletingId === addr.id}
 									>
 										<Trash2 size={12} />
 									</Button>
