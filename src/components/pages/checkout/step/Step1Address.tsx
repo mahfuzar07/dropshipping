@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { HomeIcon, LocationEdit, MapPin, Phone, Plus } from 'lucide-react';
@@ -15,13 +15,14 @@ import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 type AddressUI = {
 	id: number;
 	fullName: string;
-	address: string;
-	city: string;
 	phone: string;
-	label: 'HOME' | 'OFFICE';
+	address: string;
+	addressLine2: string;
+	city: string;
+	district: string;
+	postalCode: string;
+	label?: 'HOME' | 'OFFICE';
 	isDefaultShipping: boolean;
-	isDefaultBilling: boolean;
-	zone: string;
 };
 
 export default function Step1Address() {
@@ -40,15 +41,16 @@ export default function Step1Address() {
 	// ✅ Normalize API → UI
 	const addressList: AddressUI[] =
 		addressresponse?.results?.map((addr: any) => ({
-			id: addr.id,
+			id: Number(addr.id),
 			fullName: addr.full_name,
 			address: addr.address,
-			city: addr.city,
+			addressLine2: addr.address_line2 ?? '',
+			city: addr.city ?? '',
+			district: addr.district ?? '',
+			postalCode: addr.postal_code ?? '',
 			phone: addr.phone,
-			label: 'HOME',
+			label: addr.label ?? 'HOME',
 			isDefaultShipping: addr.is_default,
-			isDefaultBilling: addr.is_default,
-			zone: addr.city,
 		})) || [];
 
 	// ✅ Get default (fallback প্রথমটা)
@@ -65,6 +67,20 @@ export default function Step1Address() {
 		nextStep();
 	};
 
+	const handleSelectAddress = useCallback(
+		(list: AddressUI[]) => {
+			openModal({ modalType: 'select-address-modal', modalData: list });
+		},
+		[openModal],
+	);
+
+	const handleEditAddress = useCallback(
+		(addr: AddressUI) => {
+			openModal({ modalType: 'edit-address-modal', modalData: addr });
+		},
+		[openModal],
+	);
+
 	return (
 		<div>
 			<h1 className="text-lg font-semibold mb-5 flex items-center gap-2">
@@ -73,7 +89,7 @@ export default function Step1Address() {
 			</h1>
 
 			<div className="flex w-full justify-end mt-5 mb-5">
-				<Button size="sm" className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">
+				<Button onClick={() => handleSelectAddress(addressList)} size="sm" className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">
 					Choose Address
 				</Button>
 				<div className="border-l pl-3 ml-3">
@@ -100,11 +116,14 @@ export default function Step1Address() {
 							</div>
 							<div>
 								<p className="font-semibold">{defaultAddress.fullName}</p>
-								<p className="text-xs text-muted-foreground">{defaultAddress.label}</p>
+								<div className="flex items-center gap-2 text-sm">
+									<Phone size={14} />
+									{defaultAddress.phone}
+								</div>
 							</div>
 						</div>
 
-						<button className="text-sm flex items-center gap-1 text-blue-600 hover:underline">
+						<button onClick={() => handleEditAddress(defaultAddress)} className="text-sm flex items-center gap-1 text-blue-600 hover:underline">
 							<LocationEdit size={14} /> Edit
 						</button>
 					</div>
@@ -112,12 +131,6 @@ export default function Step1Address() {
 					{/* Address */}
 					<div className="text-sm text-muted-foreground leading-relaxed">
 						{defaultAddress.address}, {defaultAddress.city}
-					</div>
-
-					{/* Phone */}
-					<div className="flex items-center gap-2 text-sm">
-						<Phone size={14} />
-						{defaultAddress.phone}
 					</div>
 
 					{/* Badge */}

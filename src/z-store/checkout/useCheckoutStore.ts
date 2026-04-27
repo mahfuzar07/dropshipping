@@ -2,20 +2,7 @@ import { create } from 'zustand';
 
 /* ================= TYPES ================= */
 
-interface Address {
-	firstName: string;
-	lastName: string;
-	email: string;
-	phone: string;
-	address: string;
-	city: string;
-	zip: string;
-	country: string;
-}
-
-interface Shipping {
-	method: string;
-}
+type ShippingMethod = 'std' | 'exp' | 'ovn' | '';
 
 interface Payment {
 	cardName: string;
@@ -24,30 +11,19 @@ interface Payment {
 	cvv: string;
 }
 
-interface OrderItem {
-	id: number;
-	name: string;
-	variant: string;
-	qty: number;
-	price: number;
-	emoji: string;
-}
-
 interface OrderSummary {
-	items: OrderItem[];
 	discount: number;
 }
 
 interface CheckoutState {
 	step: number;
-
-	address: Address;
-	shipping: Shipping;
+	address: number | null;
+	shipping: ShippingMethod;
 	payment: Payment;
 	orderSummary: OrderSummary;
 
-	setAddress: (data: Partial<Address>) => void;
-	setShipping: (data: Partial<Shipping>) => void;
+	setAddress: (id: number) => void;
+	setShipping: (method: ShippingMethod) => void;
 	setPayment: (data: Partial<Payment>) => void;
 
 	nextStep: () => void;
@@ -59,19 +35,8 @@ interface CheckoutState {
 
 export const useCheckoutStore = create<CheckoutState>((set) => ({
 	step: 1,
-
-	address: {
-		firstName: '',
-		lastName: '',
-		email: '',
-		phone: '',
-		address: '',
-		city: '',
-		zip: '',
-		country: '',
-	},
-
-	shipping: { method: '' },
+	address: null,
+	shipping: '',
 
 	payment: {
 		cardName: '',
@@ -81,29 +46,11 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
 	},
 
 	orderSummary: {
-		items: [
-			{
-				id: 1,
-				name: 'Premium Wireless Headphones',
-				variant: 'Black / XL',
-				qty: 1,
-				price: 3499,
-				emoji: '🎧',
-			},
-			{
-				id: 2,
-				name: 'Leather Phone Case',
-				variant: 'iPhone 15 Pro',
-				qty: 2,
-				price: 899,
-				emoji: '📱',
-			},
-		],
 		discount: 200,
 	},
 
-	setAddress: (data) => set((s) => ({ address: { ...s.address, ...data } })),
-	setShipping: (data) => set((s) => ({ shipping: { ...s.shipping, ...data } })),
+	setAddress: (id) => set({ address: id }),
+	setShipping: (method) => set({ shipping: method }),
 	setPayment: (data) => set((s) => ({ payment: { ...s.payment, ...data } })),
 
 	nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 3) })),
