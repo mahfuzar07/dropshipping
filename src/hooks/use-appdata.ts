@@ -42,8 +42,9 @@ export interface UseAppDataResult<T, TResponse extends ResponseType> {
 	isError: boolean;
 	isSuccess: boolean;
 	error: AxiosError | null;
-	create: (payload: Partial<T> | FormData) => Promise<T | undefined>;
-	update: (id?: string | number, payload?: Partial<T> | FormData) => Promise<T | undefined>;
+	
+	create: (payload: Partial<T> | FormData, action?: string, id?: string | number) => Promise<T | undefined>;
+	update: (id?: string | number, payload?: Partial<T> | FormData, action?: string) => Promise<T | undefined>;
 	remove: (id: string | number) => Promise<void>;
 	refetch: () => Promise<TResponse extends 'array' ? T[] : T | undefined>;
 }
@@ -243,8 +244,9 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			isSuccess: query.isSuccess,
 			error: query.error as AxiosError | null,
 
-			create: (payload) => mutation.mutateAsync({ method: 'POST', payload }),
-			update: (id, payload) => mutation.mutateAsync({ method: 'PATCH', id, payload }),
+			create: (payload, action?: string, id?: string | number) => mutation.mutateAsync({ method: 'POST', payload, action, id }),
+
+			update: (id, payload, action?: string) => mutation.mutateAsync({ method: 'PATCH', id, payload, action }),
 			remove: (id) => mutation.mutateAsync({ method: 'DELETE', id }).then(() => void 0),
 
 			refetch: async () => {

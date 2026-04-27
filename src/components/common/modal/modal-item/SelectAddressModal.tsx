@@ -7,7 +7,7 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { APIResponse } from '@/types/types';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 type AddressUI = {
@@ -29,33 +29,28 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 	const [selectedShippingId, setSelectedShippingId] = useState<number | null>(
 		() => modalData.find((a) => a.isDefaultShipping)?.id ?? modalData[0]?.id ?? null,
 	);
-	const [defaultingId, setDefaultingId] = useState<number | null>(null);
 
-	const { create: setDefaultAddress } = useAppData<APIResponse, 'single'>({
+	const { create: setDefaultAddress, isMutating } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS_SET_DEFAULT(Number(defaultingId)),
+		api: apiEndpoint.users.DELIVERY_ADDRESS(),
 		auth: true,
 		responseType: 'single',
 		enabled: false,
+		initialData: {} as APIResponse,
+		optimistic: false,
+		invalidateKeys: [[QueriesKey.DELIVERY_ADDRESS_LIST]],
 		onSuccess: () => {
 			toast.success('Default address updated!');
-			setDefaultingId(null);
 			closeModal();
 		},
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to update default address');
-			setDefaultingId(null);
 		},
 	});
 
-	useEffect(() => {
-		if (!defaultingId) return;
-		setDefaultAddress({});
-	}, [defaultingId]);
-
-	const handleConfirm = () => {
-		if (!selectedShippingId) return;
-		setDefaultingId(selectedShippingId);
+	const handleConfirm = async () => {
+		if (!selectedShippingId || isMutating) return;
+		await setDefaultAddress({}, 'set_default', selectedShippingId);
 	};
 
 	return (
@@ -71,9 +66,10 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 						return (
 							<div
 								key={addr.id}
-								onClick={() => setSelectedShippingId(addr.id)}
+								onClick={() => !isMutating && setSelectedShippingId(addr.id)}
 								className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all
-									${isSelected ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-accent/50'}`}
+									${isSelected ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-accent/50'}
+									${isMutating ? 'opacity-50 pointer-events-none' : ''}`}
 							>
 								<div
 									className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center
@@ -88,7 +84,7 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 										{addr.address}, {addr.city}
 									</p>
 									<p className="text-sm text-muted-foreground">{addr.phone}</p>
-									{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold mt-1 block">✔ Current Default</span>}
+									{addr.isDefaultShipping && <span className="text-xs text-green-600 font-semibold mt-1 block">Current Default</span>}
 								</div>
 							</div>
 						);
@@ -96,11 +92,11 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 				</div>
 
 				<DialogFooter className="mt-4">
-					<Button variant="outline" onClick={closeModal}>
+					<Button variant="outline" onClick={closeModal} disabled={isMutating}>
 						Cancel
 					</Button>
-					<Button onClick={handleConfirm} disabled={!selectedShippingId || defaultingId !== null}>
-						{defaultingId ? 'Saving...' : 'Confirm'}
+					<Button onClick={handleConfirm} disabled={!selectedShippingId || isMutating}>
+						{isMutating ? 'Saving...' : 'Confirm'}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
