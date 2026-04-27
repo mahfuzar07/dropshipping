@@ -36,7 +36,7 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 		auth: true,
 		responseType: 'single',
 		enabled: false,
-		initialData: {} as APIResponse,
+		placeholderData: {} as APIResponse,
 		optimistic: false,
 		invalidateKeys: [[QueriesKey.DELIVERY_ADDRESS_LIST]],
 		onSuccess: () => {

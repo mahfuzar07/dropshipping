@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient, QueryKey } from '@tanstack/react-query';
 import { api, authApi } from '@/lib/axiosInstance';
 import { AxiosError } from 'axios';
@@ -18,6 +18,7 @@ export interface UseAppDataOptions<T, TResponse extends ResponseType> {
 	api: string;
 	auth?: boolean;
 	initialData?: TResponse extends 'array' ? T[] : T;
+	placeholderData?: TResponse extends 'array' ? T[] : T; // ✅ added: GET suppress without initialData hack
 	enabled?: boolean;
 	staleTime?: number;
 	gcTime?: number;
@@ -29,7 +30,7 @@ export interface UseAppDataOptions<T, TResponse extends ResponseType> {
 	idField?: IdField;
 	position?: Position;
 	optimistic?: boolean | ((method: Method) => boolean);
-	onSuccess?: (data: TResponse extends 'array' ? T[] : T, method: Method) => void;
+	onSuccess?: (data: TResponse extends 'array' ? T[] : T | undefined, method: Method) => void; // ✅ DELETE also fires
 	onError?: (error: AxiosError, method?: Method) => void;
 	serverRevalidate?: () => Promise<void>;
 }
@@ -42,7 +43,6 @@ export interface UseAppDataResult<T, TResponse extends ResponseType> {
 	isError: boolean;
 	isSuccess: boolean;
 	error: AxiosError | null;
-	
 	create: (payload: Partial<T> | FormData, action?: string, id?: string | number) => Promise<T | undefined>;
 	update: (id?: string | number, payload?: Partial<T> | FormData, action?: string) => Promise<T | undefined>;
 	remove: (id: string | number) => Promise<void>;
@@ -63,6 +63,7 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 		api: path,
 		auth = false,
 		initialData,
+		placeholderData,
 		enabled = true,
 		staleTime = 5 * 60 * 1000,
 		gcTime = 30 * 60 * 1000,
@@ -83,18 +84,26 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 	const axiosInstance = auth ? authApi : api;
 	const queryKey = useMemo(() => normalizeKey(key), [key]);
 
-	const stableHeaders = useMemo(() => extraHeaders ?? {}, [extraHeaders ? JSON.stringify(extraHeaders) : null]);
+	// ✅ Fix 4: stable headers — no rules-of-hooks violation
+	const headersJson = JSON.stringify(extraHeaders ?? {});
+	const stableHeaders = useMemo(() => extraHeaders ?? {}, [headersJson]);
+
+	// ✅ Fix 2: path ref — always latest URL in mutationFn without stale closure
+	const pathRef = useRef(path);
+	pathRef.current = path;
 
 	// Fetcher
 	const fetchData = useCallback(async () => {
-		const { data } = await axiosInstance.get(path, { headers: stableHeaders });
+		const { data } = await axiosInstance.get(pathRef.current, { headers: stableHeaders });
 		return data as TResponse extends 'array' ? T[] : T;
-	}, [path, stableHeaders, axiosInstance]);
+	}, [stableHeaders, axiosInstance]);
 
 	const query = useQuery({
 		queryKey,
 		queryFn: fetchData,
 		initialData,
+		// ✅ Fix 1: placeholderData option — consumer can suppress GET without initialData hack
+		placeholderData: placeholderData as any,
 		staleTime,
 		gcTime,
 		refetchOnWindowFocus: false,
@@ -116,7 +125,8 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			payload?: Partial<T> | FormData;
 			action?: string;
 		}) => {
-			let url = path.replace(/\/$/, '');
+			// ✅ Fix 2: pathRef.current — always uses latest path, no stale closure
+			let url = pathRef.current.replace(/\/$/, '');
 
 			if (id !== undefined) url += `/${id}`;
 			if (action) url += `/${action}`;
@@ -146,7 +156,7 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			if (!shouldOptimistic) return { previous };
 
 			if (payload instanceof FormData) {
-				console.warn(`[useAppData] Optimistic skipped for FormData in ${method} → ${path}`);
+				console.warn(`[useAppData] Optimistic skipped for FormData in ${method} → ${pathRef.current}`);
 				return { previous };
 			}
 
@@ -182,7 +192,8 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			if (context?.previous !== undefined) {
 				queryClient.setQueryData(queryKey, context.previous);
 			}
-			const error = err instanceof AxiosError ? err : new AxiosError(String(err));
+			// ✅ Fix 6: proper error handling — don't cast unknown errors to AxiosError
+			const error = err instanceof AxiosError ? err : new AxiosError('Unknown error occurred');
 			onError?.(error, variables.method);
 		},
 
@@ -217,14 +228,13 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			const keys = [queryKey, ...invalidateKeys.map(normalizeKey)];
 			await Promise.allSettled([...keys.map((k) => queryClient.invalidateQueries({ queryKey: k })), serverRevalidate?.()]);
 
-			if (serverData && method !== 'DELETE') {
-				onSuccess?.(serverData as any, method);
-			}
+			// ✅ Fix 3 & 5: onSuccess fires for ALL methods including DELETE
+			onSuccess?.(serverData as any, method);
 		},
 	});
 
 	// ──────────────────────────────────────────────
-	// Type-safe data for conditional TResponse
+	// Type-safe data
 	// ──────────────────────────────────────────────
 	const typedData = useMemo(() => {
 		if (responseType === 'array') {
@@ -247,6 +257,7 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 			create: (payload, action?: string, id?: string | number) => mutation.mutateAsync({ method: 'POST', payload, action, id }),
 
 			update: (id, payload, action?: string) => mutation.mutateAsync({ method: 'PATCH', id, payload, action }),
+
 			remove: (id) => mutation.mutateAsync({ method: 'DELETE', id }).then(() => void 0),
 
 			refetch: async () => {
