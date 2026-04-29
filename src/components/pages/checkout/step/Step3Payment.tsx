@@ -52,6 +52,11 @@ type CartResponse = {
 	updated_at: string;
 };
 
+type OrderPayload = {
+	shipping_charge: number;
+	address_id: number;
+};
+
 /* ================= COMPONENT ================= */
 
 export default function Step3Payment() {
@@ -66,6 +71,21 @@ export default function Step3Payment() {
 		auth: true,
 		responseType: 'single',
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
+	});
+
+	const { create: addNewOrder, isMutating: isAddressLoading } = useAppData<OrderPayload, 'single'>({
+		key: [QueriesKey.NEW_ORDERS],
+		api: apiEndpoint.orders.ORDERS_CREATE(),
+		auth: true,
+		responseType: 'single',
+		enabled: false,
+		onSuccess: () => {
+			toast.success('Address added successfully!');
+		},
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
 	});
 
 	console.log('Cart data in Step 3:', data);
@@ -95,7 +115,14 @@ export default function Step3Payment() {
 
 		try {
 			// fake API simulation
-			const isSuccess = true; // replace with real API
+			const payload: OrderPayload = {
+				shipping_charge: shipping.price,
+				address_id: address?.id,
+			};
+
+			console.log('Order payload:', payload);
+
+			const isSuccess = await addNewOrder(payload); // replace with real API
 
 			if (!isSuccess) {
 				router.push('/order/failed');
@@ -105,7 +132,7 @@ export default function Step3Payment() {
 			nextStep();
 			router.push('/order/success');
 		} catch (err) {
-			router.push('/order/failed');
+			// router.push('/order/failed');
 		}
 	};
 	const cardField = (key: PaymentKeys, formatter?: (v: string) => string) => ({
