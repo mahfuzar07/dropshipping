@@ -9,6 +9,10 @@ import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import FormField from '../../../common/elements/form-element/FormField';
 import { CreditCard, MoveLeft, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
 
@@ -40,13 +44,33 @@ const formatExpiry = (value: string) => {
 	return `${v.slice(0, 2)}/${v.slice(2, 4)}`;
 };
 
+type CartResponse = {
+	id: number;
+	items: CartItemAPI[];
+	total_price: number;
+	created_at: string;
+	updated_at: string;
+};
+
 /* ================= COMPONENT ================= */
 
 export default function Step3Payment() {
-	const { payment, setPayment, nextStep, prevStep } = useCheckoutStore();
+	const { payment, setPayment, nextStep, prevStep, address, shipping } = useCheckoutStore();
 	const router = useRouter();
 	const [errors, setErrors] = useState<ErrorState>({});
 	const [payType, setPayType] = useState<PayType>('card');
+
+	const { data, isLoading } = useAppData<CartResponse, 'single'>({
+		key: [QueriesKey.CART_DATA],
+		api: apiEndpoint.cart.GET_CART(),
+		auth: true,
+		responseType: 'single',
+		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
+	});
+
+	console.log('Cart data in Step 3:', data);
+	console.log('Cart data address:', address);
+	console.log('Cart data shipping:', shipping);
 
 	const validate = (): ErrorState => {
 		if (payType !== 'card') return {};
