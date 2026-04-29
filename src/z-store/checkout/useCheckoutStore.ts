@@ -2,7 +2,14 @@ import { create } from 'zustand';
 
 /* ================= TYPES ================= */
 
-type ShippingMethod = 'std' | 'exp' | 'ovn' | '';
+export type ShippingInterface = {
+	id: number;
+	method: string;
+	label: string;
+	price: number;
+	duration: string;
+	icon: React.ReactNode;
+};
 
 interface Payment {
 	cardName: string;
@@ -18,12 +25,12 @@ interface OrderSummary {
 interface CheckoutState {
 	step: number;
 	address: number | null;
-	shipping: ShippingMethod;
+	shipping: ShippingInterface | null;
 	payment: Payment;
 	orderSummary: OrderSummary;
 
 	setAddress: (id: number) => void;
-	setShipping: (method: ShippingMethod) => void;
+	setShipping: (shippingInfo: ShippingInterface | null) => void;
 	setPayment: (data: Partial<Payment>) => void;
 
 	nextStep: () => void;
@@ -36,7 +43,7 @@ interface CheckoutState {
 export const useCheckoutStore = create<CheckoutState>((set) => ({
 	step: 1,
 	address: null,
-	shipping: '',
+	shipping: null,
 
 	payment: {
 		cardName: '',
@@ -50,7 +57,7 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
 	},
 
 	setAddress: (id) => set({ address: id }),
-	setShipping: (method) => set({ shipping: method }),
+	setShipping: (shippingInfo) => set({ shipping: shippingInfo }),
 	setPayment: (data) => set((s) => ({ payment: { ...s.payment, ...data } })),
 
 	nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 3) })),

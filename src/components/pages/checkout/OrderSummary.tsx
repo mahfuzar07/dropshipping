@@ -4,7 +4,7 @@ import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Package, Zap, Rocket, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Package, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
@@ -12,8 +12,6 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
-
-type ShippingMethod = 'std' | 'exp' | 'ovn';
 
 type CartItemAPI = {
 	id: number;
@@ -51,20 +49,6 @@ type CartResponse = {
 	updated_at: string;
 };
 
-/* ================= CONST ================= */
-
-const SHIPPING_METHODS: {
-	id: ShippingMethod;
-	label: string;
-	duration: string;
-	price: number;
-	icon: React.ReactNode;
-}[] = [
-	{ id: 'std', label: 'Standard Delivery', duration: '5–7 business days', price: 60, icon: <Package size={18} /> },
-	{ id: 'exp', label: 'Express Delivery', duration: '2–3 business days', price: 150, icon: <Zap size={18} /> },
-	{ id: 'ovn', label: 'Overnight Delivery', duration: 'Next business day', price: 350, icon: <Rocket size={18} /> },
-];
-
 /* ================= COMPONENT ================= */
 
 export default function OrderSummary() {
@@ -95,10 +79,10 @@ export default function OrderSummary() {
 	const handleToggle = () => {
 		if (isMobile) setCollapsed((prev) => !prev);
 	};
-
-	const shipPrice = shipping ? (SHIPPING_METHODS.find((m) => m.id === shipping)?.price ?? null) : null;
+	const shipPrice = shipping?.price ?? 0;
 	const subtotal = data?.total_price ?? 0;
-	const total = subtotal - (orderSummary?.discount ?? 0) + (shipPrice ?? 0);
+	const discount = orderSummary?.discount ?? 0;
+	const total = subtotal - discount + shipPrice;
 
 	return (
 		<Card className="p-0 border-orange-100 bg-white overflow-hidden font-hanken">
@@ -164,11 +148,11 @@ export default function OrderSummary() {
 							<span className="text-muted-foreground">Subtotal</span>
 							<span>৳{subtotal.toLocaleString()}</span>
 						</div>
-
+						{/*
 						<div className="flex justify-between text-[13px]">
 							<span className="text-muted-foreground">Discount</span>
 							<span className="text-green-600 font-medium">-৳{(orderSummary?.discount ?? 0).toLocaleString()}</span>
-						</div>
+						</div> */}
 
 						<div className="flex justify-between text-[13px]">
 							<span className="text-muted-foreground">Shipping</span>

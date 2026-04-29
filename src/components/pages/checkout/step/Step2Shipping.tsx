@@ -1,12 +1,12 @@
-import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
+import { ShippingInterface, useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MoveLeft, MoveRight, Truck } from 'lucide-react';
 
-const SHIPPING_METHODS = [
-	{ id: 'std', label: 'Standard Delivery', duration: '5–7 business days', price: 60, icon: '📦' },
-	{ id: 'exp', label: 'Express Delivery', duration: '2–3 business days', price: 150, icon: '⚡' },
-	{ id: 'ovn', label: 'Overnight Delivery', duration: 'Next business day', price: 350, icon: '🚀' },
+const SHIPPING_METHODS: ShippingInterface[] = [
+	{ id: 1, method: 'std', label: 'Standard Delivery', duration: '5–7 business days', price: 60, icon: '📦' },
+	{ id: 2, method: 'exp', label: 'Express Delivery', duration: '2–3 business days', price: 150, icon: '⚡' },
+	{ id: 3, method: 'over', label: 'Overnight Delivery', duration: 'Next business day', price: 350, icon: '🚀' },
 ];
 
 export default function Step2Shipping() {
@@ -29,13 +29,13 @@ export default function Step2Shipping() {
 			</h1>
 
 			<div className="space-y-2.5">
-				{SHIPPING_METHODS.map((m) => {
-					const sel = shipping === m.id;
+				{SHIPPING_METHODS.map((infoObj) => {
+					const sel = shipping?.id === infoObj.id;
 					return (
 						<button
-							key={m.id}
+							key={infoObj.id}
 							onClick={() => {
-								setShipping(m.id as 'std' | 'exp' | 'ovn');
+								setShipping(infoObj);
 								setError('');
 							}}
 							className={`
@@ -44,12 +44,12 @@ export default function Step2Shipping() {
 								${sel ? 'border-orange-300 border-2 bg-orange-50/50 shadow-sm' : 'border-border border-2 bg-background hover:bg-muted/40'}
 							`}
 						>
-							<span className="text-2xl">{m.icon}</span>
+							<span className="text-2xl">{infoObj.icon}</span>
 							<div className="flex-1">
-								<p className={`text-sm font-semibold ${sel ? 'text-orange-400' : 'text-foreground'}`}>{m.label}</p>
-								<p className="text-xs text-muted-foreground mt-0.5">{m.duration}</p>
+								<p className={`text-sm font-semibold ${sel ? 'text-orange-400' : 'text-foreground'}`}>{infoObj.label}</p>
+								<p className="text-xs text-muted-foreground mt-0.5">{infoObj.duration}</p>
 							</div>
-							<p className={`font-bold text-[15px] shrink-0 font-hanken ${sel ? 'text-orange-600' : 'text-foreground'}`}>৳{m.price}</p>
+							<p className={`font-bold text-[15px] shrink-0 font-hanken ${sel ? 'text-orange-600' : 'text-foreground'}`}>৳{infoObj.price}</p>
 							<div
 								className={`
 									w-5 h-5 rounded-full shrink-0 transition-all duration-200 bg-white
