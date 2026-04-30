@@ -55,8 +55,6 @@ export default function GiftIdeas() {
 		},
 	});
 
-	console.log('Gift Ideas Products:', giftIdeasProducts);
-
 	const products: Product[] = giftIdeasProducts?.results ?? [];
 
 	return (

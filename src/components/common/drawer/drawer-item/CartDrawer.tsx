@@ -81,10 +81,28 @@ type CartPayload = {
 
 const getVariantBySize = (variants: Variant[], size: string) => variants.find((v) => v.size_name === size);
 
-const parsePrice = (priceStr: string): number => {
-	const parsed = parseFloat(priceStr.replace(/[^\d.]/g, ''));
-	return isNaN(parsed) ? 0 : parsed;
-};
+// const parsePrice = (priceStr: string): number => {
+// 	const parsed = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+// 	return isNaN(parsed) ? 0 : parsed;
+// };
+
+function parsePrice(variant) {
+	if (!variant?.price) {
+		return { currency: '', amount: 0 };
+	}
+
+	// Extract currency (non-numeric characters at the start)
+	const currencyMatch = variant.price.match(/^[^\d.]+/);
+	const currency = currencyMatch ? currencyMatch[0] : '';
+
+	// Extract numeric amount
+	const amount = parseFloat(variant.price.replace(/[^\d.]/g, ''));
+
+	return {
+		currency,
+		amount: isNaN(amount) ? 0 : amount,
+	};
+}
 
 /* =========================
    Component
@@ -241,7 +259,9 @@ export default function CartDrawer() {
 										.filter(([, qty]) => qty > 0)
 										.map(([size, qty], index) => {
 											const variant = getVariantBySize(cartItem.variant, size);
-											const price = variant ? parsePrice(variant.price) : 0;
+											const { currency, amount } = parsePrice(variant);
+											console.log('variant===', variant);
+											console.log('price===', { currency, amount });
 											const rowKey = `${cartItem.id}-${size}`;
 											const isUpdating = loadingKey === rowKey;
 
@@ -315,8 +335,16 @@ export default function CartDrawer() {
 																			</div>
 
 																			<div className="text-right">
-																				<div className="font-medium text-sm">${(price * qty).toFixed(2)}</div>
-																				{qty > 1 && <div className="text-xs text-muted-foreground">${price.toFixed(2)} each</div>}
+																				<div className="font-medium text-sm">
+																					{currency}
+																					{(amount * qty).toFixed(2)}
+																				</div>
+																				{qty > 1 && (
+																					<div className="text-xs text-muted-foreground">
+																						{currency}
+																						{amount.toFixed(2)} each
+																					</div>
+																				)}
 																			</div>
 																		</div>
 																	</div>

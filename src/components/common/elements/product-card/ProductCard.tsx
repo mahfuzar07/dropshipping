@@ -74,7 +74,8 @@ export default function ProductCard({ product }: { product: Product }) {
 					{/* Price */}
 					<div className="mt-auto">
 						<h3 className="text-xl font-bold text-primary flex items-center font-hanken">
-							<span className="mr-0.5">{getCurrencySymbol()}</span>
+							{/* <span className="mr-0.5">{getCurrencySymbol()}</span> */}
+							<span className="mr-0.5">{product?.price?.currency}</span>
 							{product?.price?.amount || '0'}
 							{product?.price?.unit || ''}
 						</h3>
