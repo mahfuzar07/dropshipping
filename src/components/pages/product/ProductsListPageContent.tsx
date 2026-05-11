@@ -3,12 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LayoutGrid, List } from 'lucide-react';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import ProductFilterSidebar from './ProductFilterSidebar';
 import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
-import { useProductStore } from '@/z-store/product/useProductStore';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -17,27 +17,12 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 
-/* ================= TYPES ================= */
-
 type Product = {
 	_id: string;
-	offer_id: string;
 	title: string;
-	url: string;
 	image: string;
-	product_name: string;
-	promotion: string;
 	rating: string;
-	sold: string;
-	price: {
-		amount: string;
-		currency: string;
-		overseas: string;
-		unit: string;
-	};
-	seller_icon: string;
-	is_ad: boolean;
-	moq: null | number;
+	price: { amount: string; currency: string };
 };
 
 type TopSellingResponse = {
@@ -49,110 +34,194 @@ type TopSellingResponse = {
 };
 
 export default function ProductsListPageContent() {
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+
 	const {
 		selectedCategories,
 		discountOnly,
 		priceRange,
+		searchText,
 		selectedRatings,
 		sortBy,
 		viewMode,
 		pagination,
 		setSortBy,
 		setViewMode,
+		setSearchText,
+		setCategory,
+		setPriceRange,
+		toggleDiscount,
 		loadMoreProducts,
 		resetPagination,
-		setPaginationData,
 		clearAllFilters,
 	} = useProductFilterStore();
 
-	const { products, isLoading, setLoading, setProducts, appendProducts, clearProducts } = useProductStore();
+	/* ================================================================
+	   1. INIT STORE FROM URL on first mount
+	   ================================================================ */
+	const didInitFromURL = useRef(false);
 
-	const loadMoreRef = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		if (didInitFromURL.current) return;
+		didInitFromURL.current = true;
 
-	/* ================= FILTER ================= */
+		const q = searchParams.get('search') || '';
+		const cat = searchParams.get('category');
+		const minP = searchParams.get('min_price');
+		const maxP = searchParams.get('max_price');
+		const disc = searchParams.get('discount');
+		const sort = searchParams.get('sort');
 
-	const getFilteredData = useCallback(() => {
-		let data = [...products]; // ✅ FIX: dummy array remove (real store use)
+		if (q) setSearchText(q);
+		if (cat) setCategory(Number(cat));
+		if (minP || maxP) setPriceRange([Number(minP ?? 0), Number(maxP ?? 1_000_000_000)]);
+		if (disc === 'true') toggleDiscount();
+		if (sort) setSortBy(sort);
+	}, []);
 
-		if (selectedCategories.length) {
-			data = data.filter((p: any) => selectedCategories.includes(Number(p.category)));
+	/* ================================================================
+	   2. DEBOUNCE searchText (400ms)
+	   ================================================================ */
+	const [debouncedSearch, setDebouncedSearch] = useState(searchText);
+
+	useEffect(() => {
+		const t = setTimeout(() => setDebouncedSearch(searchText), 400);
+		return () => clearTimeout(t);
+	}, [searchText]);
+
+	/* ================================================================
+	   3. SYNC FILTERS → URL
+	   ================================================================ */
+	const updateURL = useCallback(
+		(params: URLSearchParams) => {
+			const newURL = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+			router.replace(newURL, { scroll: false });
+		},
+		[pathname, router],
+	);
+
+	useEffect(() => {
+		const params = new URLSearchParams();
+
+		if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+		if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
+		if (discountOnly) params.set('discount', 'true');
+		if (priceRange[0] > 0) params.set('min_price', String(priceRange[0]));
+		if (priceRange[1] < 1_000_000_000) params.set('max_price', String(priceRange[1]));
+		if (sortBy && sortBy !== 'newest') params.set('sort', sortBy);
+
+		updateURL(params);
+	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy, updateURL]);
+
+	/* ================================================================
+	   4. RESET PAGE when filters change (not on page increment)
+	   ================================================================ */
+	const prevFiltersRef = useRef({
+		debouncedSearch,
+		selectedCategories,
+		discountOnly,
+		priceRange,
+		selectedRatings,
+		sortBy,
+	});
+
+	useEffect(() => {
+		const prev = prevFiltersRef.current;
+
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.discountOnly !== discountOnly ||
+			prev.sortBy !== sortBy ||
+			JSON.stringify(prev.priceRange) !== JSON.stringify(priceRange) ||
+			JSON.stringify(prev.selectedCategories) !== JSON.stringify(selectedCategories) ||
+			JSON.stringify(prev.selectedRatings) !== JSON.stringify(selectedRatings);
+
+		if (filtersChanged) {
+			resetPagination();
+			prevFiltersRef.current = {
+				debouncedSearch,
+				selectedCategories,
+				discountOnly,
+				priceRange,
+				selectedRatings,
+				sortBy,
+			};
 		}
+	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
 
-		if (discountOnly) {
-			data = data.filter((p: any) => p.discount);
-		}
+	/* ================================================================
+	   5. BUILD API QUERY PARAMS
+	   ================================================================ */
+	const queryParams = useMemo(() => {
+		const params = new URLSearchParams();
 
-		data = data.filter((p: any) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+		params.set('page', String(pagination.page_number ?? 1));
+		params.set('limit', String(pagination.page_size ?? 20));
+
+		if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+		if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
+		if (discountOnly) params.set('discount', 'true');
+		if (priceRange[0] > 0) params.set('min_price', String(priceRange[0]));
+		if (priceRange[1] < 1_000_000_000) params.set('max_price', String(priceRange[1]));
+		if (sortBy && sortBy !== 'newest') params.set('sort', sortBy);
+
+		return params.toString();
+	}, [pagination.page_number, pagination.page_size, debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy]);
+
+	/* ================================================================
+	   6. FETCH
+	   ================================================================ */
+	const { data: topProducts, isLoading } = useAppData<TopSellingResponse, 'single'>({
+		key: [QueriesKey.TOP_PRODUCTS, queryParams],
+		api: apiEndpoint.products.TOP_PRODUCTS(queryParams),
+		auth: true,
+		responseType: 'single',
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to fetch products');
+		},
+	});
+
+	const allProducts = topProducts?.results || [];
+
+	/* ================================================================
+	   7. CLIENT-SIDE RATING FILTER + SORT (fallback)
+	   ================================================================ */
+	const filteredProducts = useMemo(() => {
+		let data = [...allProducts];
 
 		if (selectedRatings.length) {
-			data = data.filter((p: any) => selectedRatings.includes(p.rating));
+			data = data.filter((p) => selectedRatings.includes(Number(p.rating || 0)));
 		}
 
 		if (sortBy === 'price-low') {
-			data.sort((a: any, b: any) => a.price - b.price);
+			data.sort((a, b) => Number(a.price.amount) - Number(b.price.amount));
 		} else if (sortBy === 'price-high') {
-			data.sort((a: any, b: any) => b.price - a.price);
+			data.sort((a, b) => Number(b.price.amount) - Number(a.price.amount));
 		}
 
 		return data;
-	}, [products, selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
+	}, [allProducts, selectedRatings, sortBy]);
 
-	/* ================= FETCH ================= */
+	/* ================================================================
+	   8. CLIENT-SIDE PAGINATION WINDOW
+	   ================================================================ */
+	const visibleProducts = useMemo(() => {
+		const size = pagination.page_size || 20;
+		const page = pagination.page_number || 1;
+		return filteredProducts.slice(0, page * size);
+	}, [filteredProducts, pagination]);
 
-	const fetchProducts = useCallback(
-		(isLoadMore = false) => {
-			if (isLoading) return;
-
-			setLoading(true);
-
-			const filtered = getFilteredData();
-
-			const page = pagination.page_number ?? 1;
-			const size = pagination.page_size ?? 10;
-
-			const start = (page - 1) * size;
-			const end = start + size;
-
-			const paginated = filtered.slice(start, end);
-
-			setTimeout(() => {
-				if (isLoadMore) {
-					appendProducts(paginated);
-				} else {
-					setProducts(paginated);
-				}
-
-				setPaginationData({
-					count: filtered.length,
-					page_number: page,
-					page_size: size,
-					total_pages: Math.ceil(filtered.length / size),
-					hasMore: end < filtered.length,
-				});
-
-				setLoading(false);
-			}, 100);
-		},
-		[getFilteredData, isLoading, pagination],
-	);
-
-	/* ================= EFFECTS ================= */
-
-	useEffect(() => {
-		resetPagination();
-		clearProducts();
-	}, [selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
-
-	useEffect(() => {
-		fetchProducts(pagination.page_number !== 1);
-	}, [pagination.page_number]);
-
-	/* ================= INFINITE SCROLL ================= */
+	/* ================================================================
+	   9. INFINITE SCROLL
+	   ================================================================ */
+	const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
-				if (entries[0].isIntersecting && pagination.hasMore && !isLoading) {
+				if (entries[0].isIntersecting && visibleProducts.length < filteredProducts.length && !isLoading) {
 					loadMoreProducts();
 				}
 			},
@@ -166,24 +235,19 @@ export default function ProductsListPageContent() {
 			if (el) observer.unobserve(el);
 			observer.disconnect();
 		};
-	}, [pagination.hasMore, isLoading, loadMoreProducts]);
+	}, [visibleProducts, filteredProducts, isLoading]);
 
-	/* ================= UI ================= */
+	/* ================================================================
+	   10. CLEAR ALL — also wipe URL
+	   ================================================================ */
+	const handleClearAll = () => {
+		clearAllFilters();
+		router.replace(pathname, { scroll: false });
+	};
 
-	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<TopSellingResponse, 'single'>({
-		key: [QueriesKey.TOP_PRODUCTS],
-		api: apiEndpoint.products.TOP_PRODUCTS(),
-		auth: true,
-		responseType: 'single',
-
-		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to add address');
-		},
-	});
-
-	const _products = topProducts?.results || [];
-	console.log('products', _products);
-
+	/* ================================================================
+	   RENDER
+	   ================================================================ */
 	return (
 		<div className="container mx-auto py-3">
 			<div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -197,7 +261,7 @@ export default function ProductsListPageContent() {
 					{/* Toolbar */}
 					<div className="flex items-center justify-between mb-6">
 						<span className="text-md text-gray-600">
-							<strong>Results for</strong> "product"
+							<strong>{filteredProducts.length}</strong> Products Found
 						</span>
 
 						<div className="flex gap-3">
@@ -223,41 +287,31 @@ export default function ProductsListPageContent() {
 						</div>
 					</div>
 
-					{/* Products */}
-					{isLoading && products.length === 0 ? (
+					{/* Product Grid */}
+					{isLoading ? (
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<ProductCardSkeleton key={i} />
 							))}
 						</div>
-					) : products.length > 0 ? (
+					) : visibleProducts.length > 0 ? (
 						<>
 							<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
-								{products.map((product, i) => (
+								{visibleProducts.map((product, i) => (
 									<motion.div key={product._id || i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 										<ProductCard product={product} />
 									</motion.div>
 								))}
 							</div>
 
-							{/* loader */}
-							{isLoading && (
-								<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
-									{Array.from({ length: 4 }).map((_, i) => (
-										<ProductCardSkeleton key={i} />
-									))}
-								</div>
-							)}
-
-							{/* observer */}
 							<div ref={loadMoreRef} className="py-10 text-center text-sm text-muted-foreground">
-								{pagination.hasMore ? 'Loading more...' : 'No more products'}
+								{visibleProducts.length < filteredProducts.length ? 'Loading more...' : 'No more products'}
 							</div>
 						</>
 					) : (
 						<div className="text-center py-20">
 							<p className="mb-3">No products found</p>
-							<Button onClick={clearAllFilters}>Clear Filters</Button>
+							<Button onClick={handleClearAll}>Clear Filters</Button>
 						</div>
 					)}
 				</div>

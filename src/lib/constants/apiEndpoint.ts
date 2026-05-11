@@ -45,7 +45,8 @@ export const apiEndpoint = {
 		delete: (id: string | number) => `/category/${id}`,
 	},
 	products: {
-		TOP_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
+		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
+		// PRODUCTS_FILTER: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		LATEST_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
 		NEW_LAUNCH_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
 		GIFT_DEEAS_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=3`,

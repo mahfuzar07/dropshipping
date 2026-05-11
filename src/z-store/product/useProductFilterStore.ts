@@ -113,12 +113,13 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 			},
 		})),
 
+	// AFTER (correct):
 	clearAllFilters: () =>
 		set({
 			searchText: '',
 			selectedCategories: [],
 			discountOnly: false,
-			priceRange: [0, 0],
+			priceRange: [0, 1_000_000_000], // ← restored to full range
 			selectedRatings: [],
 			pagination: {
 				...get().pagination,
