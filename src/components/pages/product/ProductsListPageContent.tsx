@@ -12,6 +12,10 @@ import { useProductStore } from '@/z-store/product/useProductStore';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
 
@@ -34,6 +38,14 @@ type Product = {
 	seller_icon: string;
 	is_ad: boolean;
 	moq: null | number;
+};
+
+type TopSellingResponse = {
+	page: number;
+	limit: number;
+	total: number;
+	total_pages: number;
+	results: Product[];
 };
 
 export default function ProductsListPageContent() {
@@ -157,6 +169,20 @@ export default function ProductsListPageContent() {
 	}, [pagination.hasMore, isLoading, loadMoreProducts]);
 
 	/* ================= UI ================= */
+
+	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<TopSellingResponse, 'single'>({
+		key: [QueriesKey.TOP_PRODUCTS],
+		api: apiEndpoint.products.TOP_PRODUCTS(),
+		auth: true,
+		responseType: 'single',
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const _products = topProducts?.results || [];
+	console.log('products', _products);
 
 	return (
 		<div className="container mx-auto py-3">
