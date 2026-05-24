@@ -9,21 +9,13 @@ import { motion } from 'framer-motion';
 
 import ProductFilterSidebar from './ProductFilterSidebar';
 import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
-import ProductCard from '@/components/common/elements/product-card/ProductCard';
+import ProductCard, { Product } from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
-
-type Product = {
-	_id: string;
-	title: string;
-	image: string;
-	rating: string;
-	price: { amount: string; currency: string };
-};
 
 type TopSellingResponse = {
 	page: number;
@@ -56,6 +48,7 @@ export default function ProductsListPageContent() {
 		loadMoreProducts,
 		resetPagination,
 		clearAllFilters,
+		setPaginationData,
 	} = useProductFilterStore();
 
 	/* ================================================================
@@ -116,7 +109,14 @@ export default function ProductsListPageContent() {
 	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy, updateURL]);
 
 	/* ================================================================
-	   4. RESET PAGE when filters change (not on page increment)
+	   4. ACCUMULATED PRODUCTS STATE
+	   ================================================================ */
+	const [accumulatedProducts, setAccumulatedProducts] = useState<Product[]>([]);
+
+	const lastRenderedPageRef = useRef<number>(0);
+
+	/* ================================================================
+	   5. FILTER CHANGE → RESET ACCUMULATED LIST + PAGINATION
 	   ================================================================ */
 	const prevFiltersRef = useRef({
 		debouncedSearch,
@@ -139,6 +139,8 @@ export default function ProductsListPageContent() {
 			JSON.stringify(prev.selectedRatings) !== JSON.stringify(selectedRatings);
 
 		if (filtersChanged) {
+			setAccumulatedProducts([]);
+			lastRenderedPageRef.current = 0;
 			resetPagination();
 			prevFiltersRef.current = {
 				debouncedSearch,
@@ -152,7 +154,7 @@ export default function ProductsListPageContent() {
 	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
 
 	/* ================================================================
-	   5. BUILD API QUERY PARAMS
+	   6. BUILD API QUERY PARAMS
 	   ================================================================ */
 	const queryParams = useMemo(() => {
 		const params = new URLSearchParams();
@@ -171,7 +173,7 @@ export default function ProductsListPageContent() {
 	}, [pagination.page_number, pagination.page_size, debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy]);
 
 	/* ================================================================
-	   6. FETCH
+	   7. FETCH
 	   ================================================================ */
 	const { data: topProducts, isLoading } = useAppData<TopSellingResponse, 'single'>({
 		key: [QueriesKey.TOP_PRODUCTS, queryParams],
@@ -183,13 +185,49 @@ export default function ProductsListPageContent() {
 		},
 	});
 
-	const allProducts = topProducts?.results || [];
+	/* ================================================================
+	   8. ACCUMULATE — API response
+	   ================================================================ */
+	useEffect(() => {
+		if (!topProducts?.results) return;
+
+		const incomingPage = topProducts.page;
+
+		if (incomingPage === lastRenderedPageRef.current) return;
+		lastRenderedPageRef.current = incomingPage;
+
+		if (incomingPage === 1) {
+			setAccumulatedProducts(topProducts.results);
+		} else {
+			setAccumulatedProducts((prev) => {
+				const existingIds = new Set(prev.map((p) => p._id));
+				const newOnes = topProducts.results.filter((p) => !existingIds.has(p._id));
+				return [...prev, ...newOnes];
+			});
+		}
+
+		// Store-এ hasMore
+		setPaginationData({
+			count: topProducts.total,
+			page_number: topProducts.page,
+			page_size: topProducts.limit,
+			total_pages: topProducts.total_pages,
+			hasMore: topProducts.page < topProducts.total_pages,
+		});
+	}, [topProducts]);
 
 	/* ================================================================
-	   7. CLIENT-SIDE RATING FILTER + SORT (fallback)
+	   9. DERIVED LOADING STATES
+
+	   ================================================================ */
+	const isInitialLoading = isLoading && accumulatedProducts.length === 0;
+	const isLoadingMore = isLoading && accumulatedProducts.length > 0;
+
+	/* ================================================================
+	   10. CLIENT-SIDE RATING FILTER + SORT
 	   ================================================================ */
 	const filteredProducts = useMemo(() => {
-		let data = [...allProducts];
+		let data = [...accumulatedProducts];
 
 		if (selectedRatings.length) {
 			data = data.filter((p) => selectedRatings.includes(Number(p.rating || 0)));
@@ -202,46 +240,51 @@ export default function ProductsListPageContent() {
 		}
 
 		return data;
-	}, [allProducts, selectedRatings, sortBy]);
+	}, [accumulatedProducts, selectedRatings, sortBy]);
 
 	/* ================================================================
-	   8. CLIENT-SIDE PAGINATION WINDOW
-	   ================================================================ */
-	const visibleProducts = useMemo(() => {
-		const size = pagination.page_size || 20;
-		const page = pagination.page_number || 1;
-		return filteredProducts.slice(0, page * size);
-	}, [filteredProducts, pagination]);
+	   11. INFINITE SCROLL
 
-	/* ================================================================
-	   9. INFINITE SCROLL
 	   ================================================================ */
-	const loadMoreRef = useRef<HTMLDivElement | null>(null);
+	const isFetchingRef = useRef(isLoading);
+	const hasMoreRef = useRef(pagination.hasMore);
+
+	// ref
+	useEffect(() => {
+		isFetchingRef.current = isLoading;
+	}, [isLoading]);
 
 	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting && visibleProducts.length < filteredProducts.length && !isLoading) {
-					loadMoreProducts();
-				}
-			},
-			{ threshold: 0.1 },
-		);
+		hasMoreRef.current = pagination.hasMore;
+	}, [pagination.hasMore]);
 
-		const el = loadMoreRef.current;
-		if (el) observer.observe(el);
+	const loadMoreRef = useCallback(
+		(node: HTMLDivElement | null) => {
+			if (!node) return;
 
-		return () => {
-			if (el) observer.unobserve(el);
-			observer.disconnect();
-		};
-	}, [visibleProducts, filteredProducts, isLoading]);
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (entries[0].isIntersecting && hasMoreRef.current && !isFetchingRef.current) {
+						loadMoreProducts();
+					}
+				},
+				{ threshold: 0.1 },
+			);
+
+			observer.observe(node);
+
+			return () => observer.disconnect();
+		},
+		[loadMoreProducts],
+	);
 
 	/* ================================================================
-	   10. CLEAR ALL — also wipe URL
+	   12. CLEAR ALL
 	   ================================================================ */
 	const handleClearAll = () => {
 		clearAllFilters();
+		setAccumulatedProducts([]);
+		lastRenderedPageRef.current = 0;
 		router.replace(pathname, { scroll: false });
 	};
 
@@ -262,10 +305,11 @@ export default function ProductsListPageContent() {
 					<div className="flex items-center justify-between mb-6">
 						<span className="text-md text-gray-600">
 							<strong>{filteredProducts.length}</strong> Products Found
+							{pagination.hasMore && !isLoading && <span className="text-sm font-normal text-muted-foreground">more</span>}
 						</span>
 
 						<div className="flex gap-3">
-							<ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)}>
+							<ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
 								<ToggleGroupItem value="grid">
 									<LayoutGrid />
 								</ToggleGroupItem>
@@ -287,31 +331,51 @@ export default function ProductsListPageContent() {
 						</div>
 					</div>
 
-					{/* Product Grid */}
-					{isLoading ? (
+					{/* ── Initial Loading ── */}
+					{isInitialLoading ? (
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<ProductCardSkeleton key={i} />
 							))}
 						</div>
-					) : visibleProducts.length > 0 ? (
+					) : /* ── Products exist ── */
+					filteredProducts.length > 0 ? (
 						<>
 							<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
-								{visibleProducts.map((product, i) => (
-									<motion.div key={product._id || i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+								{filteredProducts.map((product, i) => (
+									<motion.div
+										key={product._id || i}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.25, delay: (i % 20) * 0.03 }}
+									>
 										<ProductCard product={product} />
 									</motion.div>
 								))}
 							</div>
 
-							<div ref={loadMoreRef} className="py-10 text-center text-sm text-muted-foreground">
-								{visibleProducts.length < filteredProducts.length ? 'Loading more...' : 'No more products'}
+							{/* ── Infinite scroll trigger + bottom indicator ── */}
+							<div ref={loadMoreRef} className="mt-6 min-h-[80px]">
+								{isLoadingMore ? (
+									<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+										{Array.from({ length: 4 }).map((_, i) => (
+											<ProductCardSkeleton key={`more-${i}`} />
+										))}
+									</div>
+								) : pagination.hasMore ? (
+									<div className="py-8 text-center text-sm text-muted-foreground">scroll for more products</div>
+								) : (
+									<div className="py-8 text-center text-sm text-muted-foreground">
+										all <strong>{filteredProducts.length}</strong> product
+									</div>
+								)}
 							</div>
 						</>
 					) : (
+						/* ── Empty state ── */
 						<div className="text-center py-20">
-							<p className="mb-3">No products found</p>
-							<Button onClick={handleClearAll}>Clear Filters</Button>
+							<p className="mb-3 text-muted-foreground">Product not found</p>
+							<Button onClick={handleClearAll}>Filters clear</Button>
 						</div>
 					)}
 				</div>

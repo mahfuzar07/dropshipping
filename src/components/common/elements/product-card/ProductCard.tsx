@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
 
-type Product = {
+export type Product = {
 	_id: string;
 	offer_id: string;
 	title: string;
@@ -19,6 +18,7 @@ type Product = {
 		unit: string;
 		overseas: string;
 	};
+	price_float: number;
 
 	rating: string;
 	sold: string;
@@ -30,7 +30,10 @@ type Product = {
 };
 
 export default function ProductCard({ product }: { product: Product }) {
+
 	if (!product) return null;
+
+	console.log('Rendering ProductCard for:', product);
 
 	return (
 		<motion.div
