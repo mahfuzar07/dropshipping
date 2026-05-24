@@ -1,28 +1,29 @@
 'use client';
 
-import { Search, Clock, X } from 'lucide-react';
+import { Search, Clock, X, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/axiosInstance';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const WORDS = ['Fashion & Apparel', 'Home & Garden', 'Toys & Hobbies', 'Health & Medical', 'Gifts'];
+type Product = {
+	_id: string;
+	title: string;
+	image: string;
+	rating: string;
+	price: { amount: string; currency: string };
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const WORDS = ['Fashion & Apparel', 'Home & Garden', 'Health & Medical', 'Gifts'];
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
-const ITEMS = [
-	{ icon: '🧸', name: 'Premium Teddy Bear', sub: 'Toys · 1,200+ sold', cat: 'toys' },
-	{ icon: '🎮', name: 'Gaming Controller Pro', sub: 'Electronics · Top rated', cat: 'electronics' },
-	{ icon: '💄', name: 'Luxury Skincare Set', sub: 'Beauty · 500+ reviews', cat: 'beauty' },
-	{ icon: '👟', name: 'Sport Running Shoes', sub: 'Footwear · Free shipping', cat: 'fashion' },
-	{ icon: '🪑', name: 'Ergonomic Office Chair', sub: 'Furniture · Best seller', cat: 'furniture' },
-	{ icon: '📦', name: 'Custom Packaging Service', sub: 'Services · B2B', cat: 'services' },
-	{ icon: '🎁', name: 'Gift Hamper Deluxe', sub: 'Gifts · Same-day delivery', cat: 'gifts' },
-	{ icon: '🏠', name: 'Smart Home Kit', sub: 'Gadgets · New arrival', cat: 'gadgets' },
-];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── LocalStorage helpers ─────────────────────────────────────────────────────
 
 function getHistory(): string[] {
 	if (typeof window === 'undefined') return [];
@@ -36,14 +37,14 @@ function getHistory(): string[] {
 function saveToHistory(term: string) {
 	if (!term.trim()) return;
 	const prev = getHistory().filter((h) => h.toLowerCase() !== term.toLowerCase());
-	const next = [term.trim(), ...prev].slice(0, MAX_HISTORY);
-	localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+	localStorage.setItem(HISTORY_KEY, JSON.stringify([term.trim(), ...prev].slice(0, MAX_HISTORY)));
 }
 
 function removeFromHistory(term: string) {
-	const next = getHistory().filter((h) => h !== term);
-	localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+	localStorage.setItem(HISTORY_KEY, JSON.stringify(getHistory().filter((h) => h !== term)));
 }
+
+// ─── Highlight match ──────────────────────────────────────────────────────────
 
 function Highlight({ text, query }: { text: string; query: string }) {
 	if (!query) return <>{text}</>;
@@ -58,40 +59,86 @@ function Highlight({ text, query }: { text: string; query: string }) {
 	);
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SearchBar() {
 	const router = useRouter();
+
 	const [query, setQuery] = useState('');
 	const [open, setOpen] = useState(false);
 	const [wordIdx, setWordIdx] = useState(0);
 	const [history, setHistory] = useState<string[]>([]);
-	const wrapperRef = useRef<HTMLDivElement>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
 
-	// Cycle animated placeholder words
+	// debounced search results
+	const [results, setResults] = useState<Product[]>([]);
+	const [searching, setSearching] = useState(false);
+
+	const wrapperRef = useRef<HTMLDivElement>(null);
+	const abortRef = useRef<AbortController | null>(null);
+
+	// ── Animated placeholder ──────────────────────────────────────────────────
 	useEffect(() => {
 		const id = setInterval(() => setWordIdx((i) => (i + 1) % WORDS.length), 2200);
 		return () => clearInterval(id);
 	}, []);
 
-	// Load history from localStorage on open
+	// ── Load history when dropdown opens ─────────────────────────────────────
 	useEffect(() => {
 		if (open) setHistory(getHistory());
 	}, [open]);
 
-	// Close on outside click
+	// ── Close on outside click ────────────────────────────────────────────────
 	useEffect(() => {
-		const handleClickOutside = (e: PointerEvent) => {
+		const handle = (e: PointerEvent) => {
 			if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
 				setOpen(false);
 			}
 		};
-		document.addEventListener('pointerdown', handleClickOutside);
-		return () => document.removeEventListener('pointerdown', handleClickOutside);
+		document.addEventListener('pointerdown', handle);
+		return () => document.removeEventListener('pointerdown', handle);
 	}, []);
 
-	// ── Navigate to product list ──────────────────────────────────────────────
+	// ── Debounced API search (400ms) ──────────────────────────────────────────
+	useEffect(() => {
+		const q = query.trim();
+
+		if (!q) {
+			setResults([]);
+			setSearching(false);
+			return;
+		}
+
+		setSearching(true);
+
+		// cancel previous request
+		abortRef.current?.abort();
+		abortRef.current = new AbortController();
+
+		const timer = setTimeout(async () => {
+			try {
+				const url = apiEndpoint.products.SEARCH_PRODUCTS(q);
+				const { data } = await authApi.get(url, {
+					signal: abortRef.current!.signal,
+				});
+				// API response: { results: Product[] } or Product[]
+				const products: Product[] = data?.results ?? data ?? [];
+				setResults(products.slice(0, 6));
+			} catch (err: any) {
+				if (err?.name !== 'CanceledError' && err?.name !== 'AbortError') {
+					setResults([]);
+				}
+			} finally {
+				setSearching(false);
+			}
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+			abortRef.current?.abort();
+		};
+	}, [query]);
+
+	// ── Navigate ──────────────────────────────────────────────────────────────
 	const handleSearch = useCallback(
 		(term: string) => {
 			const q = term.trim();
@@ -115,21 +162,16 @@ export default function SearchBar() {
 		setHistory(getHistory());
 	};
 
-	// ── Filtered results ──────────────────────────────────────────────────────
-	const results = query.trim()
-		? ITEMS.filter((it) => it.name.toLowerCase().includes(query.toLowerCase()) || it.cat.toLowerCase().includes(query.toLowerCase()))
-		: null;
-
-	// What to show in dropdown when query is empty
-	const showHistory = !query.trim() && history.length > 0;
-	const showPopular = !query.trim() && history.length === 0;
+	// ── Dropdown state flags ──────────────────────────────────────────────────
+	const hasQuery = query.trim().length > 0;
+	const showHistory = !hasQuery && history.length > 0;
+	const showPopular = !hasQuery && history.length === 0;
 
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
 			<div className="bg-white/10 rounded-full flex items-center pl-5 pr-1 py-1 gap-3 border border-orange-300">
 				<input
-					ref={inputRef}
 					type="text"
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
@@ -179,41 +221,73 @@ export default function SearchBar() {
 						className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl border border-white/20 bg-white shadow-xl py-2 overflow-hidden"
 					>
 						<div className="overflow-y-auto max-h-[70vh] md:max-h-[50vh]">
-							{/* ── Search results (when typing) ── */}
-							{results !== null && (
+							{/* ── Typing: live search results ── */}
+							{hasQuery && (
 								<>
-									<p className="px-4 py-2 text-xs tracking-widest uppercase text-muted-foreground font-semibold">
-										{results.length} result{results.length !== 1 ? 's' : ''}
+									<p className="px-4 py-2 text-xs tracking-widest uppercase text-muted-foreground font-semibold flex items-center gap-2">
+										{searching ? (
+											<>
+												<Loader2 className="w-3 h-3 animate-spin" />
+												Searching...
+											</>
+										) : (
+											<>
+												{results.length} result{results.length !== 1 ? 's' : ''}
+											</>
+										)}
 									</p>
 
-									{results.length > 0 ? (
-										results.map((item, i) => (
+									{!searching && results.length > 0 ? (
+										results.map((product, i) => (
 											<motion.button
-												key={item.name}
+												key={product._id}
 												initial={{ opacity: 0, x: -10 }}
 												animate={{ opacity: 1, x: 0 }}
 												transition={{ delay: i * 0.04, duration: 0.22 }}
-												onMouseDown={() => handleSearch(item.name)}
+												onMouseDown={() => handleSearch(product.title)}
 												className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-left"
 											>
-												<span className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted text-base flex-shrink-0">{item.icon}</span>
+												{/* product image */}
+												<span className="w-9 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+													{product.image ? (
+														<img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+													) : (
+														<span className="w-full h-full flex items-center justify-center text-lg">🛍️</span>
+													)}
+												</span>
 												<span className="flex-1 min-w-0">
-													<span className="block text-sm font-medium text-foreground">
-														<Highlight text={item.name} query={query} />
+													<span className="block text-sm font-medium text-foreground truncate">
+														<Highlight text={product.title} query={query} />
 													</span>
-													<span className="block text-xs text-muted-foreground mt-0.5">{item.sub}</span>
+													<span className="block font-play text-xs text-muted-foreground mt-0.5">
+														{product.price?.currency} {product.price?.amount}
+														{product.rating ? ` · ⭐ ${product.rating}` : ''}
+													</span>
 												</span>
 											</motion.button>
 										))
-									) : (
+									) : !searching ? (
 										<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 py-5 text-center text-sm text-muted-foreground">
 											No results for &ldquo;<strong className="text-foreground">{query}</strong>&rdquo;
 										</motion.p>
+									) : (
+										// searching skeleton
+										<div className="px-4 py-2 space-y-3">
+											{Array.from({ length: 3 }).map((_, i) => (
+												<div key={i} className="flex items-center gap-3 animate-pulse">
+													<div className="w-9 h-9 rounded-lg bg-muted flex-shrink-0" />
+													<div className="flex-1 space-y-1.5">
+														<div className="h-3 bg-muted rounded w-3/4" />
+														<div className="h-2.5 bg-muted rounded w-1/2" />
+													</div>
+												</div>
+											))}
+										</div>
 									)}
 								</>
 							)}
 
-							{/* ── Recent searches (query empty, history exists) ── */}
+							{/* ── No query: recent searches ── */}
 							{showHistory && (
 								<>
 									<p className="px-4 py-2 text-xs tracking-widest uppercase text-muted-foreground font-semibold">Recent Searches</p>
@@ -230,7 +304,6 @@ export default function SearchBar() {
 												<Clock className="w-3.5 h-3.5 text-orange-400" />
 											</span>
 											<span className="flex-1 text-sm font-medium text-foreground">{term}</span>
-											{/* Delete single history item */}
 											<button
 												onMouseDown={(e) => handleDeleteHistory(e, term)}
 												className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-orange-100"
@@ -239,8 +312,6 @@ export default function SearchBar() {
 											</button>
 										</motion.div>
 									))}
-
-									{/* Clear all history */}
 									<div className="px-4 pt-1 pb-2 flex justify-end">
 										<button
 											onMouseDown={() => {
@@ -255,7 +326,7 @@ export default function SearchBar() {
 								</>
 							)}
 
-							{/* ── Popular searches (query empty, no history) ── */}
+							{/* ── No query, no history: popular ── */}
 							{showPopular && (
 								<>
 									<p className="px-4 py-2 text-xs tracking-widest uppercase text-muted-foreground font-semibold">Popular Searches</p>
