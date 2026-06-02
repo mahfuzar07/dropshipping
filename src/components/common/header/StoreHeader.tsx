@@ -189,6 +189,11 @@ export default function StoreHeader() {
 									<li>Contact</li>
 									<li>Terms & Condition</li>
 									<li>Privacy Policy</li>
+									<li>
+										<Link href="/track-order" className="hover:text-foreground transition">
+											Track Order
+										</Link>
+									</li>
 								</ul>
 								<HoverPopover
 									trigger={
