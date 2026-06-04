@@ -46,7 +46,7 @@ const formatExpiry = (value: string) => {
 
 type CartResponse = {
 	id: number;
-	items: CartItemAPI[];
+	items: any[];
 	total_price: number;
 	created_at: string;
 	updated_at: string;
@@ -116,8 +116,9 @@ export default function Step3Payment() {
 		try {
 			// fake API simulation
 			const payload: OrderPayload = {
-				shipping_charge: shipping.price,
-				address_id: address?.id,
+				shipping_charge: shipping?.price ?? 0,
+
+				address_id: (typeof address === 'number' ? address : (address as any)?.id) ?? 0,
 			};
 
 			console.log('Order payload:', payload);

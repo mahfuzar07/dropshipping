@@ -86,7 +86,7 @@ const getVariantBySize = (variants: Variant[], size: string) => variants.find((v
 // 	return isNaN(parsed) ? 0 : parsed;
 // };
 
-function parsePrice(variant) {
+function parsePrice(variant: { price?: string } | undefined): { currency: string; amount: number } {
 	if (!variant?.price) {
 		return { currency: '', amount: 0 };
 	}

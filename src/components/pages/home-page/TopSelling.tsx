@@ -38,7 +38,7 @@ type Product = {
 		overseas: string;
 		unit: string;
 	};
-
+	price_float: number;
 	seller_icon: string;
 	is_ad: boolean;
 	moq: null | number;
@@ -52,7 +52,7 @@ export default function TopSelling() {
 
 	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<TopSellingResponse, 'single'>({
 		key: [QueriesKey.TOP_PRODUCTS],
-		api: apiEndpoint.products.TOP_PRODUCTS(),
+		api: apiEndpoint.products.TOP_PRODUCTS({}),
 		auth: true,
 		responseType: 'single',
 

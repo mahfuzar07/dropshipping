@@ -57,7 +57,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date', class
 						const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 						onChange(normalized);
 					}}
-					initialFocus
+					// initialFocus
 					captionLayout="dropdown"
 					defaultMonth={selectedDate ?? new Date()}
 					disabled={disabled}

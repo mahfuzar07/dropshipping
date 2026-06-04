@@ -53,7 +53,7 @@ export default function Step1Address() {
 			isDefaultShipping: addr.is_default,
 		})) || [];
 
-	// ✅ Get default (fallback প্রথমটা)
+	// ✅ Get default
 	const defaultAddress = addressList.find((a) => a.isDefaultShipping) || addressList[0];
 
 	// ✅ Continue handler
@@ -63,7 +63,7 @@ export default function Step1Address() {
 			return;
 		}
 
-		setAddress(defaultAddress);
+		setAddress(defaultAddress.id);
 		nextStep();
 	};
 

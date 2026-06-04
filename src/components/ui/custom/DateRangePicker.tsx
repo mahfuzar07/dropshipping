@@ -63,7 +63,7 @@ export function DateRangePicker({ value, onChange, placeholder = 'Select date ra
 
 			<PopoverContent className="w-auto p-0" align="start">
 				<Calendar
-					initialFocus
+					// initialFocus
 					mode="range"
 					required={false}
 					captionLayout="dropdown"

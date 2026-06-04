@@ -33,6 +33,7 @@ type Product = {
 		unit: string;
 	};
 
+	price_float: number;
 	seller_icon: string;
 	is_ad: boolean;
 	moq: null | number;

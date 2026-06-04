@@ -21,11 +21,11 @@ export type ShipmentMethodType = {
 	updated_at: string; // ISO datetime string
 };
 
-// const SHIPPING_METHODS: ShippingInterface[] = [
-// 	{ id: 1, method: 'std', label: 'Standard Delivery', duration: '5–7 business days', price: 60, icon: '📦' },
-// 	{ id: 2, method: 'exp', label: 'Express Delivery', duration: '2–3 business days', price: 150, icon: '⚡' },
-// 	{ id: 3, method: 'over', label: 'Overnight Delivery', duration: 'Next business day', price: 350, icon: '🚀' },
-// ];
+const SHIPPING_METHODS: ShippingInterface[] = [
+	{ id: 1, method: 'std', label: 'Standard Delivery', duration: '5–7 business days', price: 60, icon: '📦' },
+	{ id: 2, method: 'exp', label: 'Express Delivery', duration: '2–3 business days', price: 150, icon: '⚡' },
+	{ id: 3, method: 'over', label: 'Overnight Delivery', duration: 'Next business day', price: 350, icon: '🚀' },
+];
 
 export default function Step2Shipping() {
 	const { shipping, setShipping, nextStep, prevStep } = useCheckoutStore();
@@ -39,7 +39,7 @@ export default function Step2Shipping() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
 
-	const SHIPPING_METHODS = data?.results;
+	const shipmentMethods = (data && ((data as any).results ?? data)) ?? SHIPPING_METHODS;
 
 	const handleNext = () => {
 		if (!shipping) {
@@ -57,8 +57,8 @@ export default function Step2Shipping() {
 			</h1>
 
 			<div className="space-y-2.5">
-				{SHIPPING_METHODS &&
-					SHIPPING_METHODS.map((infoObj) => {
+				{shipmentMethods &&
+					shipmentMethods.map((infoObj: ShippingInterface) => {
 						const sel = shipping?.id === infoObj.id;
 						return (
 							<button
@@ -73,8 +73,12 @@ export default function Step2Shipping() {
 								${sel ? 'border-orange-300 border-2 bg-orange-50/50 shadow-sm' : 'border-border border-2 bg-background hover:bg-muted/40'}
 							`}
 							>
-								{/* <span className="text-2xl">{infoObj.icon}</span> */}
-								<img src={infoObj.icon} alt={infoObj.label} className="w-8 h-8 object-contain" />
+								{/* icon may be a URL string or a React node (emoji/SVG). Render accordingly to satisfy img src typing */}
+								{typeof infoObj.icon === 'string' && infoObj.icon ? (
+									<img src={infoObj.icon} alt={infoObj.label} className="w-8 h-8 object-contain" />
+								) : (
+									<span className="w-8 h-8 flex items-center justify-center text-2xl">{infoObj.icon}</span>
+								)}
 								<div className="flex-1">
 									<p className={`text-sm font-semibold ${sel ? 'text-orange-400' : 'text-foreground'}`}>{infoObj.label}</p>
 									<p className="text-xs text-muted-foreground mt-0.5">{infoObj.duration}</p>
