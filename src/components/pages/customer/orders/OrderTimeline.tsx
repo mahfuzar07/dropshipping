@@ -12,9 +12,11 @@ export const ORDER_STATUSES = {
 	CONFIRMED: 'CONFIRMED',
 	PROCESSING: 'PROCESSING',
 	SHIPPED: 'SHIPPED',
+	DELIVERED: 'DELIVERED',
 	RESCHEDULED: 'RESCHEDULED',
 	COMPLETED: 'COMPLETED',
 	CANCELLED: 'CANCELLED',
+	RETURNED: 'RETURNED',
 	REFUNDED: 'REFUNDED',
 	FAILED: 'FAILED',
 } as const;
@@ -29,10 +31,6 @@ export interface HistoryItem {
 export interface OrderTimelineProps {
 	status: OrderStatus;
 	history?: HistoryItem[];
-	/**
-	 * 'row'    → horizontal stepper (desktop default)
-	 * 'column' → vertical stepper (mobile / sidebar)
-	 */
 	direction?: 'row' | 'column';
 }
 
@@ -46,15 +44,31 @@ const timelineConfig = [
 	{ key: ORDER_STATUSES.PROCESSING, label: 'Processing', subtitle: 'Seller is preparing your items', icon: PackageCheck },
 	{ key: ORDER_STATUSES.SHIPPED, label: 'Shipped', subtitle: 'Package picked up by courier', icon: Truck },
 	{ key: ORDER_STATUSES.RESCHEDULED, label: 'Rescheduled', subtitle: 'Delivery has been rescheduled', icon: RefreshCcw },
-	{ key: ORDER_STATUSES.COMPLETED, label: 'Completed', subtitle: 'Order delivered successfully', icon: CheckCircle2 },
+	{ key: ORDER_STATUSES.DELIVERED, label: 'Delivered', subtitle: 'Order delivered successfully', icon: CheckCircle2 },
 ] as const;
 
-const specialStatusConfig = {
+type SpecialStatus = 'CANCELLED' | 'RETURNED' | 'REFUNDED' | 'FAILED';
+
+const specialStatusConfig: Record<
+	SpecialStatus,
+	{
+		label: string;
+		icon: React.ElementType;
+		wrapClass: string;
+		iconClass: string;
+	}
+> = {
 	CANCELLED: {
 		label: 'Order Cancelled',
 		icon: XCircle,
 		wrapClass: 'bg-red-50 border-red-200 text-red-700',
 		iconClass: 'bg-red-500 text-white',
+	},
+	RETURNED: {
+		label: 'Order Returned',
+		icon: RotateCcw,
+		wrapClass: 'bg-rose-50 border-rose-200 text-rose-700',
+		iconClass: 'bg-rose-500 text-white',
 	},
 	REFUNDED: {
 		label: 'Refund Completed',
@@ -68,7 +82,7 @@ const specialStatusConfig = {
 		wrapClass: 'bg-orange-50 border-orange-200 text-orange-700',
 		iconClass: 'bg-orange-500 text-white',
 	},
-} as const;
+};
 
 /* =========================================================
    SPECIAL BANNER (cancelled / refunded / failed)

@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Truck, Clock3, ClipboardCheck, PackageCheck, RefreshCcw, CheckCircle2, XCircle, RotateCcw, AlertTriangle, X } from 'lucide-react';
-import OrderTimeline from './OrderTimeline';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Search, X } from 'lucide-react';
+import OrderTimeline, { HistoryItem } from './OrderTimeline';
+import { motion } from 'framer-motion';
 import { useAppData } from '@/hooks/use-appdata';
-import { ProductApiResponse } from '../../product-details/ProductDetailsPageContent';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import { APIResponse } from '@/types/types';
+
 /* =========================================================
    ORDER STATUS TYPES
 ========================================================= */
@@ -19,100 +19,48 @@ export const ORDER_STATUSES = {
 	CONFIRMED: 'CONFIRMED',
 	PROCESSING: 'PROCESSING',
 	SHIPPED: 'SHIPPED',
+	DELIVERED: 'DELIVERED',
 	RESCHEDULED: 'RESCHEDULED',
 	COMPLETED: 'COMPLETED',
 	CANCELLED: 'CANCELLED',
+	RETURNED: 'RETURNED',
 	REFUNDED: 'REFUNDED',
 	FAILED: 'FAILED',
 } as const;
 
-type OrderStatus = keyof typeof ORDER_STATUSES;
-
-interface HistoryItem {
-	status: string;
-	date: string;
-}
+export type OrderStatus = keyof typeof ORDER_STATUSES;
 
 /* =========================================================
-   MOCK DATA
+   TYPES
 ========================================================= */
 
-interface MockOrder {
-	status: OrderStatus;
-	product: string;
-
-	recipient: string;
+interface TrackingAddress {
+	id: number;
+	full_name: string;
 	phone: string;
 	address: string;
-	courier: string;
-	estDelivery: string;
-	history: HistoryItem[];
+	address_line2?: string;
+	city: string;
+	district: string;
+	postal_code: string;
+	is_default: boolean;
+	created_at: string;
+	updated_at: string;
+	user: number;
 }
 
-const mockOrders: Record<string, MockOrder> = {
-	'ORD-2025-9871': {
-		status: 'SHIPPED',
-		product: 'Sony WH-1000XM5 Headphones',
-
-		recipient: 'Rahim Ahmed',
-		phone: '+880 1711-234567',
-		address: 'House 12, Road 4, Block C, Bashundhara R/A, Dhaka 1229',
-		courier: 'Pathao Courier',
-		estDelivery: 'Today, 4–6 PM',
-		history: [
-			{ status: 'PENDING', date: 'May 1 · 9:00 AM' },
-			{ status: 'CONFIRMED', date: 'May 1 · 10:22 AM' },
-			{ status: 'PROCESSING', date: 'May 2 · 1:45 PM' },
-			{ status: 'SHIPPED', date: 'May 3 · 9:00 AM' },
-		],
-	},
-	'ORD-2025-3344': {
-		status: 'PROCESSING',
-		product: 'Nike Air Max Sneakers',
-
-		recipient: 'Nusrat Jahan',
-		phone: '+880 1822-345678',
-		address: 'Flat 5B, House 9, Road 2, Dhanmondi, Dhaka 1205',
-		courier: 'Sundarban Courier',
-		estDelivery: 'May 6, 2–5 PM',
-		history: [
-			{ status: 'PENDING', date: 'May 2 · 11:00 AM' },
-			{ status: 'CONFIRMED', date: 'May 2 · 12:30 PM' },
-			{ status: 'PROCESSING', date: 'May 3 · 8:00 AM' },
-		],
-	},
-	'ORD-2025-1102': {
-		status: 'COMPLETED',
-		product: 'Apple Watch Series 9',
-
-		recipient: 'Karim Hossain',
-		phone: '+880 1933-456789',
-		address: 'House 3, Road 7, Uttara Sector 11, Dhaka 1230',
-		courier: 'SA Paribahan',
-		estDelivery: 'Delivered',
-		history: [
-			{ status: 'PENDING', date: 'Apr 28 · 10:00 AM' },
-			{ status: 'CONFIRMED', date: 'Apr 28 · 11:15 AM' },
-			{ status: 'PROCESSING', date: 'Apr 29 · 9:30 AM' },
-			{ status: 'SHIPPED', date: 'Apr 30 · 8:00 AM' },
-			{ status: 'COMPLETED', date: 'May 1 · 3:45 PM' },
-		],
-	},
-	'ORD-2025-0077': {
-		status: 'CANCELLED',
-		product: 'Samsung Galaxy Tab S9',
-
-		recipient: 'Fatema Begum',
-		phone: '+880 1644-567890',
-		address: 'House 22, Road 1, Mirpur DOHS, Dhaka 1216',
-		courier: '—',
-		estDelivery: '—',
-		history: [
-			{ status: 'PENDING', date: 'May 2 · 2:00 PM' },
-			{ status: 'CONFIRMED', date: 'May 2 · 3:00 PM' },
-		],
-	},
-};
+interface TrackingData {
+	id: string;
+	order: string;
+	order_number: string;
+	carrier: string;
+	tracking_number: string;
+	tracking_url: string;
+	estimated_delivery: string;
+	status: string;
+	shipped_at: string;
+	address: TrackingAddress;
+}
 
 /* =========================================================
    STATUS BADGE COLOR MAP
@@ -123,22 +71,73 @@ const statusBadge: Record<OrderStatus, string> = {
 	CONFIRMED: 'text-sky-600     bg-sky-50     border-sky-200',
 	PROCESSING: 'text-amber-600   bg-amber-50   border-amber-200',
 	SHIPPED: 'text-violet-600  bg-violet-50  border-violet-200',
+	DELIVERED: 'text-blue-600    bg-blue-50    border-blue-200',
 	RESCHEDULED: 'text-orange-600  bg-orange-50  border-orange-200',
 	COMPLETED: 'text-emerald-600 bg-emerald-50 border-emerald-200',
 	CANCELLED: 'text-red-600     bg-red-50     border-red-200',
+	RETURNED: 'text-rose-600    bg-rose-50    border-rose-200',
 	REFUNDED: 'text-sky-600     bg-sky-50     border-sky-200',
 	FAILED: 'text-orange-600  bg-orange-50  border-orange-200',
 };
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const normalizeStatus = (raw: string): OrderStatus => {
+	const upper = raw.toUpperCase() as OrderStatus;
+	return upper in ORDER_STATUSES ? upper : 'PENDING';
+};
+
+function formatDate(dateStr: string) {
+	if (!dateStr) return '';
+	return new Date(dateStr).toLocaleDateString('en-GB', {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+	});
+}
+
+// status
+const STATUS_PROGRESS: Record<OrderStatus, number> = {
+	PENDING: 1,
+	CONFIRMED: 2,
+	PROCESSING: 3,
+	SHIPPED: 4,
+	DELIVERED: 5,
+	RESCHEDULED: 4,
+	COMPLETED: 6,
+	CANCELLED: 0,
+	RETURNED: 0,
+	REFUNDED: 0,
+	FAILED: 0,
+};
+
+function buildHistory(data: TrackingData, status: OrderStatus): HistoryItem[] {
+	const progress = STATUS_PROGRESS[status] ?? 1;
+
+	const steps: { status: OrderStatus; getDate: () => string }[] = [
+		{ status: 'PENDING', getDate: () => '' },
+		{ status: 'CONFIRMED', getDate: () => '' },
+		{ status: 'PROCESSING', getDate: () => '' },
+		{ status: 'SHIPPED', getDate: () => (data.shipped_at ? formatDate(data.shipped_at) : '') },
+		{ status: 'DELIVERED', getDate: () => '' },
+		{ status: 'COMPLETED', getDate: () => (data.estimated_delivery ? formatDate(data.estimated_delivery) : '') },
+	];
+
+	return steps.slice(0, progress).map((s) => ({ status: s.status, date: s.getDate() }));
+}
 
 /* =========================================================
    MAIN PAGE
 ========================================================= */
 
 export default function TrackOrderPageContent() {
-	const [inputValue, setInputValue] = useState('ORD-2025-9871');
-	const [activeOrder, setActiveOrder] = useState<string | null>(null);
-	const [recentIds, setRecentIds] = useState<string[]>([]);
+	const [inputValue, setInputValue] = useState('');
 	const [error, setError] = useState('');
+	const [recentIds, setRecentIds] = useState<string[]>([]);
+	const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+	const [activeId, setActiveId] = useState<string | null>(null);
 
 	const { create: submitTrackNumber } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.SHIPMENT_TRACKING],
@@ -146,82 +145,79 @@ export default function TrackOrderPageContent() {
 		auth: true,
 		responseType: 'single',
 		enabled: false,
-		onSuccess: () => {
-			toast.success('Address added successfully!');
-		},
+		onSuccess: () => {},
 		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to add address');
+			toast.error(error?.response?.data?.message || 'Tracking number not found');
 		},
 	});
 
-	// const { data, isLoading } = useAppData<ProductApiResponse, 'single'>({
-	// 	key: [QueriesKey.SHIPMENT_TRACKING],
-	// 	api: apiEndpoint.orders.SHIPMENT_TRACKING(),
-	// 	auth: true,
-	// 	responseType: 'single',
-	// 	enabled: !!inputValue,
-	// 	onError: (error: any) => {
-	// 		toast.error(error?.response?.data?.message || 'Failed to load product');
-	// 	},
-	// });
-
-	// const shipmentTrackData = data;
-	// console.log('shipment tracking data', shipmentTrackData);
-
-	const order = activeOrder ? mockOrders[activeOrder] : null;
-
-	const handleTrack = (id?: string) => {
-		const val = (id ?? inputValue).trim().toUpperCase();
-		const responseData = submitTrackNumber({ tracking_number: val });
-
-		console.log('tracking response', responseData);
+	const doTrack = async (trackingNumber: string) => {
+		const val = trackingNumber.trim().toUpperCase();
 		if (!val) {
-			setError('Please enter an order ID');
+			setError('Please enter a tracking number');
 			return;
 		}
 
-		if (mockOrders[val]) {
-			setActiveOrder(val);
-			setRecentIds((prev) => {
-				const filtered = prev.filter((r) => r !== val);
-				return [val, ...filtered].slice(0, 3);
-			});
-			setInputValue('');
-			setError('');
-		} else {
-			setError(`"${val}" not found. Try: ORD-2025-9871`);
+		const form = new FormData();
+		form.append('tracking_number', val);
+
+		try {
+			const response = (await submitTrackNumber(form)) as any;
+			const data: TrackingData = response?.data ?? response;
+
+			if (data?.tracking_number) {
+				setTrackingData(data);
+				setActiveId(val);
+				setRecentIds((prev) => [val, ...prev.filter((r) => r !== val)].slice(0, 3));
+				setInputValue('');
+				setError('');
+			} else {
+				setError(`No tracking info found for "${val}"`);
+			}
+		} catch {
+			setError(`No tracking info found for "${val}"`);
 		}
 	};
 
-	const handleChipClick = (id: string) => {
-		if (mockOrders[id]) {
-			setActiveOrder(id);
-			setRecentIds((prev) => {
-				const filtered = prev.filter((r) => r !== id);
-				return [id, ...filtered].slice(0, 3);
-			});
-			setInputValue('');
-			setError('');
-		}
-	};
+	const handleTrack = () => doTrack(inputValue);
+	const handleChipClick = (id: string) => doTrack(id);
 
 	const removeChip = (id: string, e: React.MouseEvent) => {
 		e.stopPropagation();
 		setRecentIds((prev) => prev.filter((r) => r !== id));
-		if (activeOrder === id) setActiveOrder(null);
+		if (activeId === id) {
+			setTrackingData(null);
+			setActiveId(null);
+		}
 	};
+
+	const status = trackingData ? normalizeStatus(trackingData.status) : ('PENDING' as OrderStatus);
+	const history = trackingData ? buildHistory(trackingData, status) : [];
+
+	const fullAddress = trackingData?.address
+		? [
+				trackingData.address.address,
+				trackingData.address.address_line2,
+				trackingData.address.city,
+				trackingData.address.district,
+				trackingData.address.postal_code,
+			]
+				.filter(Boolean)
+				.join(', ')
+		: '—';
 
 	return (
 		<div className="min-h-screen container max-w-6xl mx-auto space-y-5">
 			<div className="text-center mb-6 md:mb-10">
 				<h1 className="text-2xl md:text-4xl font-semibold tracking-tight">Track your order</h1>
 				<p className="text-[10px] md:text-xs text-muted-foreground mt-1 tracking-wider uppercase">
-					Enter your order ID to see real-time delivery status
+					Enter your tracking number to see real-time delivery status
 				</p>
 			</div>
+
 			{/* ── Search Card ── */}
-			<div className=" bg-white backdrop-blur-xl  p-6 rounded-xl">
-				<div className=" max-w-2xl mx-auto">
+			<div className="bg-white backdrop-blur-xl p-6 rounded-xl">
+				<div className="max-w-2xl mx-auto">
 					<div className="rounded-full flex items-center pl-4 pr-1 py-1 gap-3 border">
 						<input
 							type="text"
@@ -231,24 +227,22 @@ export default function TrackOrderPageContent() {
 								setError('');
 							}}
 							onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
-							placeholder="e.g. ORD-2025-9871"
+							placeholder="e.g. TRK0B4D6RATH"
 							className="flex-1 outline-none text-sm md:text-base text-foreground placeholder:text-slate-300 bg-transparent"
 						/>
-
 						<motion.button
 							whileTap={{ scale: 1 }}
 							whileHover={{ scale: 0.95 }}
-							onClick={() => handleTrack()}
-							className="flex gap-1 shadow items-center justify-center bg-orange-300 text-white  rounded-full py-2 px-5 font-fredoka font-medium cursor-pointer"
+							onClick={handleTrack}
+							className="flex gap-1 shadow items-center justify-center bg-orange-300 text-white rounded-full py-2 px-5 font-fredoka font-medium cursor-pointer"
 						>
 							<Search className="w-5 h-5" />
-							<span className="hidden md:block"> Track</span>
+							<span className="hidden md:block">Track</span>
 						</motion.button>
 					</div>
 
 					{error && <p className="text-xs text-rose-500 mt-2">{error}</p>}
 
-					{/* last 3 searched chips */}
 					{recentIds.length > 0 && (
 						<div className="mt-4 flex items-center gap-2 flex-wrap">
 							<span className="text-xs text-slate-400">Recent:</span>
@@ -257,7 +251,7 @@ export default function TrackOrderPageContent() {
 									key={id}
 									onClick={() => handleChipClick(id)}
 									className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all ${
-										activeOrder === id
+										activeId === id
 											? 'bg-twinkle-teal/5 text-twinkle-teal border-twinkle-teal/50'
 											: 'bg-slate-50 text-foreground border-slate-200 hover:border-slate-400'
 									}`}
@@ -267,7 +261,7 @@ export default function TrackOrderPageContent() {
 										role="button"
 										aria-label={`Remove ${id}`}
 										onClick={(e) => removeChip(id, e)}
-										className={`ml-0.5 cursor-pointer transition-colors ${activeOrder === id ? 'text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
+										className="ml-0.5 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
 									>
 										<X className="w-3 h-3" />
 									</span>
@@ -279,67 +273,81 @@ export default function TrackOrderPageContent() {
 			</div>
 
 			{/* ── Order Details ── */}
-			{order && activeOrder && (
-				<>
-					{/* 2-column grid: timeline | delivery details */}
-					<div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-						{/* timeline */}
-						<div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-							<p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-6">Delivery Timeline</p>
-							<OrderTimeline direction="column" status={order.status} history={order.history} />
+			{trackingData && activeId && (
+				<div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+					{/* Timeline */}
+					<div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+						<p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-6">Delivery Timeline</p>
+						<OrderTimeline direction="column" status={status as any} history={history} />
+					</div>
+
+					{/* Details */}
+					<div className="md:col-span-3 space-y-2">
+						{/* Order header */}
+						<div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+							<div className="flex items-center gap-4">
+								<div className="flex-1 min-w-0">
+									<p className="font-medium text-slate-800 text-sm truncate">{trackingData.order_number}</p>
+									<p className="text-xs text-slate-400 mt-0.5">Tracking: {trackingData.tracking_number}</p>
+								</div>
+								<span className={`text-xs font-medium px-3 py-1.5 rounded-full border flex-shrink-0 ${statusBadge[status]}`}>
+									{status.charAt(0) + status.slice(1).toLowerCase()}
+								</span>
+							</div>
 						</div>
 
-						{/* delivery details */}
-						<div className="md:col-span-3 space-y-2">
-							<div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-								<div className="flex items-center gap-4">
-									<div className="flex-1 min-w-0">
-										<p className="font-medium text-slate-800 text-sm truncate">{order.product}</p>
-										<p className="text-xs text-slate-400 mt-0.5">{activeOrder}</p>
-									</div>
-									<span className={`text-xs font-medium px-3 py-1.5 rounded-full border flex-shrink-0 ${statusBadge[order.status]}`}>
-										{order.status.charAt(0) + order.status.slice(1).toLowerCase()}
-									</span>
-								</div>
-							</div>
-							<div className=" bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-								<p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Delivery Details</p>
-								<div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-									<div>
-										<p className="text-xs text-slate-400 mb-0.5">Recipient</p>
-										<p className="text-slate-700 font-medium">{order.recipient}</p>
-									</div>
-									<div>
-										<p className="text-xs text-slate-400 mb-0.5">Phone</p>
-										<p className="text-slate-700">{order.phone}</p>
-									</div>
-									<div className="col-span-2">
-										<p className="text-xs text-slate-400 mb-0.5">Address</p>
-										<p className="text-slate-700">{order.address}</p>
-									</div>
-									<div>
-										<p className="text-xs text-slate-400 mb-0.5">Courier</p>
-										<p className="text-slate-700">{order.courier}</p>
-									</div>
-									<div>
-										<p className="text-xs text-slate-400 mb-0.5">Est. Delivery</p>
-										<p className="text-slate-700">{order.estDelivery}</p>
-									</div>
-								</div>
-							</div>
-							{/* help bar — full width */}
-							<div className="rounded-2xl bg-white shadow p-6 flex items-center justify-between gap-4">
+						{/* Delivery details */}
+						<div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+							<p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Delivery Details</p>
+							<div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
 								<div>
-									<p className=" text-sm font-medium">Need help with this order?</p>
-									<p className="text-slate-400 text-xs mt-0.5">Contact our support team anytime</p>
+									<p className="text-xs text-slate-400 mb-0.5">Recipient</p>
+									<p className="text-slate-700 font-medium">{trackingData.address.full_name}</p>
 								</div>
-								<button className="flex-shrink-0 text-sm shadow bg-white text-slate-900 font-medium px-4 py-2 rounded-xl hover:bg-slate-100 active:scale-95 transition-all">
-									Contact Us
-								</button>
+								<div>
+									<p className="text-xs text-slate-400 mb-0.5">Phone</p>
+									<p className="text-slate-700">{trackingData.address.phone}</p>
+								</div>
+								<div className="col-span-2">
+									<p className="text-xs text-slate-400 mb-0.5">Address</p>
+									<p className="text-slate-700">{fullAddress}</p>
+								</div>
+								<div>
+									<p className="text-xs text-slate-400 mb-0.5">Carrier</p>
+									<p className="text-slate-700">{trackingData.carrier || '—'}</p>
+								</div>
+								<div>
+									<p className="text-xs text-slate-400 mb-0.5">Est. Delivery</p>
+									<p className="text-slate-700">{trackingData.estimated_delivery ? formatDate(trackingData.estimated_delivery) : '—'}</p>
+								</div>
+								{trackingData.tracking_url && (
+									<div className="col-span-2">
+										<p className="text-xs text-slate-400 mb-0.5">Tracking URL</p>
+										<a
+											href={trackingData.tracking_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-sky-500 hover:underline text-xs break-all"
+										>
+											{trackingData.tracking_url}
+										</a>
+									</div>
+								)}
 							</div>
 						</div>
+
+						{/* Help bar */}
+						<div className="rounded-2xl bg-white shadow p-6 flex items-center justify-between gap-4">
+							<div>
+								<p className="text-sm font-medium">Need help with this order?</p>
+								<p className="text-slate-400 text-xs mt-0.5">Contact our support team anytime</p>
+							</div>
+							<button className="flex-shrink-0 text-sm shadow bg-white text-slate-900 font-medium px-4 py-2 rounded-xl hover:bg-slate-100 active:scale-95 transition-all">
+								Contact Us
+							</button>
+						</div>
 					</div>
-				</>
+				</div>
 			)}
 		</div>
 	);
