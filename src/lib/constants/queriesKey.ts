@@ -20,4 +20,5 @@ export const QueriesKey = {
 	CATEGORIES: 'categories',
 	PRODUCT_DETAIL: 'product-detail',
 	SEARCH_PRODUCTS: 'search-products',
+	SHIPMENT_TRACKING: 'shipment-tracking',
 };

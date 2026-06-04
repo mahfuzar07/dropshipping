@@ -37,6 +37,7 @@ export const apiEndpoint = {
 		ORDERS_CREATE: () => `/api/order/orders/place_order/`,
 		ORDERS_DETAILS: (id: string | number) => `/api/order/orders/${id}/`,
 		SHIPMENT_METHODS: () => `/api/order/shipment-method/`,
+		SHIPMENT_TRACKING: () => `/api/order/shipments/track/`,
 	},
 	categories: {
 		category: '/category',

@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { Search, Truck, Clock3, ClipboardCheck, PackageCheck, RefreshCcw, CheckCircle2, XCircle, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import OrderTimeline from './OrderTimeline';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAppData } from '@/hooks/use-appdata';
+import { ProductApiResponse } from '../../product-details/ProductDetailsPageContent';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { toast } from 'sonner';
+import { APIResponse } from '@/types/types';
 /* =========================================================
    ORDER STATUS TYPES
 ========================================================= */
@@ -134,10 +140,41 @@ export default function TrackOrderPageContent() {
 	const [recentIds, setRecentIds] = useState<string[]>([]);
 	const [error, setError] = useState('');
 
+	const { create: submitTrackNumber } = useAppData<APIResponse, 'single'>({
+		key: [QueriesKey.SHIPMENT_TRACKING],
+		api: apiEndpoint.orders.SHIPMENT_TRACKING(),
+		auth: true,
+		responseType: 'single',
+		enabled: false,
+		onSuccess: () => {
+			toast.success('Address added successfully!');
+		},
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	// const { data, isLoading } = useAppData<ProductApiResponse, 'single'>({
+	// 	key: [QueriesKey.SHIPMENT_TRACKING],
+	// 	api: apiEndpoint.orders.SHIPMENT_TRACKING(),
+	// 	auth: true,
+	// 	responseType: 'single',
+	// 	enabled: !!inputValue,
+	// 	onError: (error: any) => {
+	// 		toast.error(error?.response?.data?.message || 'Failed to load product');
+	// 	},
+	// });
+
+	// const shipmentTrackData = data;
+	// console.log('shipment tracking data', shipmentTrackData);
+
 	const order = activeOrder ? mockOrders[activeOrder] : null;
 
 	const handleTrack = (id?: string) => {
 		const val = (id ?? inputValue).trim().toUpperCase();
+		const responseData = submitTrackNumber({ tracking_number: val });
+
+		console.log('tracking response', responseData);
 		if (!val) {
 			setError('Please enter an order ID');
 			return;
