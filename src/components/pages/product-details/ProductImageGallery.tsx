@@ -55,21 +55,17 @@ export default function ProductImageGallery({ images, productName, selectedImage
 		exit: (direction: string) => ({ zIndex: 0, x: direction === 'right' ? -300 : 300, opacity: 0 }),
 	};
 
-	console.log('Rendering ProductImageGallery with images:', images);
+	// const fullUrls = images.map((img) => {
+	// 	// already full url
+	// 	if (img.startsWith('http://') || img.startsWith('https://')) {
+	// 		return img;
+	// 	}
 
-	const BASE_URL = 'http://192.168.68.118:8001/';
+	// 	// convert relative path to full url
+	// 	return `${BASE_URL}${img}`;
+	// });
 
-	const fullUrls = images.map((img) => {
-		// already full url
-		if (img.startsWith('http://') || img.startsWith('https://')) {
-			return img;
-		}
-
-		// convert relative path to full url
-		return `${BASE_URL}${img}`;
-	});
-
-	console.log(fullUrls);
+	// console.log(fullUrls);
 
 	return (
 		<div className="space-y-4">
@@ -90,7 +86,7 @@ export default function ProductImageGallery({ images, productName, selectedImage
 							<div className="relative h-[350px] md:h-[400px] xl:h-[520px] w-full flex items-center justify-center p-4 md:p-8">
 								<Image
 									fill
-									src={fullUrls[selectedImage] || '/placeholder.svg'}
+									src={images[selectedImage] || '/placeholder.svg'}
 									alt={`${productName} - Image ${selectedImage + 1}`}
 									className="object-cover h-full w-full"
 								/>
@@ -130,7 +126,7 @@ export default function ProductImageGallery({ images, productName, selectedImage
 						1024: { slidesPerView: 7 },
 					}}
 				>
-					{fullUrls.map((image, index) => (
+					{images.map((image, index) => (
 						<SwiperSlide key={index}>
 							<div
 								onClick={() => selectImage(index)}

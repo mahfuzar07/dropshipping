@@ -11,6 +11,7 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
+import PieceWeightScaleInfoTable from './PieceWeightScaleInfoTable';
 
 /* ================= TYPES ================= */
 
@@ -27,6 +28,30 @@ export interface Variant {
 	sizes: VariantSize[];
 }
 
+// export interface ProductDetails {
+// 	_id: string;
+// 	offer_id: string;
+// 	title: string;
+// 	image: string;
+// 	rating: string;
+// 	sold: string;
+
+// 	price: {
+// 		currency: string;
+// 		amount: string;
+// 		unit: string;
+// 		overseas: string;
+// 	};
+
+// 	details: {
+// 		extract_product_variants: Variant[];
+// 		extract_product_attributes: Record<string, string>;
+// 		extract_product_description: {
+// 			images: string[];
+// 		};
+// 	};
+// }
+
 export interface ProductDetails {
 	_id: string;
 	offer_id: string;
@@ -34,19 +59,40 @@ export interface ProductDetails {
 	image: string;
 	rating: string;
 	sold: string;
-
 	price: {
 		currency: string;
 		amount: string;
 		unit: string;
 		overseas: string;
 	};
-
 	details: {
-		extract_product_variants: Variant[];
-		extract_product_attributes: Record<string, string>;
-		extract_product_description: {
-			images: string[];
+		data: {
+			gallery: {
+				fields: {
+					offerImgList: string[];
+				};
+			};
+			Root: {
+				fields: {
+					dataJson: {
+						skuModel: {
+							skuProps: Array<{
+								prop: string;
+								value: Array<{ name: string; imageUrl: string }>;
+							}>;
+							skuInfoMap: Record<
+								// ← missing < was the core bug
+								string,
+								{ canBookCount: number; skuId: number }
+							>;
+						};
+					};
+				};
+			};
+			offerDetail: {
+				// ← moved inside data, not a sibling of it
+				featureAttributes: Array<{ name: string; value: string }>;
+			};
 		};
 	};
 }
@@ -58,15 +104,114 @@ export interface ProductApiResponse {
 
 /* ================= MAPPER ================= */
 
+// const mapProductData = (product: ProductDetails) => {
+// 	const variants = product.details?.extract_product_variants || [];
+
+// 	const colors = variants.map((v) => ({
+// 		name: v.color_name,
+// 		image: v.image,
+// 	}));
+
+// 	const galleryImages = [product.image, ...variants.map((v) => v.image)];
+
+// 	return {
+// 		id: product._id,
+// 		offer_id: product.offer_id,
+// 		name: product.title,
+// 		price: Number(product.price?.amount || 0),
+// 		overseasPrice: product.price?.overseas,
+// 		currency: product.price?.currency,
+// 		rating: Number(product.rating || 0),
+// 		reviewCount: 0,
+
+// 		image: product.image,
+// 		sold: product.sold,
+
+// 		colors,
+// 		variants,
+// 		galleryImages,
+
+// 		specifications: product.details?.extract_product_attributes || {},
+// 	};
+// };
+
 const mapProductData = (product: ProductDetails) => {
-	const variants = product.details?.extract_product_variants || [];
+	const dataJson = product.details?.data?.Root?.fields?.dataJson;
+	const skuModel = dataJson?.skuModel;
 
-	const colors = variants.map((v) => ({
-		name: v.color_name,
-		image: v.image,
+	// Colors come from skuProps (the "颜色" prop)
+	const colorProp = skuModel?.skuProps?.find((p) => p.prop === '颜色');
+	const colorValues = colorProp?.value || [];
+	const skuInfoMap = skuModel?.skuInfoMap || {};
+
+	// Build variants — one per color, with stock from skuInfoMap
+	// const variants = colorValues.map((color) => ({
+	// 	color_name: color.name,
+	// 	image: color.imageUrl,
+	// 	active: true,
+	// 	// This product has no sizes — wrap stock as a single "size" entry
+	// 	sizes: [
+	// 		{
+	// 			size_name: 'Standard',
+	// 			price: product.price?.amount || '0',
+	// 			stock: String(skuInfoMap[color.name]?.canBookCount ?? 0),
+	// 		},
+	// 	],
+	// }));
+
+	const findWeightBySku = (
+		pieceWeightScaleInfo: Array<{
+			sku1: string;
+			weight: number;
+			height: number;
+			length: number;
+			width: number;
+			volume: number;
+			skuId: number;
+		}>,
+		skuName: string,
+	) => {
+		return pieceWeightScaleInfo.find((item) => item.sku1 === skuName) ?? null;
+	};
+
+	const pieceWeightScaleInfo = product.details?.data?.productPackInfo?.fields?.pieceWeightScale?.pieceWeightScaleInfo ?? [];
+	const pieceWeightScaleInfoColumnList = product.details?.data?.productPackInfo?.fields?.pieceWeightScale?.columnList ?? [];
+
+	const variants = colorValues.map((color) => {
+		const weightInfo = findWeightBySku(pieceWeightScaleInfo, color.name);
+		const weightKg = weightInfo ? weightInfo.weight / 1000 : 0;
+
+		return {
+			color_name: color.name,
+			image: color.imageUrl,
+			active: true,
+			weightKg,
+			weightInfo, // attach full object if you need length/width/height later
+			sizes: [
+				{
+					size_name: 'Standard',
+					price: product.price?.amount || '0',
+					stock: String(skuInfoMap[color.name]?.canBookCount ?? 0),
+				},
+			],
+		};
+	});
+
+	const galleryImages = product.details?.data?.gallery?.fields?.offerImgList || [product.image];
+
+	// Build specifications from featureAttributes
+	const featureAttributes = (product.details?.data as any)?.offerDetail?.featureAttributes || [];
+	const specifications: Record<string, string> = {};
+	featureAttributes.forEach((attr: { name: string; value: string }) => {
+		if (attr.name && attr.value) {
+			specifications[attr.name] = attr.value;
+		}
+	});
+
+	const colors = colorValues.map((c) => ({
+		name: c.name,
+		image: c.imageUrl,
 	}));
-
-	const galleryImages = [product.image, ...variants.map((v) => v.image)];
 
 	return {
 		id: product._id,
@@ -77,15 +222,14 @@ const mapProductData = (product: ProductDetails) => {
 		currency: product.price?.currency,
 		rating: Number(product.rating || 0),
 		reviewCount: 0,
-
 		image: product.image,
 		sold: product.sold,
-
 		colors,
 		variants,
 		galleryImages,
-
-		specifications: product.details?.extract_product_attributes || {},
+		specifications,
+		pieceWeightScaleInfo,
+		pieceWeightScaleInfoColumnList,
 	};
 };
 
@@ -103,9 +247,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 		},
 	});
 
-	const productRaw = data?.product;
-
-	// console.log('product details', productRaw);
+	const productRaw = data;
 
 	const product = useMemo(() => {
 		if (!productRaw) return null;
@@ -125,7 +267,6 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 	const sizes = selectedVariant?.sizes?.map((s) => s.size_name) || [];
 
 	const mainImage = selectedVariant?.image || product.image;
-	// console.log('qty==', qty);
 
 	return (
 		<div className="px-2 py-3">
@@ -179,7 +320,13 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 					{/* TABS */}
 					<div className="col-span-12 bg-white rounded-lg p-5">
 						<SellerInfo />
-						<ProductTabs description={product.name} specifications={product.specifications} reviews={[]} />
+						{/* <ProductTabs description={product.name} specifications={product.specifications} reviews={[]} /> */}
+						<ProductTabs
+							description={product.name} // keep as fallback until API provides description text
+							specifications={product.specifications}
+							reviews={[]}
+						/>
+						<PieceWeightScaleInfoTable data={product.pieceWeightScaleInfo} columns={product.pieceWeightScaleInfoColumnList} />
 					</div>
 				</div>
 
