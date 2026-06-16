@@ -669,6 +669,19 @@ import { addToCard } from '@/lib/api/cart';
 // 	);
 // }
 
+export interface VariantSize {
+	size_name: string;
+	price: string;
+	stock: string;
+}
+
+export interface Variant {
+	color_name: string;
+	image: string;
+	active: boolean;
+	sizes: VariantSize[];
+}
+
 const SHIPPING_RATES = {
 	air: { label: 'By Air', perKg: 780, priceDisplay: '৳780 / ৳1170 Per Kg' },
 	sea: { label: 'By Sea', perKg: 170, priceDisplay: '৳170 / ৳400 Per Kg' },
@@ -678,20 +691,44 @@ export default function CartSection({ product }: { product: any }) {
 	const [selectedShipping, setSelectedShipping] = useState<'air' | 'sea'>('air');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const selectedColorQty: Record<number, Record<string, number>> = product?.selectedColorQty || {};
+	const variants: Variant[] = product?.variants || [];
+
+	const totalQty = Object.values(selectedColorQty).reduce((sum, sizeMap) => {
+		return sum + Object.values(sizeMap).reduce((s, q) => s + q, 0);
+	}, 0);
+
+	const productTotal = Object.entries(selectedColorQty).reduce((total, [colorIndex, sizeMap]) => {
+		const variant = variants[Number(colorIndex)];
+		return (
+			total +
+			Object.entries(sizeMap).reduce((sum, [sizeName, qty]) => {
+				const size = variant?.sizes?.find((s) => s.size_name === sizeName);
+				return sum + qty * Number(size?.price || 0);
+			}, 0)
+		);
+	}, 0);
+
+	// weight = heaviest selected variant (or average — your call)
+	const weightKg = Object.keys(selectedColorQty).reduce((max, colorIndex) => {
+		const w = variants[Number(colorIndex)]?.weightKg ?? 0;
+		return Math.max(max, w);
+	}, 0);
+
 	const qty: Record<string, number> = product?.qty || {};
 	const sizes: Array<{ size_name: string; price: string }> = product?.selectedVariant?.sizes || [];
 
 	// ── Weight from selected variant's pieceWeightScaleInfo ──
-	const weightKg: number = product?.selectedVariant?.weightKg ?? 0;
-	console.log('===product?.selectedVariant?.weightKg', product?.selectedVariant);
+	// const weightKg: number = product?.selectedVariant?.weightKg ?? 0;
+	// console.log('===product?.selectedVariant?.weightKg', product?.selectedVariant);
 	// ─────────────────────────────────────────────────────────
 
-	const totalQty = Object.values(qty).reduce((sum, q) => sum + q, 0);
+	// const totalQty = Object.values(qty).reduce((sum, q) => sum + q, 0);
 
-	const productTotal = sizes.reduce((sum, size) => {
-		const q = qty[size.size_name] || 0;
-		return sum + q * Number(size.price || 0);
-	}, 0);
+	// const productTotal = sizes.reduce((sum, size) => {
+	// 	const q = qty[size.size_name] || 0;
+	// 	return sum + q * Number(size.price || 0);
+	// }, 0);
 
 	// ── Shipping charge uses real weight now ──────────────────
 	const shippingRate = SHIPPING_RATES[selectedShipping];
@@ -702,15 +739,55 @@ export default function CartSection({ product }: { product: any }) {
 	const payNow = Math.round(grandTotal * 0.7);
 	const payOnDelivery = grandTotal - payNow;
 
+	// const handleSubmit = async (e: React.FormEvent) => {
+	// 	e.preventDefault();
+	// 	setIsSubmitting(true);
+	// 	const form = {
+	// 		product_id: product?.offer_id,
+	// 		variant: product?.selectedVariant,
+	// 		quantity: qty,
+	// 		shipping_method: selectedShipping,
+	// 	};
+	// 	try {
+	// 		await addToCard(form);
+	// 		toast.success('Product added to cart successfully!');
+	// 	} catch (err) {
+	// 		toast.error('Failed to add product to cart.');
+	// 	} finally {
+	// 		setIsSubmitting(false);
+	// 	}
+	// };
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSubmitting(true);
+
+		const selectedVariants = Object.entries(selectedColorQty)
+			.filter(([, sizeMap]) => Object.values(sizeMap).some((q) => q > 0))
+			.map(([colorIndex, sizeMap]) => ({
+				variant: variants[Number(colorIndex)],
+				quantity: sizeMap,
+			}));
+
 		const form = {
 			product_id: product?.offer_id,
-			variant: product?.selectedVariant,
-			quantity: qty,
+			product_name: product?.name,
+			product_image: product?.image,
+			variants: selectedVariants.map((v) => ({
+				variant: {
+					color_name: v.variant?.color_name,
+					image: v.variant?.image, // ← image lives here
+					weightKg: v.variant?.weightKg,
+					weightInfo: v.variant?.weightInfo,
+					sizes: v.variant?.sizes,
+				},
+				quantity: v.quantity,
+			})),
 			shipping_method: selectedShipping,
 		};
+
+		console.log('cart submit payload:', form);
+
 		try {
 			await addToCard(form);
 			toast.success('Product added to cart successfully!');

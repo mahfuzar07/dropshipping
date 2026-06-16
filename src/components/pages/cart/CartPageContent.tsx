@@ -82,6 +82,8 @@ export default function CartPageContent() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
 
+
+
 	const items = data?.items || [];
 
 	const { create: addToCard, isMutating: isAddressLoading } = useAppData<CartPayload, 'single'>({

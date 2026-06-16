@@ -1,3 +1,177 @@
+// 'use client';
+
+// import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
+// import { Card, CardContent } from '@/components/ui/card';
+// import { Badge } from '@/components/ui/badge';
+// import { Separator } from '@/components/ui/separator';
+// import { ShoppingCart, Package, ChevronDown } from 'lucide-react';
+// import { useEffect, useState } from 'react';
+// import { useAppData } from '@/hooks/use-appdata';
+// import { QueriesKey } from '@/lib/constants/queriesKey';
+// import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+// import { toast } from 'sonner';
+
+// /* ================= TYPES ================= */
+
+// type CartItemAPI = {
+// 	id: number;
+// 	product: {
+// 		_id: string;
+// 		moq: string | null;
+// 		url: string;
+// 		sold: string;
+// 		image: string;
+// 		is_ad: boolean;
+// 		price: { unit: string; amount: string; currency: string; overseas: string };
+// 		title: string;
+// 		rating: string;
+// 		offer_id: string;
+// 		promotion: string | null;
+// 		seller_icon: string | null;
+// 		product_name: string;
+// 	};
+// 	quantity: Record<string, number>;
+// 	variant: {
+// 		price: string;
+// 		stock: string;
+// 		quantity: number;
+// 		size_name: string;
+// 	}[];
+// 	total_price: number;
+// 	added_at: string;
+// };
+
+// type CartResponse = {
+// 	id: number;
+// 	items: CartItemAPI[];
+// 	total_price: number;
+// 	created_at: string;
+// 	updated_at: string;
+// };
+
+// /* ================= COMPONENT ================= */
+
+// export default function OrderSummary() {
+// 	const { orderSummary, shipping } = useCheckoutStore();
+
+// 	const [collapsed, setCollapsed] = useState(true);
+// 	const [isMobile, setIsMobile] = useState(false);
+
+// 	const { data, isLoading } = useAppData<CartResponse, 'single'>({
+// 		key: [QueriesKey.CART_DATA],
+// 		api: apiEndpoint.cart.GET_CART(),
+// 		auth: true,
+// 		responseType: 'single',
+// 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
+// 	});
+
+// 	useEffect(() => {
+// 		const handleResize = () => {
+// 			const mobile = window.innerWidth < 768;
+// 			setIsMobile(mobile);
+// 			setCollapsed(mobile);
+// 		};
+// 		handleResize();
+// 		window.addEventListener('resize', handleResize);
+// 		return () => window.removeEventListener('resize', handleResize);
+// 	}, []);
+
+// 	const handleToggle = () => {
+// 		if (isMobile) setCollapsed((prev) => !prev);
+// 	};
+// 	const shipPrice = shipping?.price ?? 0;
+// 	const subtotal = data?.total_price ?? 0;
+// 	const discount = orderSummary?.discount ?? 0;
+// 	const total = subtotal - discount + shipPrice;
+
+// 	return (
+// 		<Card className="p-0 border-orange-100 bg-white overflow-hidden font-hanken">
+// 			<button
+// 				onClick={handleToggle}
+// 				className="w-full flex justify-between items-center px-3 md:px-5 py-5 font-semibold hover:bg-orange-50 transition-colors"
+// 			>
+// 				<h1 className="flex items-center gap-2 !text-md">
+// 					<ShoppingCart size={16} className="shrink-0" />
+// 					Order Summary
+// 					<Badge className="bg-orange-300 text-white text-[10px] px-2 py-0 h-5 rounded-full">{data?.items.length ?? 0}</Badge>
+// 				</h1>
+
+// 				<div className="flex items-center gap-2.5">
+// 					<span className="font-bold text-orange-600 text-lg">৳{data?.total_price ? data.total_price.toLocaleString() : '0'}</span>
+// 					{isMobile && <ChevronDown size={16} className={`transition-transform duration-200 ${collapsed ? 'rotate-0' : 'rotate-180'}`} />}
+// 				</div>
+// 			</button>
+
+// 			{(!collapsed || !isMobile) && (
+// 				<CardContent className="pt-0 px-5 pb-4">
+// 					<div className="space-y-3 mb-4">
+// 						{isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+
+// 						{data?.items.map((item) => {
+// 							// ✅ variant
+// 							const variantLabel = item.variant.map((v) => v.size_name).join(', ');
+// 							// ✅ quantity
+// 							const totalQty = Object.values(item.quantity).reduce((sum, q) => sum + q, 0);
+
+// 							return (
+// 								<div key={item.id} className="flex items-start justify-between gap-3">
+// 									<div className="flex gap-2.5 flex-1">
+// 										{/* ✅ product image */}
+// 										<div className="w-10 h-10 rounded-lg bg-orange-100 overflow-hidden flex-shrink-0">
+// 											{item.product.image ? (
+// 												<img src={item.product.image} alt={item.product.product_name} className="w-full h-full object-cover" />
+// 											) : (
+// 												<div className="w-full h-full flex items-center justify-center">
+// 													<Package size={18} />
+// 												</div>
+// 											)}
+// 										</div>
+
+// 										<div>
+// 											<p className="text-[13px] font-medium leading-tight">{item.product.product_name}</p>
+// 											<p className="text-[11px] text-muted-foreground mt-0.5">
+// 												{variantLabel} × {totalQty}
+// 											</p>
+// 										</div>
+// 									</div>
+
+// 									<span className="text-[13px] font-semibold whitespace-nowrap">৳{item.total_price.toLocaleString()}</span>
+// 								</div>
+// 							);
+// 						})}
+// 					</div>
+
+// 					<Separator className="mb-3 bg-orange-100" />
+
+// 					<div className="space-y-1.5">
+// 						<div className="flex justify-between text-[13px]">
+// 							<span className="text-muted-foreground">Subtotal</span>
+// 							<span>৳{subtotal.toLocaleString()}</span>
+// 						</div>
+// 						{/*
+// 						<div className="flex justify-between text-[13px]">
+// 							<span className="text-muted-foreground">Discount</span>
+// 							<span className="text-green-600 font-medium">-৳{(orderSummary?.discount ?? 0).toLocaleString()}</span>
+// 						</div> */}
+
+// 						<div className="flex justify-between text-[13px]">
+// 							<span className="text-muted-foreground">Shipping</span>
+// 							<span className={!shipPrice ? 'text-muted-foreground' : ''}>{shipPrice ? `৳${shipPrice}` : 'Select method'}</span>
+// 						</div>
+
+// 						<Separator className="my-2 bg-orange-100" />
+
+// 						<div className="flex justify-between font-bold text-[15px]">
+// 							<span>Total</span>
+// 							<span className="text-orange-600">৳{total.toLocaleString()}</span>
+// 						</div>
+// 					</div>
+// 				</CardContent>
+// 			)}
+// 		</Card>
+// 	);
+// }
+
 'use client';
 
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
@@ -5,7 +179,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Package, ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
@@ -13,41 +187,74 @@ import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
 
-type CartItemAPI = {
-	id: number;
-	product: {
-		_id: string;
-		moq: string | null;
-		url: string;
-		sold: string;
-		image: string;
-		is_ad: boolean;
-		price: { unit: string; amount: string; currency: string; overseas: string };
-		title: string;
-		rating: string;
-		offer_id: string;
-		promotion: string | null;
-		seller_icon: string | null;
-		product_name: string;
-	};
-	quantity: Record<string, number>;
-	variant: {
-		price: string;
-		stock: string;
-		quantity: number;
-		size_name: string;
-	}[];
-	total_price: number;
-	added_at: string;
+type VariantSize = {
+	price: string;
+	stock: string;
+	size_name: string;
 };
 
-type CartResponse = {
+type VariantDetail = {
+	image: string;
+	color_name: string;
+	weightKg: number;
+	sizes: VariantSize[];
+};
+
+type VariantEntry = {
+	variant: VariantDetail;
+	quantity: Record<string, number>;
+};
+
+type CartItem = {
 	id: number;
-	items: CartItemAPI[];
-	total_price: number;
+	user: string;
+	product_id: string;
+	product_name: string;
+	product_image: string;
+	variants: VariantEntry[];
+	shipping_method: 'air' | 'sea';
 	created_at: string;
 	updated_at: string;
 };
+
+type CartResponse = {
+	success: boolean;
+	count: number;
+	data: CartItem[];
+};
+
+/* ================= HELPERS ================= */
+
+// total qty across all variants of one cart item
+const getItemTotalQty = (variants: VariantEntry[]): number =>
+	variants.reduce((sum, v) => {
+		return sum + Object.values(v.quantity).reduce((s, q) => s + q, 0);
+	}, 0);
+
+// total price for one cart item
+const getItemTotal = (variants: VariantEntry[]): number =>
+	variants.reduce((total, v) => {
+		return (
+			total +
+			Object.entries(v.quantity).reduce((sum, [sizeName, qty]) => {
+				const size = v.variant.sizes.find((s) => s.size_name === sizeName);
+				return sum + qty * Number(size?.price || 0);
+			}, 0)
+		);
+	}, 0);
+
+// grand subtotal across all cart items
+const getSubtotal = (items: CartItem[]): number => items.reduce((sum, item) => sum + getItemTotal(item.variants), 0);
+
+// variant label: "典雅灰 × 2, 奶茶色 × 1"
+const getVariantLabel = (variants: VariantEntry[]): string =>
+	variants
+		.filter((v) => Object.values(v.quantity).some((q) => q > 0))
+		.map((v) => {
+			const qty = Object.values(v.quantity).reduce((s, q) => s + q, 0);
+			return `${v.variant.color_name} × ${qty}`;
+		})
+		.join(', ');
 
 /* ================= COMPONENT ================= */
 
@@ -56,14 +263,6 @@ export default function OrderSummary() {
 
 	const [collapsed, setCollapsed] = useState(true);
 	const [isMobile, setIsMobile] = useState(false);
-
-	const { data, isLoading } = useAppData<CartResponse, 'single'>({
-		key: [QueriesKey.CART_DATA],
-		api: apiEndpoint.cart.GET_CART(),
-		auth: true,
-		responseType: 'single',
-		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
-	});
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -76,94 +275,121 @@ export default function OrderSummary() {
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
-	const handleToggle = () => {
-		if (isMobile) setCollapsed((prev) => !prev);
-	};
+	const { data, isLoading } = useAppData<CartResponse, 'single'>({
+		key: [QueriesKey.CART_DATA],
+		api: apiEndpoint.cart.GET_CART(),
+		auth: true,
+		responseType: 'single',
+		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
+	});
+
+	const cartItems = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
+
+	const subtotal = useMemo(() => getSubtotal(cartItems), [cartItems]);
 	const shipPrice = shipping?.price ?? 0;
-	const subtotal = data?.total_price ?? 0;
 	const discount = orderSummary?.discount ?? 0;
 	const total = subtotal - discount + shipPrice;
+	const itemCount = cartItems.length;
 
 	return (
 		<Card className="p-0 border-orange-100 bg-white overflow-hidden font-hanken">
+			{/* Header — toggles on mobile */}
 			<button
-				onClick={handleToggle}
+				onClick={() => isMobile && setCollapsed((prev) => !prev)}
 				className="w-full flex justify-between items-center px-3 md:px-5 py-5 font-semibold hover:bg-orange-50 transition-colors"
 			>
 				<h1 className="flex items-center gap-2 !text-md">
 					<ShoppingCart size={16} className="shrink-0" />
 					Order Summary
-					<Badge className="bg-orange-300 text-white text-[10px] px-2 py-0 h-5 rounded-full">{data?.items.length ?? 0}</Badge>
+					<Badge className="bg-orange-300 text-white text-[10px] px-2 py-0 h-5 rounded-full">{itemCount}</Badge>
 				</h1>
 
 				<div className="flex items-center gap-2.5">
-					<span className="font-bold text-orange-600 text-lg">৳{data?.total_price ? data.total_price.toLocaleString() : '0'}</span>
+					<span className="font-bold text-orange-600 text-lg">৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 					{isMobile && <ChevronDown size={16} className={`transition-transform duration-200 ${collapsed ? 'rotate-0' : 'rotate-180'}`} />}
 				</div>
 			</button>
 
 			{(!collapsed || !isMobile) && (
 				<CardContent className="pt-0 px-5 pb-4">
+					{/* Cart items list */}
 					<div className="space-y-3 mb-4">
-						{isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+						{isLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>}
 
-						{data?.items.map((item) => {
-							// ✅ variant
-							const variantLabel = item.variant.map((v) => v.size_name).join(', ');
-							// ✅ quantity
-							const totalQty = Object.values(item.quantity).reduce((sum, q) => sum + q, 0);
+						{cartItems.map((item) => {
+							const itemTotal = getItemTotal(item.variants);
+							const totalQty = getItemTotalQty(item.variants);
+							const variantLabel = getVariantLabel(item.variants);
 
 							return (
 								<div key={item.id} className="flex items-start justify-between gap-3">
-									<div className="flex gap-2.5 flex-1">
-										{/* ✅ product image */}
-										<div className="w-10 h-10 rounded-lg bg-orange-100 overflow-hidden flex-shrink-0">
-											{item.product.image ? (
-												<img src={item.product.image} alt={item.product.product_name} className="w-full h-full object-cover" />
+									<div className="flex gap-2.5 flex-1 min-w-0">
+										{/* Product image — uses product_image as main, variant image as overlay */}
+										<div className="relative w-10 h-10 rounded-lg bg-orange-50 overflow-hidden flex-shrink-0 border border-orange-100">
+											{item.product_image ? (
+												<img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
 											) : (
 												<div className="w-full h-full flex items-center justify-center">
-													<Package size={18} />
+													<Package size={18} className="text-orange-300" />
 												</div>
+											)}
+											{/* qty badge */}
+											{totalQty > 1 && (
+												<span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-400 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+													{totalQty}
+												</span>
 											)}
 										</div>
 
-										<div>
-											<p className="text-[13px] font-medium leading-tight">{item.product.product_name}</p>
-											<p className="text-[11px] text-muted-foreground mt-0.5">
-												{variantLabel} × {totalQty}
-											</p>
+										<div className="min-w-0">
+											<p className="text-[13px] font-medium leading-tight line-clamp-2">{item.product_name}</p>
+											{/* variant color + size summary */}
+											<p className="text-[11px] text-muted-foreground mt-0.5 truncate">{variantLabel}</p>
+											{/* shipping method badge */}
+											<span className="inline-block text-[10px] bg-orange-50 text-orange-500 px-1.5 py-0.5 rounded mt-0.5">
+												{item.shipping_method === 'air' ? '✈ Air' : '🚢 Sea'}
+											</span>
 										</div>
 									</div>
 
-									<span className="text-[13px] font-semibold whitespace-nowrap">৳{item.total_price.toLocaleString()}</span>
+									<span className="text-[13px] font-semibold whitespace-nowrap">
+										৳{itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+									</span>
 								</div>
 							);
 						})}
+
+						{!isLoading && cartItems.length === 0 && <p className="text-sm text-muted-foreground text-center py-2">No items in cart.</p>}
 					</div>
 
 					<Separator className="mb-3 bg-orange-100" />
 
+					{/* Price breakdown */}
 					<div className="space-y-1.5">
 						<div className="flex justify-between text-[13px]">
-							<span className="text-muted-foreground">Subtotal</span>
-							<span>৳{subtotal.toLocaleString()}</span>
+							<span className="text-muted-foreground">
+								Subtotal ({itemCount} item{itemCount !== 1 ? 's' : ''})
+							</span>
+							<span>৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 						</div>
-						{/*
-						<div className="flex justify-between text-[13px]">
-							<span className="text-muted-foreground">Discount</span>
-							<span className="text-green-600 font-medium">-৳{(orderSummary?.discount ?? 0).toLocaleString()}</span>
-						</div> */}
+
+						{discount > 0 && (
+							<div className="flex justify-between text-[13px]">
+								<span className="text-muted-foreground">Discount</span>
+								<span className="text-green-600 font-medium">-৳{discount.toLocaleString()}</span>
+							</div>
+						)}
 
 						<div className="flex justify-between text-[13px]">
 							<span className="text-muted-foreground">Shipping</span>
-							<span className={!shipPrice ? 'text-muted-foreground' : ''}>{shipPrice ? `৳${shipPrice}` : 'Select method'}</span>
+							<span className={!shipPrice ? 'text-muted-foreground' : ''}>{shipPrice ? `৳${shipPrice.toLocaleString()}` : 'Select method'}</span>
 						</div>
 
 						<Separator className="my-2 bg-orange-100" />
 
 						<div className="flex justify-between font-bold text-[15px]">
 							<span>Total</span>
-							<span className="text-orange-600">৳{total.toLocaleString()}</span>
+							<span className="text-orange-600">৳{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 						</div>
 					</div>
 				</CardContent>

@@ -258,6 +258,36 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 	const [selectedSize, setSelectedSize] = useState<string | null>(null);
 	const [qty, setQty] = useState<Record<string, number>>({});
 
+	const [selectedColorQty, setSelectedColorQty] = useState<Record<number, Record<string, number>>>({});
+
+	const updateColorQty = (colorIndex: number, size: string, type: 'inc' | 'dec', stock: number) => {
+		setSelectedColorQty((prev) => {
+			const colorQty = prev[colorIndex] || {};
+			const current = colorQty[size] || 0;
+
+			if (type === 'inc' && current < stock) {
+				return { ...prev, [colorIndex]: { ...colorQty, [size]: current + 1 } };
+			}
+			if (type === 'dec' && current > 0) {
+				const updated = current - 1;
+				// remove size key if qty hits 0 to keep object clean
+				const newColorQty = { ...colorQty };
+				if (updated === 0) {
+					delete newColorQty[size];
+				} else {
+					newColorQty[size] = updated;
+				}
+				// remove color key entirely if no sizes left
+				const newState = { ...prev, [colorIndex]: newColorQty };
+				if (Object.keys(newColorQty).length === 0) {
+					delete newState[colorIndex];
+				}
+				return newState;
+			}
+			return prev;
+		});
+	};
+
 	if (isLoading || !product) {
 		return <LoadingSkeleton />;
 	}
@@ -289,7 +319,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 
 					{/* INFO */}
 					<div className="col-span-7">
-						<ProductInfo
+						{/* <ProductInfo
 							product={{
 								id: product.id,
 								name: product.name,
@@ -314,6 +344,27 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 							}}
 							qty={qty}
 							setQty={setQty}
+						/> */}
+
+						<ProductInfo
+							product={{
+								id: product.id,
+								name: product.name,
+								price: product.price,
+								currency: product.currency,
+								overseas: product.overseasPrice,
+								solded: product.sold,
+								description: product.sold,
+								inStock: true,
+								stockCount: null,
+								colors: product.colors,
+								image: mainImage,
+								variants: product.variants,
+								rating: product.rating,
+								reviewCount: product.reviewCount,
+							}}
+							selectedColorQty={selectedColorQty}
+							updateColorQty={updateColorQty}
 						/>
 					</div>
 
@@ -332,12 +383,18 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 
 				{/* RIGHT */}
 				<div className="col-span-3 sticky top-5 self-start">
-					<CartSection
+					{/* <CartSection
 						product={{
 							...product,
 							selectedVariant,
 							selectedSize,
 							qty,
+						}}
+					/> */}
+					<CartSection
+						product={{
+							...product,
+							selectedColorQty, // all selected colors + qtys
 						}}
 					/>
 				</div>

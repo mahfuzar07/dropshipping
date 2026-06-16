@@ -38,8 +38,8 @@ export default function CheckoutPageContent() {
 					{/* Form Section */}
 					<div className="md:col-span-3 lg:col-span-7 order-2 md:order-1 border border-border rounded-xl p-3 md:p-5 shadow">
 						{step === 1 && <Step1Address />}
-						{step === 2 && <Step2Shipping />}
-						{step === 3 && <Step3Payment />}
+						{/* {step === 2 && <Step2Shipping />} */}
+						{step === 2 && <Step3Payment />}
 					</div>
 				</div>
 			</div>
