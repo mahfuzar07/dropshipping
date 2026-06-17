@@ -59,6 +59,8 @@ export interface ProductDetails {
 	image: string;
 	rating: string;
 	sold: string;
+	weightKg: number;
+	weightInfo: string;
 	price: {
 		currency: string;
 		amount: string;
@@ -92,6 +94,22 @@ export interface ProductDetails {
 			offerDetail: {
 				// ← moved inside data, not a sibling of it
 				featureAttributes: Array<{ name: string; value: string }>;
+			};
+			productPackInfo: {
+				fields: {
+					pieceWeightScale: {
+						pieceWeightScaleInfo: Array<{
+							sku1: string;
+							weight: number;
+							height: number;
+							length: number;
+							width: number;
+							volume: number;
+							skuId: number;
+						}>;
+						columnList: Array<{ key: string; label: string }>;
+					};
+				};
 			};
 		};
 	};
@@ -136,6 +154,7 @@ export interface ProductApiResponse {
 // };
 
 const mapProductData = (product: ProductDetails) => {
+	console.log('Raw product details data:', product);
 	const dataJson = product.details?.data?.Root?.fields?.dataJson;
 	const skuModel = dataJson?.skuModel;
 
@@ -251,7 +270,7 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 
 	const product = useMemo(() => {
 		if (!productRaw) return null;
-		return mapProductData(productRaw);
+		return mapProductData(productRaw || null);
 	}, [productRaw]);
 
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -297,6 +316,8 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 	const sizes = selectedVariant?.sizes?.map((s) => s.size_name) || [];
 
 	const mainImage = selectedVariant?.image || product.image;
+
+	console.log('product.pieceWeightScaleInfoColumnList', product.pieceWeightScaleInfoColumnList);
 
 	return (
 		<div className="px-2 py-3">

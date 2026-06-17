@@ -680,6 +680,8 @@ export interface Variant {
 	image: string;
 	active: boolean;
 	sizes: VariantSize[];
+	weightKg: number; // new field for weight in kg
+	weightInfo: string; // e.g. "500g per piece"
 }
 
 const SHIPPING_RATES = {
@@ -789,7 +791,7 @@ export default function CartSection({ product }: { product: any }) {
 		console.log('cart submit payload:', form);
 
 		try {
-			await addToCard(form);
+			await addToCard(form as any);
 			toast.success('Product added to cart successfully!');
 		} catch (err) {
 			toast.error('Failed to add product to cart.');
