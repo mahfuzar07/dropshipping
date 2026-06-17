@@ -107,7 +107,7 @@ export interface ProductDetails {
 							volume: number;
 							skuId: number;
 						}>;
-						columnList: Array<{ key: string; label: string }>;
+						columnList: Array<{ name: string; label: string; precision: number; fid?: number }>;
 					};
 				};
 			};
@@ -255,7 +255,7 @@ const mapProductData = (product: ProductDetails) => {
 /* ================= COMPONENT ================= */
 
 export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
-	const { data, isLoading } = useAppData<ProductApiResponse, 'single'>({
+	const { data, isLoading } = useAppData<ProductDetails, 'single'>({
 		key: [QueriesKey.PRODUCT_DETAIL, productSlug],
 		api: apiEndpoint.products.DETAILS(productSlug),
 		auth: true,
@@ -265,13 +265,14 @@ export default function ProductDetailsPageContent({ productSlug }: { productSlug
 			toast.error(error?.response?.data?.message || 'Failed to load product');
 		},
 	});
+	// console.log('API response for product details:', data);
 
-	const productRaw = data;
-
+	// const productRaw = { product: data };
+	// console.log('Raw product data from API:', data);
 	const product = useMemo(() => {
-		if (!productRaw) return null;
-		return mapProductData(productRaw || null);
-	}, [productRaw]);
+		if (!data) return null;
+		return mapProductData(data);
+	}, [JSON.stringify(data)]);
 
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 	const [selectedSize, setSelectedSize] = useState<string | null>(null);
