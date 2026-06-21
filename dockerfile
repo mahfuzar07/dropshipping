@@ -12,9 +12,9 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY .env.local .env.local
+COPY .env .env
 
-RUN if [ -f .env.local ]; then set -a && . .env.local && npm run build; else npm run build; fi
+RUN if [ -f .env ]; then set -a && . .env && npm run build; else npm run build; fi
 
 
 # 3. Run production server
