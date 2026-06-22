@@ -23,22 +23,22 @@ const slides = [
 		title: 'SUMMER',
 		subtitle: 'Fresh Picks For The Season',
 		buttonText: 'Shop Now',
-		bg: '/assets/hero/slide-1.jpg',
+		bg: '/assets/hero/hero-bg.png',
 	},
-	{
-		id: 2,
-		title: 'WINTER',
-		subtitle: 'Warm & Cozy Essentials',
-		buttonText: 'Explore Now',
-		bg: '/assets/hero/slide-2.jpg',
-	},
-	{
-		id: 3,
-		title: 'ACCESSORIES',
-		subtitle: 'Trendy Add-Ons For Every Look',
-		buttonText: 'Discover',
-		bg: '/assets/hero/slide-3.jpg',
-	},
+	// {
+	// 	id: 2,
+	// 	title: 'WINTER',
+	// 	subtitle: 'Warm & Cozy Essentials',
+	// 	buttonText: 'Explore Now',
+	// 	bg: '/assets/hero/slide-2.jpg',
+	// },
+	// {
+	// 	id: 3,
+	// 	title: 'ACCESSORIES',
+	// 	subtitle: 'Trendy Add-Ons For Every Look',
+	// 	buttonText: 'Discover',
+	// 	bg: '/assets/hero/slide-3.jpg',
+	// },
 ];
 
 export default function HeroSection() {
@@ -118,7 +118,7 @@ export default function HeroSection() {
 								<Image src={slide.bg} alt={slide.title} fill objectFit="cover" objectPosition="top-center" priority={slide.id === 1} />
 								<div className="absolute inset-0 bg-black/30 transition-opacity duration-500" />
 
-								<div className="absolute left-1/2 md:top-40 2xl:top-60 top-50 -translate-x-1/2 z-10 flex items-center justify-center text-center px-4">
+								{/* <div className="absolute left-1/2 md:top-40 2xl:top-60 top-50 -translate-x-1/2 z-10 flex items-center justify-center text-center px-4">
 									<div className="text-white max-w-xl">
 										<h1 className="text-3xl md:text-5xl font-bold text-white">{slide.title}</h1>
 
@@ -126,7 +126,7 @@ export default function HeroSection() {
 
 										<button className="mt-4 px-6 py-2 bg-orange-300 hover:bg-orange-400 rounded-lg font-semibold">{slide.buttonText}</button>
 									</div>
-								</div>
+								</div> */}
 							</div>
 						</SwiperSlide>
 					))}
@@ -161,11 +161,11 @@ export default function HeroSection() {
 			</div>
 
 			{/* Search Box */}
-			<div className="absolute left-1/2 bottom-20 -translate-x-1/2  w-full px-4 z-10">
+			{/* <div className="absolute left-1/2 bottom-20 -translate-x-1/2  w-full px-4 z-10">
 				<div className="bg-white/30 backdrop-blur-xl p-5 max-w-3xl mx-auto rounded-xl shadow-xl relative">
 					<SearchBar />
 
-					{/* Country selector */}
+
 					<div className="mt-3 flex items-center justify-center gap-5 text-xs md:text-sm text-gray-100">
 						<span>Order From:</span>
 						{['🇧🇩', '🇺🇸', '🇬🇧', '🇨🇳', '🇩🇪', '🇵🇰'].map((flag, i) => (
@@ -175,7 +175,7 @@ export default function HeroSection() {
 						))}
 					</div>
 				</div>
-			</div>
+			</div> */}
 		</div>
 	);
 }
