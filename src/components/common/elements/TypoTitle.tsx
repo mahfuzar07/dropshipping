@@ -31,12 +31,12 @@ export default function TypoTitle({
 	};
 
 	return (
-		<div className={cn('relative w-full flex flex-col !font-emily', alignMap[align], className)}>
+		<div className={cn('relative w-full flex flex-col', alignMap[align], className)}>
 			{/* Tag title */}
-			{tagTitle && <span className={cn('mb-1 text-sm font-medium  tracking-wide text-muted-foreground', tagClassName)}>{tagTitle}</span>}
+			{tagTitle && <span className={cn('mb-1 text-sm font-medium  text-muted-foreground', tagClassName)}>{tagTitle}</span>}
 
 			{/* Title */}
-			<div className={cn('relative w-full h-[60px] flex items-center', align === 'center' && 'justify-center', align === 'right' && 'justify-end')}>
+			<div className={cn('relative w-full h-full flex items-center', align === 'center' && 'justify-center', align === 'right' && 'justify-end')}>
 				<div
 					className={cn('absolute w-full h-full -top-2 -left-5 z-0 bg-orange-100')}
 					style={{
@@ -51,7 +51,7 @@ export default function TypoTitle({
 					}}
 				/>
 
-				<h2 className={cn('relative z-10 text-xl md:text-3xl font-semibold text-twinkle-accent', titleClassName)}>{title}</h2>
+				<h2 className={cn('relative z-10 text-lg md:text-2xl font-bold tracking-tight', titleClassName)}>{title}</h2>
 			</div>
 
 			{/* Subtitle */}
