@@ -1,5 +1,5 @@
 'use client';
-import { ChevronDown, Phone } from 'lucide-react';
+import { ChevronDown, Menu, Phone } from 'lucide-react';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import CategoryMenu, { type MenuCategory } from './CategoryMenu';
 import Link from 'next/link';
@@ -81,6 +81,10 @@ const navItems = [
 		href: '/flash-sale',
 	},
 	{
+		label: 'New Arrivals',
+		href: '/new-sale',
+	},
+	{
 		label: 'All Brands',
 		href: '/brands',
 	},
@@ -112,9 +116,10 @@ export default function HeaderBottom() {
 			<div className="container mx-auto px-3 h-full font-fredoka font-medium tracking-wide">
 				<div className="flex items-center justify-between  gap-2 h-full">
 					<HoverPopover
-						className="w-[280px]"
+						className="w-[260px]"
 						trigger={
-							<div className="relative py-3 w-[280px] hidden rounded-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
+							<div className="relative py-2.5 w-[260px] hidden rounded-t-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
+								<Menu strokeWidth={3} size={18} />
 								All Categories
 								<ChevronDown strokeWidth={3} size={18} />
 							</div>
@@ -123,7 +128,7 @@ export default function HeaderBottom() {
 						<CategoryMenu categories={normalizedCategories} />
 					</HoverPopover>
 
-					<div className="flex gap-1 items-center ml-5 font-fredoka text-base font-medium tracking-wide">
+					<div className="flex gap-4 items-center font-fredoka text-md font-medium">
 						{navItems.map((item) => {
 							const isActive = pathname === item.href;
 
@@ -131,8 +136,12 @@ export default function HeaderBottom() {
 								<Link
 									key={item.href}
 									href={item.href}
-									className={`px-3 py-1.5 rounded-full transition-all duration-300
-				${isActive ? '' : ''}`}
+									className={`relative px-3 py-3.5 font-medium transition-all duration-300
+                ${
+									isActive
+										? 'text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-1 after:rounded-md after:bg-primary'
+										: 'text-gray-700 hover:text-primary/80'
+								}`}
 								>
 									{item.label}
 								</Link>

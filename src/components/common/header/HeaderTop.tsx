@@ -1,12 +1,12 @@
 'use client';
-import { Search, User, ShoppingBasket, Menu, Bell, Heart, Truck, ShieldCheck } from 'lucide-react';
+import { Search, User, ShoppingBasket, Menu, Bell, Heart, Truck, ShieldCheck, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
-import SearchBar from './SearchBar';
-import NotificationContent from './dropdown-content/NotificationContent';
+
 import HoverPopover from '@/components/ui/custom/HoverPopover';
 import ProfileContent from './dropdown-content/ProfileContent';
+import SearchBar from '../elements/SearchBar';
 
 interface HeaderTopProps {
 	isScrolled: boolean;
@@ -94,14 +94,14 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							trigger={
 								<div
 									onClick={!isAuthenticated ? () => openModal({ modalType: 'auth-modal', modalData: 'login' }) : undefined}
-									className="items-center gap-2 text-slate-700 cursor-pointer md:flex hidden"
+									className="items-center text-slate-700 cursor-pointer md:flex hidden"
 								>
 									<div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
 										<User size={24} strokeWidth={1.5} className="" />
 									</div>
 									<div className="flex flex-col leading-tight font-fredoka">
-										<p className="text-sm">{isAuthenticated ? 'Welcome' : 'Sign In'}</p>
-										<p className="leading-tight text-base">{!isAuthenticated ? 'My Account' : (user?.phone ?? 'Account')}</p>
+										<p className="text-xs">{isAuthenticated ? 'Welcome' : 'Sign In'}</p>
+										<p className="leading-tight text-sm">{!isAuthenticated ? 'My Account' : (user?.phone ?? 'Account')}</p>
 									</div>
 								</div>
 							}
@@ -111,11 +111,11 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 
 						<div className="flex items-center">
 							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center">
-								<ShoppingBasket size={24} strokeWidth={1.5} className="" />
+								<ShoppingCart size={24} strokeWidth={1.5} className="" />
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<span>Wishlist</span>
+								<p className="text-sm">Wishlist</p>
 								<div className="absolute -right-4 -top-3 h-3.5 w-3.5 md:h-4.5 md:w-4.5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									0
 								</div>
@@ -128,7 +128,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<span>Cart</span>
+								<p className="text-sm">Cart</p>
 								<div className="absolute -right-4 -top-3 h-3.5 w-3.5 md:h-4.5 md:w-4.5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									0
 								</div>

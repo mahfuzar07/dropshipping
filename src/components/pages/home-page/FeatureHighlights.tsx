@@ -1,25 +1,33 @@
 import { BadgeDollarSign, ShieldCheck, Award, Plane, PackageCheck } from 'lucide-react';
 
 const features = [
-	{ icon: '/assets/icon/security.png', label: 'নিরাপদ ক্রয়', subTitle: '' },
-	{ icon: '/assets/icon/badge.png', label: 'নির্ভরযোগ্য সোর্সিং', subTitle: '' },
-	{ icon: '/assets/icon/delivery-truck.png', label: 'ফাস্ট শিপিং', subTitle: '' },
-	{ icon: '/assets/icon/box.png', label: 'বাংলাদেশ ডেলিভারি', subTitle: '' },
+	{ icon: '/assets/icon/security.png', label: '100% Original products', subTitle: 'Authentic & Quality Products' },
+	{ icon: '/assets/icon/delivery-truck.png', label: 'Fast & Free Delivery', subTitle: 'Free Delivery on orders over Tk.2000' },
+	{ icon: '/assets/icon/return-box.png', label: 'Easy Returns', subTitle: '14 days easy return policy' },
+	{ icon: '/assets/icon/payment.png', label: 'Secure Payment', subTitle: '100% Secure Payment' },
 ];
 
 export default function FeatureHighlights() {
 	return (
-		<section className="w-full bg-gray-50 py-10">
-			<div className="container mx-auto px-4">
-				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-gray-300">
-					{features.map((feature, index) => {
-						const Icon = feature.icon;
+		<section className="w-full bg-white py-5">
+			<div className="container mx-auto px-4 py-8 border border-border/50 rounded-md shadow">
+				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+					{features.map((f, index) => {
 						return (
-							<div key={index} className="flex flex-col items-center justify-center text-center px-6 py-6 transition duration-300">
-								<div className="mb-5">
-									<Icon className="md:w-14 md:h-14 w-8 h-8 text-orange-300" />
+							<div key={index} className="flex items-center justify-center gap-3 text-xs">
+								<div
+									className="w-12 h-12 bg-primary"
+									style={{
+										WebkitMaskImage: `url(${f.icon})`,
+										WebkitMaskRepeat: 'no-repeat',
+										WebkitMaskPosition: 'center',
+										WebkitMaskSize: 'contain',
+									}}
+								></div>
+								<div>
+									<h2 className="font-semibold text-base">{f.label}</h2>
+									<h5 className="text-muted-foreground">{f.subTitle}</h5>
 								</div>
-								<p className="md:text-md text-sm text-gray-600">{feature.title}</p>
 							</div>
 						);
 					})}

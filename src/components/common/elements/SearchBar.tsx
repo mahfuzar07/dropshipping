@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/axiosInstance';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import CategoryMenu from '../header/CategoryMenu';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ type Product = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WORDS = ['Fashion & Apparel', 'Home & Garden', 'Health & Medical', 'Gifts'];
+const WORDS = ['Products', 'Paste Product Link', , 'Home & Garden', 'Health & Medical', 'Gifts'];
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
@@ -170,7 +171,19 @@ export default function SearchBar() {
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/10 rounded-full flex items-center pl-5 pr-1 py-1 gap-3 border border-orange-300">
+			<div className="bg-white/10 rounded-full flex items-center pl-5 pr-1 py-1 gap-3 border border-orange-500 shadow">
+				{/* <HoverPopover
+					className="w-[260px]"
+					trigger={
+						<div className="relative py-2.5 w-[260px] hidden rounded-t-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
+							<Menu strokeWidth={3} size={18} />
+							All Categories
+							<ChevronDown strokeWidth={3} size={18} />
+						</div>
+					}
+				>
+					<CategoryMenu categories={normalizedCategories} />
+				</HoverPopover> */}
 				<input
 					type="text"
 					value={query}
@@ -179,7 +192,7 @@ export default function SearchBar() {
 					onKeyDown={handleKeyDown}
 					autoComplete="off"
 					placeholder="Search for"
-					className="flex-1 outline-none text-sm md:text-base text-white bg-transparent placeholder:text-white"
+					className="flex-1 outline-none text-sm md:text-base text-foreground bg-transparent placeholder:text-muted-foreground"
 				/>
 
 				{/* Animated placeholder cycling */}
@@ -193,7 +206,7 @@ export default function SearchBar() {
 							transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
 							className="absolute inset-0 flex items-center pointer-events-none z-0 left-25"
 						>
-							<span className="text-orange-200 text-sm md:text-base font-medium">{WORDS[wordIdx]}</span>
+							<span className="text-primary text-sm md:text-base font-medium">{WORDS[wordIdx]}</span>
 						</motion.div>
 					)}
 				</AnimatePresence>
@@ -204,9 +217,9 @@ export default function SearchBar() {
 					whileTap={{ scale: 1 }}
 					whileHover={{ scale: 0.95 }}
 					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
-					className="flex shadow items-center justify-center bg-orange-300 text-white w-10 h-10 md:w-25 md:h-11 rounded-full hover:bg-orange-400 cursor-pointer"
+					className="flex shadow items-center justify-center bg-primary text-white w-10 h-10 md:w-18 md:h-11 rounded-full hover:bg-primary/80 cursor-pointer"
 				>
-					<Search className="w-4 h-4 md:w-5 md:h-5 2xl:w-6 2xl:h-6" />
+					<Search className="w-4 h-4 md:w-5 md:h-5" />
 				</motion.button>
 			</div>
 

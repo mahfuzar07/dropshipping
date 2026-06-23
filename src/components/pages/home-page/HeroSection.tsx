@@ -32,7 +32,7 @@ export default function HeroSection() {
 							{features.map((f) => (
 								<div key={f.label} className="flex flex-col items-center gap-3 text-xs text-gray-600 bg-orange-50 py-3 px-5 rounded-md">
 									<div
-										className="w-12 h-12 bg-orange-500"
+										className="w-12 h-12 bg-primary"
 										style={{
 											WebkitMaskImage: `url(${f.icon})`,
 											WebkitMaskRepeat: 'no-repeat',
