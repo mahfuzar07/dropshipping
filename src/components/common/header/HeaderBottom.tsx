@@ -19,7 +19,7 @@ interface MenuCategoryWithParent extends MenuCategory {
 	parentId?: number | null;
 }
 
-function normalizeCategories(rawCategories: Category[]): MenuCategory[] {
+export function normalizeCategories(rawCategories: Category[]): MenuCategory[] {
 	const categoryMap = new Map<number, MenuCategoryWithParent>();
 
 	// First pass: create all categories
@@ -84,10 +84,7 @@ const navItems = [
 		label: 'New Arrivals',
 		href: '/new-sale',
 	},
-	{
-		label: 'All Brands',
-		href: '/brands',
-	},
+
 	{
 		label: 'Track Order',
 		href: '/track-order',

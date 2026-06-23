@@ -1,12 +1,16 @@
 'use client';
 
-import { Search, Clock, X, Loader2 } from 'lucide-react';
+import { Search, Clock, X, Loader2, ChevronDown, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/axiosInstance';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import CategoryMenu from '../header/CategoryMenu';
+import HoverPopover from '@/components/ui/custom/HoverPopover';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { normalizeCategories } from '../header/HeaderBottom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -168,22 +172,37 @@ export default function SearchBar() {
 	const showHistory = !hasQuery && history.length > 0;
 	const showPopular = !hasQuery && history.length === 0;
 
+	const { data, isLoading } = useAppData<any, 'single'>({
+		key: [QueriesKey.CATEGORIES],
+		api: apiEndpoint.categories.category,
+		auth: true,
+		responseType: 'single',
+		enabled: true,
+		refetchOnMount: true,
+		staleTime: 2 * 60 * 1000,
+	});
+
+	const categories = Array.isArray(data) ? data : (data?.payload ?? []);
+	const normalizedCategories = normalizeCategories(categories ?? []);
+
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/10 rounded-full flex items-center pl-5 pr-1 py-1 gap-3 border border-orange-500 shadow">
-				{/* <HoverPopover
-					className="w-[260px]"
-					trigger={
-						<div className="relative py-2.5 w-[260px] hidden rounded-t-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
-							<Menu strokeWidth={3} size={18} />
-							All Categories
-							<ChevronDown strokeWidth={3} size={18} />
-						</div>
-					}
-				>
-					<CategoryMenu categories={normalizedCategories} />
-				</HoverPopover> */}
+			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-3 border border-primary">
+				<div>
+					<HoverPopover
+						className="w-[220px]"
+						trigger={
+							<div className="relative py-2.5 w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary">
+								All Categories
+								<ChevronDown strokeWidth={2} size={18} />
+							</div>
+						}
+					>
+						<CategoryMenu categories={normalizedCategories} />
+					</HoverPopover>
+				</div>
+
 				<input
 					type="text"
 					value={query}
@@ -192,7 +211,7 @@ export default function SearchBar() {
 					onKeyDown={handleKeyDown}
 					autoComplete="off"
 					placeholder="Search for"
-					className="flex-1 outline-none text-sm md:text-base text-foreground bg-transparent placeholder:text-muted-foreground"
+					className="flex-1 outline-none text-sm md:text-base text-foreground bg-transparent placeholder:text-muted-foreground font-normal"
 				/>
 
 				{/* Animated placeholder cycling */}
@@ -204,9 +223,9 @@ export default function SearchBar() {
 							animate={{ y: 0, opacity: 1 }}
 							exit={{ y: -10, opacity: 0 }}
 							transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-							className="absolute inset-0 flex items-center pointer-events-none z-0 left-25"
+							className="absolute inset-0 flex items-center pointer-events-none z-0 left-66"
 						>
-							<span className="text-primary text-sm md:text-base font-medium">{WORDS[wordIdx]}</span>
+							<span className="text-primary text-sm md:text-base font-normal">{WORDS[wordIdx]}</span>
 						</motion.div>
 					)}
 				</AnimatePresence>
@@ -350,12 +369,12 @@ export default function SearchBar() {
 											animate={{ opacity: 1, x: 0 }}
 											transition={{ delay: i * 0.04, duration: 0.22 }}
 											onMouseDown={() => handleSearch(word)}
-											className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-left cursor-pointer"
+											className="w-full flex items-center gap-3 px-4 py-2 hover:bg-orange-50 transition-colors text-left cursor-pointer"
 										>
 											<span className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted flex-shrink-0">
 												<Search className="w-3.5 h-3.5 text-orange-400" />
 											</span>
-											<span className="text-sm font-medium text-muted-foreground">{word}</span>
+											<span className="text-sm font-normal text-muted-foreground">{word}</span>
 										</motion.button>
 									))}
 								</>
