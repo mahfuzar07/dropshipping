@@ -33,9 +33,7 @@ export default function SmallKitchenAndHouseholdSection() {
 							<div className="flex items-center justify-between gap-6 w-full">
 								<h3 className="text-lg md:text-xl font-bold text-gray-900 tracking-tight uppercase">Small Kitchen Appliances</h3>
 
-								<button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-5 py-2 rounded-md text-sm transition">
-									View All
-								</button>
+								<button className="bg-primary text-white hover:bg-primary/80 font-semibold px-5 py-2 rounded-md text-sm transition">View All</button>
 							</div>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
@@ -62,9 +60,7 @@ export default function SmallKitchenAndHouseholdSection() {
 							<div className="flex items-center justify-between gap-6 w-full">
 								<h3 className="text-lg md:text-xl font-bold text-gray-900 tracking-tight">TOP-RATED HOUSEHOLD SUPPLIES</h3>
 
-								<button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-5 py-2 rounded-md text-sm transition">
-									View All
-								</button>
+								<button className="bg-primary text-white hover:bg-primary/80 font-semibold px-5 py-2 rounded-md text-sm transition">View All</button>
 							</div>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-1">

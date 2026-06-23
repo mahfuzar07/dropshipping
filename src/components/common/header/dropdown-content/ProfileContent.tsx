@@ -108,8 +108,10 @@ export default function ProfileContent({ isAuthenticated, user, logout }: Props)
 
 			{/* Auth buttons */}
 			<div className="flex flex-col gap-2 p-4">
-				<Button className="w-full h-10 text-sm bg-primary hover:bg-primary/80">Sign in</Button>
-				<Button variant="outline" className="w-full h-10 text-sm ">
+				<Button onClick={() => router.push('/sign-in')} className="w-full h-10 text-sm bg-primary hover:bg-primary/80">
+					Sign in
+				</Button>
+				<Button onClick={() => router.push('/sign-up')} variant="outline" className="w-full h-10 text-sm ">
 					Create account
 				</Button>
 			</div>
