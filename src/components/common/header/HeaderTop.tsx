@@ -1,5 +1,5 @@
 'use client';
-import { Search, User, ShoppingBasket, Menu, Bell, Heart } from 'lucide-react';
+import { Search, User, ShoppingBasket, Menu, Bell, Heart, Truck, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
@@ -18,22 +18,28 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 	const { logout, isAuthenticated, user } = useAuthStore();
 
 	return (
-		<div className="z-10">
-			<div className="container relative mx-auto py-1">
-				<div className="text-sm py-2">
-					<div className="container mx-auto flex justify-between items-center px-4">
-						<div className="flex gap-6 text-gray-600">
-							<p>🚚 Free Delivery on orders over Tk. 2000</p>
-							<p>🛡️ 100% Original Products</p>
-						</div>
-
-						<div className="flex gap-6 text-gray-600">
-							<p>Need Help? +88-01849220756</p>
-							<p>info@xianmart.com</p>
-						</div>
+		<div className="">
+			<div className="container mx-auto">
+				<div className="bg-white border-b border-gray-100 text-xs text-gray-600 flex justify-between items-center px-3 py-2">
+					<div className="flex items-center gap-4">
+						<span className="flex items-center gap-1.5">
+							<Truck size={24} className="fill-primary text-slate-100" />
+							Free Delivery on orders over Tk. 2000
+						</span>
+						<span className="text-gray-300">|</span>
+						<span className="flex items-center gap-1.5">
+							<ShieldCheck size={24} className="fill-primary text-slate-100" />
+							100% Original Products
+						</span>
+					</div>
+					<div className="flex items-center gap-4">
+						<span>Need Help? +88-01849220756</span>
+						<span className="text-gray-300">|</span>
+						<span>info@xianmart.com</span>
 					</div>
 				</div>
 			</div>
+
 			<div className="container relative mx-auto pl-3 pr-1 py-2 transition-all duration-300 ease-in-out">
 				<div className="grid grid-cols-12 items-center gap-5">
 					{/* Left - Logo + mobile menu btn */}

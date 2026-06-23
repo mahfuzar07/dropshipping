@@ -1,181 +1,65 @@
-'use client';
-
-import React, { useEffect, useRef, useState } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay, Pagination, EffectFade } from 'swiper/modules';
-import SwiperCore from 'swiper';
-import 'swiper/css';
-import 'swiper/css/effect-fade';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useAppData } from '@/hooks/use-appdata';
-import { APIResponse } from '@/types/types';
-import { QueriesKey } from '@/lib/constants/queriesKey';
-import { apiEndpoint } from '@/lib/constants/apiEndpoint';
-import { toast } from 'sonner';
-import SearchBar from '@/components/common/elements/SearchBar';
 
-const slides = [
-	{
-		id: 1,
-		title: 'SUMMER',
-		subtitle: 'Fresh Picks For The Season',
-		buttonText: 'Shop Now',
-		bg: '/assets/hero/hero-bg.png',
-	},
-	// {
-	// 	id: 2,
-	// 	title: 'WINTER',
-	// 	subtitle: 'Warm & Cozy Essentials',
-	// 	buttonText: 'Explore Now',
-	// 	bg: '/assets/hero/slide-2.jpg',
-	// },
-	// {
-	// 	id: 3,
-	// 	title: 'ACCESSORIES',
-	// 	subtitle: 'Trendy Add-Ons For Every Look',
-	// 	buttonText: 'Discover',
-	// 	bg: '/assets/hero/slide-3.jpg',
-	// },
+const features = [
+	{ icon: '/assets/icon/security.png', label: 'নিরাপদ ক্রয়' },
+	{ icon: '/assets/icon/badge.png', label: 'নির্ভরযোগ্য সোর্সিং' },
+	{ icon: '/assets/icon/delivery-truck.png', label: 'ফাস্ট শিপিং' },
+	{ icon: '/assets/icon/box.png', label: 'বাংলাদেশ ডেলিভারি' },
 ];
 
 export default function HeroSection() {
-	// const [slides, setSlides] = useState<Slide[]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [activeIndex, setActiveIndex] = useState<number>(0);
-	const prevRef = useRef<HTMLDivElement>(null);
-	const nextRef = useRef<HTMLDivElement>(null);
-	const swiperRef = useRef<SwiperCore | null>(null);
-	const [searchTerm, setSearchTerm] = useState<string>(''); // For the input field
-	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>(''); // For the API call
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedSearchTerm(searchTerm);
-		}, 500);
-
-		return () => clearTimeout(timer);
-	}, [searchTerm]);
-
-	const { data: searchProducts, isLoading: isLoadingSearch } = useAppData<APIResponse, 'single'>({
-		// Use the debounced term in the key so the cache is specific to the search
-		key: [QueriesKey.SEARCH_PRODUCTS, debouncedSearchTerm],
-		api: apiEndpoint.products.SEARCH_PRODUCTS(debouncedSearchTerm),
-		auth: true,
-		responseType: 'single',
-		// Only run if there is a search term (prevents empty calls on mount)
-		enabled: debouncedSearchTerm.length > 0,
-		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to load search products');
-		},
-	});
-
-	const products = searchProducts?.results || [];
-
 	return (
-		<div className="relative">
-			<div className="w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[18/6] overflow-hidden">
-				<Swiper
-					modules={[Autoplay, Pagination, Navigation, EffectFade]}
-					effect={'fade'}
-					speed={1000}
-					spaceBetween={10}
-					slidesPerView={1}
-					autoplay={{
-						delay: 5000,
-						disableOnInteraction: false,
-					}}
-					pagination={{
-						clickable: true,
-						el: '.swiper-pagination',
-						bulletClass: 'swiper-pagination-bullet',
-						bulletActiveClass: 'swiper-pagination-bullet-active',
-					}}
-					navigation={{
-						prevEl: prevRef.current,
-						nextEl: nextRef.current,
-						disabledClass: 'swiper-button-disabled',
-					}}
-					onBeforeInit={(swiper) => {
-						if (swiper.params.navigation && typeof swiper.params.navigation !== 'boolean') {
-							swiper.params.navigation.prevEl = prevRef.current;
-							swiper.params.navigation.nextEl = nextRef.current;
-						}
-					}}
-					onSwiper={(swiper) => {
-						swiperRef.current = swiper;
-					}}
-					onSlideChange={(swiper) => {
-						setActiveIndex(swiper.activeIndex);
-					}}
-					className="w-full h-full"
-				>
-					{slides.map((slide) => (
-						<SwiperSlide key={slide.id} className="rounded overflow-hidden">
-							<div className="relative w-full h-full">
-								<Image src={slide.bg} alt={slide.title} fill objectFit="cover" objectPosition="top-center" priority={slide.id === 1} />
-								<div className="absolute inset-0 bg-black/30 transition-opacity duration-500" />
+		<div className="w-full bg-white">
+			<div className="container mx-auto">
+				<div className="relative rounded-2xl overflow-hidden flex items-center w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[16/6]">
+					{/* Background Image */}
+					<Image src="/assets/hero/hero-bg.png" alt="Hero" fill className="object-cover object-center" priority />
 
-								{/* <div className="absolute left-1/2 md:top-40 2xl:top-60 top-50 -translate-x-1/2 z-10 flex items-center justify-center text-center px-4">
-									<div className="text-white max-w-xl">
-										<h1 className="text-3xl md:text-5xl font-bold text-white">{slide.title}</h1>
+					{/* Overlay */}
+					<div className="absolute inset-0 bg-gradient-to-r from-[#fff3ec]/95 via-[#fff3ec]/80 to-transparent" />
 
-										<p className="mt-2 text-lg md:text-xl">{slide.subtitle}</p>
+					{/* Content */}
+					<div className="relative z-10 w-full md:w-1/2 p-6 md:p-12">
+						<h1 className="text-3xl md:text-6xl font-bold text-orange-500 leading-tight">চীন এখন</h1>
 
-										<button className="mt-4 px-6 py-2 bg-orange-300 hover:bg-orange-400 rounded-lg font-semibold">{slide.buttonText}</button>
-									</div>
-								</div> */}
-							</div>
-						</SwiperSlide>
-					))}
-				</Swiper>
+						<h2 className="text-2xl md:text-6xl font-bold text-gray-800 mt-2">আপনার হাতের মুঠোয়!</h2>
 
-				{/* Custom Navigation Arrows and Pagination */}
-				<div className="bg-white/50 flex items-center justify-between absolute h-6 md:h-9.5 rounded-full md:bottom-4 bottom-2 z-10 left-1/2 -translate-x-1/2 md:gap-3 gap-1 overflow-hidden">
-					<div ref={prevRef} className={`cursor-pointer md:p-2 p-1 shadow transition-all duration-300`}>
-						<ChevronLeft className={`w-3 h-3  md:w-5 md:h-5 ${activeIndex === 0 ? 'text-gray-300' : 'text-gray-800 hover:text-primary'}`} />
-					</div>
-					{/* Custom Pagination Dots */}
-					<div className="flex justify-center gap-2 shrink-0">
-						{slides.map((_, index) => (
-							<span
-								key={index}
-								className={`md:w-2 md:h-2 w-1 h-1 rounded-full cursor-pointer ${index === activeIndex ? 'bg-gray-400' : 'bg-gray-300'}`}
-								onClick={() => {
-									if (swiperRef.current) {
-										swiperRef.current.slideTo(index);
-									}
-								}}
-							></span>
-						))}
-					</div>
+						<p className="text-gray-600 mt-4 max-w-md">আমরা চীন থেকে আপনার পণ্য নিরাপদে এনে দেই আপনার কাছে।</p>
 
-					<div ref={nextRef} className={`cursor-pointer md:p-2 p-1 shadow transition-all duration-300`}>
-						<ChevronRight
-							className={`w-3 h-3  md:w-5 md:h-5 ${activeIndex === slides.length - 1 ? 'text-gray-300' : 'text-gray-800 hover:text-primary'}`}
-						/>
+						{/* Features */}
+						<div className="flex flex-wrap gap-2 mt-5">
+							{features.map((f) => (
+								<div key={f.label} className="flex flex-col items-center gap-3 text-xs text-gray-600 bg-orange-50 py-3 px-5 rounded-md">
+									<div
+										className="w-12 h-12 bg-orange-500"
+										style={{
+											WebkitMaskImage: `url(${f.icon})`,
+											WebkitMaskRepeat: 'no-repeat',
+											WebkitMaskPosition: 'center',
+											WebkitMaskSize: 'contain',
+										}}
+									></div>
+									<span className="font-semibold">{f.label}</span>
+								</div>
+							))}
+						</div>
+
+						{/* Buttons */}
+						<div className="flex gap-4 mt-8">
+							<button className="bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition flex items-center gap-2">
+								পণ্য খুঁজুন
+								<ArrowRight />
+							</button>
+
+							<button className="border border-orange-500 text-orange-500 px-6 py-3 rounded-lg font-medium hover:bg-orange-50 transition flex items-center gap-2">
+								আজই শুরু করুন
+								<ArrowRight />
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
-
-			{/* Search Box */}
-			{/* <div className="absolute left-1/2 bottom-20 -translate-x-1/2  w-full px-4 z-10">
-				<div className="bg-white/30 backdrop-blur-xl p-5 max-w-3xl mx-auto rounded-xl shadow-xl relative">
-					<SearchBar />
-
-
-					<div className="mt-3 flex items-center justify-center gap-5 text-xs md:text-sm text-gray-100">
-						<span>Order From:</span>
-						{['🇧🇩', '🇺🇸', '🇬🇧', '🇨🇳', '🇩🇪', '🇵🇰'].map((flag, i) => (
-							<span className="text-xl" key={i}>
-								{flag}
-							</span>
-						))}
-					</div>
-				</div>
-			</div> */}
 		</div>
 	);
 }

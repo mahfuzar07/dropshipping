@@ -1,26 +1,10 @@
 import { BadgeDollarSign, ShieldCheck, Award, Plane, PackageCheck } from 'lucide-react';
 
 const features = [
-	{
-		icon: ShieldCheck,
-		title: '100% Money Back Guarantee',
-	},
-	{
-		icon: BadgeDollarSign,
-		title: 'Lowest Overall Order Cost',
-	},
-	{
-		icon: Award,
-		title: 'Premium & Luxury Brands',
-	},
-	{
-		icon: Plane,
-		title: 'Worldwide Shipping',
-	},
-	{
-		icon: PackageCheck,
-		title: '300M+ International Products',
-	},
+	{ icon: '/assets/icon/security.png', label: 'নিরাপদ ক্রয়', subTitle: '' },
+	{ icon: '/assets/icon/badge.png', label: 'নির্ভরযোগ্য সোর্সিং', subTitle: '' },
+	{ icon: '/assets/icon/delivery-truck.png', label: 'ফাস্ট শিপিং', subTitle: '' },
+	{ icon: '/assets/icon/box.png', label: 'বাংলাদেশ ডেলিভারি', subTitle: '' },
 ];
 
 export default function FeatureHighlights() {
