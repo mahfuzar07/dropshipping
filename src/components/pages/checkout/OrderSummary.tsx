@@ -301,11 +301,11 @@ export default function OrderSummary() {
 				<h1 className="flex items-center gap-2 !text-md">
 					<ShoppingCart size={16} className="shrink-0" />
 					Order Summary
-					<Badge className="bg-orange-300 text-white text-[10px] px-2 py-0 h-5 rounded-full">{itemCount}</Badge>
+					<Badge className="bg-primary text-white text-[10px] px-2 py-0 h-5 rounded-full">{itemCount}</Badge>
 				</h1>
 
 				<div className="flex items-center gap-2.5">
-					<span className="font-bold text-orange-600 text-lg">৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+					<span className="font-bold text-primary text-lg">৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 					{isMobile && <ChevronDown size={16} className={`transition-transform duration-200 ${collapsed ? 'rotate-0' : 'rotate-180'}`} />}
 				</div>
 			</button>
@@ -330,12 +330,12 @@ export default function OrderSummary() {
 												<img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
 											) : (
 												<div className="w-full h-full flex items-center justify-center">
-													<Package size={18} className="text-orange-300" />
+													<Package size={18} className="text-primary" />
 												</div>
 											)}
 											{/* qty badge */}
 											{totalQty > 1 && (
-												<span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-400 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+												<span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
 													{totalQty}
 												</span>
 											)}
@@ -346,7 +346,7 @@ export default function OrderSummary() {
 											{/* variant color + size summary */}
 											<p className="text-[11px] text-muted-foreground mt-0.5 truncate">{variantLabel}</p>
 											{/* shipping method badge */}
-											<span className="inline-block text-[10px] bg-orange-50 text-orange-500 px-1.5 py-0.5 rounded mt-0.5">
+											<span className="inline-block text-[10px] bg-orange-50 text-primary px-1.5 py-0.5 rounded mt-0.5">
 												{item.shipping_method === 'air' ? '✈ Air' : '🚢 Sea'}
 											</span>
 										</div>
@@ -389,7 +389,7 @@ export default function OrderSummary() {
 
 						<div className="flex justify-between font-bold text-[15px]">
 							<span>Total</span>
-							<span className="text-orange-600">৳{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+							<span className="text-primary">৳{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 						</div>
 					</div>
 				</CardContent>

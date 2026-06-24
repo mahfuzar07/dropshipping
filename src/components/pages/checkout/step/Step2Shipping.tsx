@@ -83,7 +83,7 @@ export default function Step2Shipping() {
 									<p className={`text-sm font-semibold ${sel ? 'text-orange-400' : 'text-foreground'}`}>{infoObj.label}</p>
 									<p className="text-xs text-muted-foreground mt-0.5">{infoObj.duration}</p>
 								</div>
-								<p className={`font-bold text-[15px] shrink-0 font-hanken ${sel ? 'text-orange-600' : 'text-foreground'}`}>৳{infoObj.price}</p>
+								<p className={`font-bold text-[15px] shrink-0 font-hanken ${sel ? 'text-primary' : 'text-foreground'}`}>৳{infoObj.price}</p>
 								<div
 									className={`
 									w-5 h-5 rounded-full shrink-0 transition-all duration-200 bg-white
@@ -101,7 +101,7 @@ export default function Step2Shipping() {
 				<Button variant="outline" className="flex-1 h-12" onClick={prevStep}>
 					<MoveLeft /> Back
 				</Button>
-				<Button className="flex-[2] h-12 rounded-xl bg-orange-300 hover:bg-orange-500 text-white font-semibold tracking-wide" onClick={handleNext}>
+				<Button className="flex-[2] h-12 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold tracking-wide" onClick={handleNext}>
 					Continue to Payment
 					<MoveRight />
 				</Button>

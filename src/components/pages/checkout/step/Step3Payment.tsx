@@ -167,7 +167,7 @@ export default function Step3Payment() {
               border transition-all duration-200 text-[11px] font-semibold cursor-pointer
               ${
 								payType === m.id
-									? 'border-orange-300 border-2 bg-orange-50  text-orange-600'
+									? 'border-primary/50 border-2 bg-orange-50  text-primary'
 									: 'border-border border-2 bg-background text-muted-foreground hover:bg-muted/40'
 							}
             `}
@@ -218,9 +218,9 @@ export default function Step3Payment() {
 			)}
 
 			<div className="flex my-5 items-center gap-1 bg-orange-50 rounded px-4 py-2.5 border border-orange-100">
-				<Shield strokeWidth={3} size={14} className="fill-orange-300 text-orange-300 shrink-0" />
+				<Shield strokeWidth={3} size={14} className="fill-orange-300 text-primary shrink-0" />
 
-				<p className="text-xs text-orange-400">Your payment info is encrypted and never stored</p>
+				<p className="text-xs text-primary">Your payment info is encrypted and never stored</p>
 			</div>
 
 			<div className="flex gap-2.5 mt-6">
@@ -228,7 +228,7 @@ export default function Step3Payment() {
 					<MoveLeft /> Back
 				</Button>
 
-				<Button className="flex-[2] h-12 rounded-xl bg-orange-300 hover:bg-orange-500 text-white font-semibold tracking-wide" onClick={handleNext}>
+				<Button className="flex-[2] h-12 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold tracking-wide" onClick={handleNext}>
 					Place Order
 				</Button>
 			</div>

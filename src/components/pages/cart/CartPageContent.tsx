@@ -201,8 +201,8 @@ export default function CartPageContent() {
 
 	// Cart with items
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-			<div className="container mx-auto px-4 py-8 md:py-12">
+		<div className="min-h-screen bg-white">
+			<div className="container mx-auto px-4 py-8">
 				{/* Header */}
 				<div className="text-center mb-6 md:mb-10">
 					<h1 className="text-2xl md:text-4xl font-bold tracking-tight">Shopping Cart</h1>
