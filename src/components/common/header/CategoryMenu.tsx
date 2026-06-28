@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils/utils';
 
 // unified type (recursive)
 export interface MenuCategory {
@@ -12,8 +13,12 @@ export interface MenuCategory {
 	slug: string;
 	subcategories?: MenuCategory[];
 }
+interface CategoryMenuProps {
+	categories: MenuCategory[];
+	columnClassName?: string;
+}
 
-export default function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
+export default function CategoryMenu({ categories, columnClassName }: CategoryMenuProps) {
 	const [activePath, setActivePath] = useState<MenuCategory[]>([]);
 
 	const handleHover = (level: number, item: MenuCategory) => {
@@ -41,7 +46,7 @@ export default function CategoryMenu({ categories }: { categories: MenuCategory[
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 20 }}
 						transition={{ duration: 0.2 }}
-						className="w-[240px] h-full overflow-y-auto border-r last:border-r-0"
+						className={cn('h-full overflow-y-auto border-r last:border-r-0', columnClassName)}
 					>
 						{col.map((item) => {
 							const isActive = activePath[level]?.id === item.id;
@@ -51,7 +56,7 @@ export default function CategoryMenu({ categories }: { categories: MenuCategory[
 									href={`/category/${item.slug}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
-									className={`flex group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
+									className={`flex w-full group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
 									${isActive ? 'bg-orange-300 text-white font-medium' : 'hover:bg-gray-100'}
 								`}
 								>

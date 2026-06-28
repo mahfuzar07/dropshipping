@@ -101,18 +101,19 @@ export default function HeaderBottom() {
 	return (
 		<div className="h-full w-full backdrop-blur-xl text-md items-center justify-center border-b mb-2">
 			<div className="container mx-auto px-3 h-full font-fredoka font-medium tracking-wide">
-				<div className="flex items-center justify-between  gap-2 h-full">
+				<div className="flex items-center justify-between  gap-2 h-full w-full">
 					<HoverPopover
-						className="w-[260px]"
+						width="min-w-[260px]"
+						align="left"
 						trigger={
-							<div className="relative py-2.5 w-[260px] hidden rounded-t-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
+							<div className="relative py-2.5 min-w-[260px] hidden rounded-t-md hover:bg-twinkle-teal text-white bg-primary md:flex items-center justify-center h-full text-lg gap-5 cursor-pointer">
 								<Menu strokeWidth={3} size={18} />
 								All Categories
 								<ChevronDown strokeWidth={3} size={18} />
 							</div>
 						}
 					>
-						<CategoryMenu categories={normalizedCategories} />
+						<CategoryMenu categories={normalizedCategories} columnClassName="min-w-[260px]" />
 					</HoverPopover>
 
 					<div className="flex gap-4 items-center font-fredoka text-md font-medium">

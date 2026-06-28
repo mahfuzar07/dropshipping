@@ -40,10 +40,10 @@ export const apiEndpoint = {
 		SHIPMENT_TRACKING: () => `/api/order/shipments/track/`,
 	},
 	categories: {
-		category: '/category',
-		tree: '/category',
-		detail: (id: string | number) => `/category/${id}`,
-		delete: (id: string | number) => `/category/${id}`,
+		category: '/api/products/categories-from-1688',
+
+		detail: (id: string | number) => `/api/products/categories-from-1688/${id}`,
+		delete: (id: string | number) => `/api/products/categories-from-1688/${id}`,
 	},
 	products: {
 		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,

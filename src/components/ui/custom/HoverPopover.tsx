@@ -11,7 +11,7 @@ interface HoverPopoverProps {
 	align?: 'left' | 'right';
 }
 
-export default function HoverPopover({ trigger, children, className = '', width = 'min-w-64', align = 'right' }: HoverPopoverProps) {
+export default function HoverPopover({ trigger, children, className = '', width = 'min-w-65', align = 'right' }: HoverPopoverProps) {
 	const [open, setOpen] = useState(false);
 
 	return (
