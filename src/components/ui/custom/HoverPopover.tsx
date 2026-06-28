@@ -11,11 +11,11 @@ interface HoverPopoverProps {
 	align?: 'left' | 'right';
 }
 
-export default function HoverPopover({ trigger, children, className = '', width = 'min-w-64', align = 'right' }: HoverPopoverProps) {
+export default function HoverPopover({ trigger, children, className = '', width = 'min-w-65', align = 'right' }: HoverPopoverProps) {
 	const [open, setOpen] = useState(false);
 
 	return (
-		<div className="relative inline-block" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+		<div className="relative inline-block z-50" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
 			{/* Trigger */}
 			{trigger}
 
@@ -31,7 +31,7 @@ export default function HoverPopover({ trigger, children, className = '', width 
 						exit={{ opacity: 0, y: -10 }}
 						transition={{ duration: 0.3, ease: 'easeOut' }}
 						className={`
-              absolute top-full mt-5 -z-1 ${width}
+              absolute top-full mt-0 -z-1 ${width}
               ${align === 'right' ? 'right-0' : 'left-0'}
               rounded-b-xl bg-white shadow
               ${className}

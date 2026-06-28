@@ -2,10 +2,8 @@
 
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { Card, CardContent } from '@/components/ui/card';
-
 import StepIndicator from './StepIndicator';
 import Step1Address from './step/Step1Address';
-import Step2Shipping from './step/Step2Shipping';
 import Step3Payment from './step/Step3Payment';
 import OrderSummary from './OrderSummary';
 
@@ -13,7 +11,7 @@ export default function CheckoutPageContent() {
 	const step = useCheckoutStore((s) => s.step);
 
 	return (
-		<div className="min-h-screen py-6 md:py-10 px-3 md:px-6 bg-background">
+		<div className="min-h-screen">
 			<div className="max-w-7xl mx-auto">
 				{/* Header */}
 				<div className="text-center mb-6 md:mb-10">

@@ -234,7 +234,7 @@ export default function TrackOrderPageContent() {
 							whileTap={{ scale: 1 }}
 							whileHover={{ scale: 0.95 }}
 							onClick={handleTrack}
-							className="flex gap-1 shadow items-center justify-center bg-orange-300 text-white rounded-full py-2 px-5 font-fredoka font-medium cursor-pointer"
+							className="flex gap-1 shadow items-center justify-center bg-primary text-white rounded-full py-2 px-5 font-fredoka font-medium cursor-pointer"
 						>
 							<Search className="w-5 h-5" />
 							<span className="hidden md:block">Track</span>

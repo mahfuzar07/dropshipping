@@ -217,8 +217,9 @@ export default function StoreHeader() {
 										</div>
 									}
 								>
-									<ProfileContent isAuthenticated={isAuthenticated} user={user} />
+									<ProfileContent isAuthenticated={isAuthenticated} user={user} logout={logout}/>
 								</HoverPopover>
+								
 								<HoverPopover
 									trigger={
 										<div className="relative cursor-pointer">

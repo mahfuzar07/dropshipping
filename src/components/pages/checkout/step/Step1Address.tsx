@@ -89,11 +89,11 @@ export default function Step1Address() {
 			</h1>
 
 			<div className="flex w-full justify-end mt-5 mb-5">
-				<Button onClick={() => handleSelectAddress(addressList)} size="sm" className="bg-orange-300/20 text-orange-500 hover:bg-orange-300/30">
+				<Button onClick={() => handleSelectAddress(addressList)} size="sm" className="bg-orange-300/20 text-primary hover:bg-orange-300/30">
 					Choose Address
 				</Button>
 				<div className="border-l pl-3 ml-3">
-					<Button size="sm" onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-orange-300 hover:bg-orange-500">
+					<Button size="sm" onClick={() => openModal({ modalType: 'add-address-modal' })} className="bg-primary hover:bg-primary/80">
 						<Plus /> Add New
 					</Button>
 				</div>
@@ -112,7 +112,7 @@ export default function Step1Address() {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<div className="bg-orange-100 p-2 rounded-full">
-								<HomeIcon size={16} className="text-orange-500" />
+								<HomeIcon size={16} className="text-primary" />
 							</div>
 							<div>
 								<p className="font-semibold">{defaultAddress.fullName}</p>
@@ -141,7 +141,7 @@ export default function Step1Address() {
 			)}
 
 			{/* Continue */}
-			<Button className="w-full mt-6 bg-orange-400 hover:bg-orange-500 text-white font-semibold h-12 rounded-xl" onClick={handleNext}>
+			<Button className="w-full mt-6 bg-primary hover:bg-primary/80 text-white font-semibold h-12 rounded-xl" onClick={handleNext}>
 				Continue to Shipping →
 			</Button>
 		</div>
