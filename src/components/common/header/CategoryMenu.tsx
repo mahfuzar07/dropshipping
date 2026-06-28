@@ -57,7 +57,7 @@ export default function CategoryMenu({ categories, columnClassName }: CategoryMe
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
 									className={`flex w-full group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
-									${isActive ? 'bg-orange-300 text-white font-medium' : 'hover:bg-gray-100'}
+									${isActive ? 'bg-primary text-white font-medium' : 'hover:bg-gray-100'}
 								`}
 								>
 									<span>{item.name}</span>
