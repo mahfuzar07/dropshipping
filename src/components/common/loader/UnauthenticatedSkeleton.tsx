@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { Lock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function UnauthenticatedSkeleton() {
 	const { openModal } = useLayoutStore();
+	const router = useRouter();
 	return (
 		<div className="min-h-screen flex items-center justify-center px-4">
 			<div className="w-full max-w-md text-center space-y-6">
@@ -33,9 +35,14 @@ export default function UnauthenticatedSkeleton() {
 				{/* Hint text */}
 				<p className="text-xs text-gray-400 pt-2 mb-8">This area is protected for security reasons</p>
 
-				<Button onClick={() => openModal({ modalType: 'login-modal' })} className="bg-slate-700 text-sm text-white py-2 px-8 rounded-md ">
-					Login
-				</Button>
+				<div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+					<Button onClick={() => openModal({ modalType: 'login-modal' })} className="bg-slate-700 text-sm text-white py-2 px-8 rounded-md w-full sm:w-auto">
+						Login with Phone
+					</Button>
+					<Button onClick={() => router.push('/admin/login')} variant="outline" className="text-sm py-2 px-8 rounded-md w-full sm:w-auto border-slate-300 text-slate-700 hover:bg-slate-50">
+						Login with Email
+					</Button>
+				</div>
 			</div>
 		</div>
 	);

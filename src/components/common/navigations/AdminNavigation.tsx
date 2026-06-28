@@ -46,7 +46,14 @@ const sidebarItems: MenuItem[] = [
 		],
 	},
 
-	{ icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
+	{
+		icon: ShoppingCart,
+		label: 'Orders',
+		subItems: [
+			{ label: 'All Orders', href: '/admin/orders' },
+			{ label: 'Fulfillment & Shipping', href: '/admin/fulfillment' },
+		],
+	},
 
 	{ icon: TicketPercent, label: 'Coupons', href: '/admin/coupons' },
 	{
@@ -57,7 +64,7 @@ const sidebarItems: MenuItem[] = [
 			{ label: 'Create Attributes', href: '/admin/add-attribute' },
 		],
 	},
-	{ icon: BarChart3, label: 'Analytics', href: '/analytics' },
+	{ icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
 	{
 		icon: Settings,
 		label: 'Settings',

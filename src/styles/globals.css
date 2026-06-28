@@ -142,6 +142,14 @@
 	/* Store color inlist */
 	--color-store-secondary: var(--store-secondary);
 	--color-store-secondary-muted: var(--store-secondary-muted);
+
+	/* Dashboard colors */
+	--color-dashboard-background: oklch(0.97 0 0);
+	--color-dashboard-foreground: oklch(0.145 0 0);
+	--color-dashboard-sidebar-background: oklch(0.18 0.02 240);
+	--color-dashboard-muted: oklch(0.4 0.02 240);
+	--color-dashboard-muted-foreground: oklch(0.6 0.02 240);
+	--color-dashboard-primary: #F16A38;
 }
 
 @layer base {
