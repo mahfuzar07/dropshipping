@@ -1,70 +1,59 @@
 'use client';
 import { ChevronDown, Menu, Phone } from 'lucide-react';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
-import CategoryMenu, { type MenuCategory } from './CategoryMenu';
+import CategoryMenu from './CategoryMenu';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HoverPopover from '@/components/ui/custom/HoverPopover';
 import ServiceContent from './dropdown-content/ServiceContent';
-import { Category } from '@/types/customer';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
+import { toast } from 'sonner';
 
 export interface CategoryItem {
-	[key: number]: any;
+	[key: string]: any;
 }
 
-interface MenuCategoryWithParent extends MenuCategory {
-	parentId?: number | null;
+// main category
+export interface Category {
+	id: number;
+	name: string;
+	slug: string;
+	icon: string;
+	subcategories: Category[];
 }
 
-export function normalizeCategories(rawCategories: Category[]): MenuCategory[] {
-	const categoryMap = new Map<number, MenuCategoryWithParent>();
+// full API response
+export interface CategoriesResponse {
+	categories: Category[];
+}
 
-	// First pass: create all categories
-	rawCategories.forEach((cat) => {
-		categoryMap.set(cat.id, {
-			id: cat.id,
-			icon: cat.icon || '',
-			name: cat.name,
-			slug: cat.slug,
-			parentId: cat.parentId || null,
-			subcategories: [],
-		});
-	});
+export interface MenuCategory {
+	id: string;
+	name: string;
+	slug: string;
+	subcategories?: MenuCategory[];
+}
 
-	const rootCategories: MenuCategory[] = [];
+export function normalizeCategories(rawCategories: any[]): MenuCategory[] {
+	return rawCategories.map((cat) => ({
+		id: cat.id,
+		name: cat.name,
+		slug: cat.id,
 
-	// Second pass: build tree
-	categoryMap.forEach((cat) => {
-		if (cat.parentId) {
-			const parent = categoryMap.get(cat.parentId);
+		subcategories: cat.subcategories?.map((sub: any, i: number) => ({
+			id: `${cat.id}-${i}`,
+			name: sub.name,
+			slug: sub.name.toLowerCase().replace(/\s+/g, '-'),
 
-			if (parent) {
-				parent.subcategories?.push(cat);
-			}
-		} else {
-			rootCategories.push(cat);
-		}
-	});
-
-	// Remove empty subcategories
-	const cleanCategories = (categories: MenuCategory[]): MenuCategory[] => {
-		return categories.map((cat) => ({
-			id: cat.id,
-			icon: cat.icon,
-			name: cat.name,
-			slug: cat.slug,
-			...(cat.subcategories && cat.subcategories.length > 0
-				? {
-						subcategories: cleanCategories(cat.subcategories),
-					}
-				: {}),
-		}));
-	};
-
-	return cleanCategories(rootCategories);
+			subcategories: sub.items?.map((item: any, j: number) => ({
+				id: `${cat.id}-${i}-${j}`,
+				name: item.name,
+				slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+			})),
+		})),
+	}));
 }
 
 const navItems = [
@@ -95,17 +84,18 @@ export default function HeaderBottom() {
 	const pathname = usePathname();
 	const { openDrawer, openModal } = useLayoutStore();
 
-	const { data, isLoading } = useAppData<any, 'single'>({
+	const { data, isLoading } = useAppData<CategoriesResponse, 'single'>({
 		key: [QueriesKey.CATEGORIES],
-		api: apiEndpoint.categories.category,
+		api: apiEndpoint.products.CATEGORIES(),
 		auth: true,
 		responseType: 'single',
-		enabled: true,
-		refetchOnMount: true,
-		staleTime: 2 * 60 * 1000,
+
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
 	});
 
-	const categories = Array.isArray(data) ? data : (data?.payload ?? []);
+	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	return (

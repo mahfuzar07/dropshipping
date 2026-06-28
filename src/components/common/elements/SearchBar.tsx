@@ -24,7 +24,7 @@ type Product = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WORDS = ['Products', 'Paste Product Link', , 'Home & Garden', 'Health & Medical', 'Gifts'];
+const WORDS = ['Products', 'Paste Product Link', 'Home & Garden', 'Health & Medical', 'Gifts'];
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
