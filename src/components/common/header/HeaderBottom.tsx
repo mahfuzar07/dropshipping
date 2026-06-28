@@ -33,6 +33,7 @@ export interface MenuCategory {
 	id: string;
 	name: string;
 	slug: string;
+	
 	subcategories?: MenuCategory[];
 }
 
@@ -96,6 +97,7 @@ export default function HeaderBottom() {
 	});
 
 	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
+
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	return (
