@@ -46,10 +46,12 @@ export const apiEndpoint = {
 		delete: (id: string | number) => `/api/products/categories-from-1688/${id}`,
 	},
 	products: {
+		publicProducts: '/api/products/product-from-1688',
+		productsDetails: '/api/products/product-from-1688/{id}',
 		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		// PRODUCTS_FILTER: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		LATEST_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
-		NEW_LAUNCH_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
+		NEW_LAUNCH_PRODUCTS: '/api/products/product-from-1688/?page=1&limit=12',
 		GIFT_DEEAS_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=2`,
 		CATEGORIES: () => `/api/products/categories-from-1688/`,
 		DETAILS: (id: string | number) => `/api/products/product-from-1688/${id}/`,
