@@ -34,7 +34,7 @@ export default function AddressPageContent() {
 
 	const { data: addressresponse } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		onError: (error: any) => {
@@ -61,7 +61,7 @@ export default function AddressPageContent() {
 	// ✅ Delete API
 	const { remove: removeAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		enabled: false,
@@ -83,7 +83,7 @@ export default function AddressPageContent() {
 				return;
 			}
 			setDeletingId(id);
-			removeAddress(id);
+			removeAddress({id});
 		},
 		[addressList, removeAddress],
 	);

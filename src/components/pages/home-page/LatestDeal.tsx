@@ -4,54 +4,53 @@ import { useAppData } from '@/hooks/use-appdata';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import Image from 'next/image';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-type LatestDealsResponse = {
-	page: number;
-	limit: number;
-	total: number;
-	total_pages: number;
-	results: Product[];
-};
-
-type Product = {
-	_id: string;
-	offer_id: string;
-	title: string;
-	url: string;
-	image: string;
-
-	product_name: string;
-	promotion: string;
-	rating: string;
-	sold: string;
-
-	price: {
-		amount: string;
-		currency: string;
-		overseas: string;
-		unit: string;
-	};
-
-	price_float: number;
-	seller_icon: string;
-	is_ad: boolean;
-	moq: null | number;
-};
+import { ProductResponse } from './NewLaunch';
 
 export default function LatestDeal() {
-	const { data: latestProducts, isLoading: isLoadingAddress } = useAppData<LatestDealsResponse, 'single'>({
-		key: [QueriesKey.LATEST_PRODUCTS],
-		api: apiEndpoint.products.LATEST_PRODUCTS(),
-		auth: true,
+	const [filter, setFilter] = useState({
+		page: 1,
+		limit: 5,
+		search: '',
+		category: '',
+		brand: '',
+		minPrice: undefined as number | undefined,
+		maxPrice: undefined as number | undefined,
+		sortBy: '',
+		sortOrder: 'desc' as 'asc' | 'desc',
+	});
+	const filterParams = useMemo(
+		() => ({
+			page: filter.page,
+			limit: filter.limit,
+			...(filter.search.trim() && { search: filter.search.trim() }),
+			...(filter.category && { category: filter.category }),
+			...(filter.brand && { brand: filter.brand }),
+			...(filter.minPrice !== undefined && { minPrice: filter.minPrice }),
+			...(filter.maxPrice !== undefined && { maxPrice: filter.maxPrice }),
+			...(filter.sortBy && { sortBy: filter.sortBy }),
+			...(filter.sortOrder && { sortOrder: filter.sortOrder }),
+		}),
+		[filter],
+	);
+	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
+		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
+		api: apiEndpoint.products.publicProducts,
+		queryParams: filterParams,
+		auth: false,
 		responseType: 'single',
+		refetchOnMount: true,
+		staleTime: 0,
+		enabled: true,
+		clientOnly: true,
 
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to add address');
 		},
 	});
 
-	const products = latestProducts?.results || [];
+	const products = data?.items.item || [];
 
 	return (
 		<div className="bg-gray-100 py-8">

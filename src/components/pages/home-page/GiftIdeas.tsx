@@ -6,57 +6,53 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { APIResponse } from '@/types/types';
 import Image from 'next/image';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-/* ================= TYPES ================= */
-type GiftIdeasResponse = {
-	page: number;
-	limit: number;
-	total: number;
-	total_pages: number;
-	results: Product[];
-};
-
-type Product = {
-	_id: string;
-	offer_id: string;
-	title: string;
-	url: string;
-	image: string;
-
-	product_name: string;
-	promotion: string;
-	rating: string;
-	sold: string;
-
-	price: {
-		amount: string;
-		currency: string;
-		overseas: string;
-		unit: string;
-	};
-
-	price_float: number;
-	seller_icon: string;
-	is_ad: boolean;
-	moq: null | number;
-};
-
-/* ================= COMPONENT ================= */
+import { ProductResponse } from './NewLaunch';
 
 export default function GiftIdeas() {
-	const { data: giftIdeasProducts, isLoading } = useAppData<GiftIdeasResponse, 'single'>({
-		key: [QueriesKey.GIFT_DEEAS_PRODUCTS],
-		api: apiEndpoint.products.GIFT_DEEAS_PRODUCTS(),
-		auth: true,
+	const [filter, setFilter] = useState({
+		page: 1,
+		limit: 5,
+		search: '',
+		category: '',
+		brand: '',
+		minPrice: undefined as number | undefined,
+		maxPrice: undefined as number | undefined,
+		sortBy: '',
+		sortOrder: 'desc' as 'asc' | 'desc',
+	});
+	const filterParams = useMemo(
+		() => ({
+			page: filter.page,
+			limit: filter.limit,
+			...(filter.search.trim() && { search: filter.search.trim() }),
+			...(filter.category && { category: filter.category }),
+			...(filter.brand && { brand: filter.brand }),
+			...(filter.minPrice !== undefined && { minPrice: filter.minPrice }),
+			...(filter.maxPrice !== undefined && { maxPrice: filter.maxPrice }),
+			...(filter.sortBy && { sortBy: filter.sortBy }),
+			...(filter.sortOrder && { sortOrder: filter.sortOrder }),
+		}),
+		[filter],
+	);
+	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
+		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
+		api: apiEndpoint.products.publicProducts,
+		queryParams: filterParams,
+		auth: false,
 		responseType: 'single',
+		refetchOnMount: true,
+		staleTime: 0,
+		enabled: true,
+		clientOnly: true,
 
 		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to load gift ideas products');
+			toast.error(error?.response?.data?.message || 'Failed to add address');
 		},
 	});
 
-	const products: Product[] = giftIdeasProducts?.results ?? [];
+	const products = data?.items.item || [];
 
 	return (
 		<div className="bg-gray-100 py-8">
@@ -87,7 +83,7 @@ export default function GiftIdeas() {
 					<div className="grid grid-cols-2 2xl:grid-cols-3 gap-3 md:col-span-2 col-span-4 items-stretch">
 						{isLoading
 							? Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-40 bg-gray-200 animate-pulse rounded-xl" />)
-							: products.map((product) => <ProductCard key={product._id} product={product} />)}
+							: products.map((product) => <ProductCard product={product} />)}
 					</div>
 				</div>
 			</div>

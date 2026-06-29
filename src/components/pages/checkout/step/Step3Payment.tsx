@@ -123,7 +123,7 @@ export default function Step3Payment() {
 
 			console.log('Order payload:', payload);
 
-			const isSuccess = await addNewOrder(payload); // replace with real API
+			const isSuccess = await addNewOrder({payload}); // replace with real API
 
 			if (!isSuccess) {
 				router.push('/order/failed');
