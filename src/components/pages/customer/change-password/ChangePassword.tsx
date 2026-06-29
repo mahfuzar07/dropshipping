@@ -90,7 +90,7 @@ export default function ChangePassword() {
 		payload.append('new_password', form.new_password);
 		payload.append('confirm_password', form.confirm_password);
 
-		changePassword(payload);
+		changePassword({payload});
 	};
 
 	/* ================= UI ================= */

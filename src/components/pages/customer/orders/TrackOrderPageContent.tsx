@@ -162,7 +162,7 @@ export default function TrackOrderPageContent() {
 		form.append('tracking_number', val);
 
 		try {
-			const response = (await submitTrackNumber(form)) as any;
+			const response = (await submitTrackNumber({ payload: form })) as any;
 			const data: TrackingData = response?.data ?? response;
 
 			if (data?.tracking_number) {

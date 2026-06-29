@@ -32,11 +32,11 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 
 	const { create: setDefaultAddress, isMutating } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		enabled: false,
-		placeholderData: {} as APIResponse,
+
 		optimistic: false,
 		invalidateKeys: [[QueriesKey.DELIVERY_ADDRESS_LIST]],
 		onSuccess: () => {
@@ -50,7 +50,7 @@ export default function SelectAddressModal({ modalData = [] }: ModalProps) {
 
 	const handleConfirm = async () => {
 		if (!selectedShippingId || isMutating) return;
-		await setDefaultAddress({}, 'set_default', selectedShippingId);
+		await setDefaultAddress({ id: selectedShippingId, action: 'set_default' });
 	};
 
 	return (

@@ -1,5 +1,5 @@
 'use client';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
@@ -11,6 +11,7 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
+import { ProductResponse } from './NewLaunch';
 
 type TopSellingResponse = {
 	page: number;
@@ -49,19 +50,48 @@ export default function TopSelling() {
 	const prevRef = useRef<HTMLDivElement>(null);
 	const nextRef = useRef<HTMLDivElement>(null);
 	const swiperRef = useRef<SwiperCore | null>(null);
-
-	const { data: topProducts, isLoading: isLoadingAddress } = useAppData<TopSellingResponse, 'single'>({
-		key: [QueriesKey.TOP_PRODUCTS],
-		api: apiEndpoint.products.TOP_PRODUCTS({}),
-		auth: true,
+	const [filter, setFilter] = useState({
+		page: 1,
+		limit: 5,
+		search: '',
+		category: '',
+		brand: '',
+		minPrice: undefined as number | undefined,
+		maxPrice: undefined as number | undefined,
+		sortBy: '',
+		sortOrder: 'desc' as 'asc' | 'desc',
+	});
+	const filterParams = useMemo(
+		() => ({
+			page: filter.page,
+			limit: filter.limit,
+			...(filter.search.trim() && { search: filter.search.trim() }),
+			...(filter.category && { category: filter.category }),
+			...(filter.brand && { brand: filter.brand }),
+			...(filter.minPrice !== undefined && { minPrice: filter.minPrice }),
+			...(filter.maxPrice !== undefined && { maxPrice: filter.maxPrice }),
+			...(filter.sortBy && { sortBy: filter.sortBy }),
+			...(filter.sortOrder && { sortOrder: filter.sortOrder }),
+		}),
+		[filter],
+	);
+	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
+		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
+		api: apiEndpoint.products.publicProducts,
+		queryParams: filterParams,
+		auth: false,
 		responseType: 'single',
+		refetchOnMount: true,
+		staleTime: 0,
+		enabled: true,
+		clientOnly: true,
 
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to add address');
 		},
 	});
 
-	const products = topProducts?.results || [];
+	const products = data?.items.item || [];
 
 	return (
 		<div className="bg-gray-100 py-8">
@@ -121,7 +151,7 @@ export default function TopSelling() {
 					}}
 				>
 					{products.map((product) => (
-						<SwiperSlide key={product._id}>
+						<SwiperSlide key={product.num_iid}>
 							<ProductCard product={product} />
 						</SwiperSlide>
 					))}

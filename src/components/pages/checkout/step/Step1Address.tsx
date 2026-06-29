@@ -30,7 +30,7 @@ export default function Step1Address() {
 	const { openModal } = useLayoutStore();
 	const { data: addressresponse } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		onError: (error: any) => {

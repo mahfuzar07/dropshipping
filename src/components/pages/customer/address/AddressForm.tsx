@@ -76,7 +76,7 @@ export default function AddressForm({ modalData }: Props) {
 
 	const { create: submitAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		enabled: false,
@@ -91,7 +91,7 @@ export default function AddressForm({ modalData }: Props) {
 
 	const { update: updateAddress } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
-		api: apiEndpoint.users.DELIVERY_ADDRESS(),
+		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
 		responseType: 'single',
 		enabled: false,
@@ -123,9 +123,9 @@ export default function AddressForm({ modalData }: Props) {
 		data.append('is_default', formData.isDefault);
 
 		if (isEdit) {
-			updateAddress(Number(formData.id), data);
+			updateAddress({ id: Number(formData.id), payload: data });
 		} else {
-			submitAddress(data);
+			submitAddress({ payload: data });
 		}
 	};
 

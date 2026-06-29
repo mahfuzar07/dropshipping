@@ -6,7 +6,7 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-type NewLaunchResponse = {
+export type ProductResponse = {
 	items: {
 		page: number;
 		page_count: number;
@@ -55,7 +55,7 @@ export default function NewLaunch() {
 		}),
 		[filter],
 	);
-	const { data: newLaunchProducts, isLoading: isLoadingAddress } = useAppData<NewLaunchResponse, 'single'>({
+	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
 		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
 		api: apiEndpoint.products.publicProducts,
 		queryParams: filterParams,
@@ -71,7 +71,7 @@ export default function NewLaunch() {
 		},
 	});
 
-	const products = newLaunchProducts?.items.item || [];
+	const products = data?.items.item || [];
 
 	return (
 		<div className="bg-gray-100 py-8">
