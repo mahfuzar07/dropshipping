@@ -2,7 +2,20 @@
 
 import { Store, Star, Trophy, Headphones, Truck, ChevronRight } from 'lucide-react';
 
-export default function SellerInfo() {
+interface SellerInfoProps {
+	seller?: {
+		nick: string;
+		shop_name: string;
+		sid: string;
+		title: string;
+		zhuy: string;
+	};
+}
+
+export default function SellerInfo({ seller }: SellerInfoProps) {
+	const shopName = seller?.shop_name || seller?.nick || seller?.title || 'Seller Store';
+	const shopUrl = seller?.zhuy;
+
 	return (
 		<div className="w-full bg-gray-50 rounded py-5 px-4 flex items-center justify-between mb-2">
 			{/* Left Side - Seller Info */}
@@ -14,36 +27,32 @@ export default function SellerInfo() {
 
 				{/* Seller Store Text & Ratings */}
 				<div>
-					<h3 className="text-lg font-bold text-gray-800 tracking-wide">SELLER STORE</h3>
+					<h3 className="text-lg font-bold text-gray-800 tracking-wide uppercase">{shopName}</h3>
 
 					<div className="flex items-center gap-4 mt-3 flex-wrap">
-						{/* Product Rating */}
 						<div className="flex items-center gap-1.5 bg-white px-5 py-1.5 rounded">
 							<Star className="w-5 h-5 text-teal-500 fill-current" />
 							<span className="text-sm text-gray-700">
-								Product <strong> 4.7</strong>
+								Product <strong>4.7</strong>
 							</span>
 						</div>
 
-						{/* Level */}
 						<div className="flex items-center gap-1.5 bg-white px-5 py-1.5 rounded">
 							<Trophy className="w-5 h-5 text-teal-500" />
 							<span className="text-sm text-gray-700">
-								Level <strong> 4.7</strong>
+								Level <strong>4.7</strong>
 							</span>
 						</div>
 
-						{/* Service */}
 						<div className="flex items-center gap-1.5 bg-white px-5 py-1.5 rounded">
 							<Headphones className="w-5 h-5 text-teal-500" />
 							<span className="text-sm text-gray-700">
-								Service <strong> 3.5</strong>
+								Service <strong>3.5</strong>
 							</span>
 						</div>
 
-						{/* Delivery */}
 						<div className="flex items-center gap-1.5 bg-white px-5 py-1.5 rounded">
-							<Truck className="w-5 h-5 text-teal-500 " />
+							<Truck className="w-5 h-5 text-teal-500" />
 							<span className="text-sm text-gray-700">
 								Delivery <strong>2.5</strong>
 							</span>
@@ -53,14 +62,28 @@ export default function SellerInfo() {
 			</div>
 
 			{/* Right Side - Visit Store Button */}
-			<button
-				className="bg-orange-300 hover:bg-orange-400 active:bg-orange-500 transition-colors
-                   text-white font-semibold px-8 py-3 rounded-full flex items-center gap-2
-                   text-sm tracking-wider cursor-pointer"
-			>
-				Visit Store
-				<ChevronRight className="w-4 h-4" />
-			</button>
+			{shopUrl ? (
+				<a
+					href={shopUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="bg-orange-300 hover:bg-orange-400 active:bg-orange-500 transition-colors
+						text-white font-semibold px-8 py-3 rounded-full flex items-center gap-2
+						text-sm tracking-wider cursor-pointer"
+				>
+					Visit Store
+					<ChevronRight className="w-4 h-4" />
+				</a>
+			) : (
+				<button
+					className="bg-orange-300 hover:bg-orange-400 active:bg-orange-500 transition-colors
+						text-white font-semibold px-8 py-3 rounded-full flex items-center gap-2
+						text-sm tracking-wider cursor-pointer"
+				>
+					Visit Store
+					<ChevronRight className="w-4 h-4" />
+				</button>
+			)}
 		</div>
 	);
 }

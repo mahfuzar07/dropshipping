@@ -11,7 +11,6 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
-import PieceWeightScaleInfoTable from './PieceWeightScaleInfoTable';
 
 /* ================= TYPES ================= */
 
@@ -25,230 +24,119 @@ export interface Variant {
 	color_name: string;
 	image: string;
 	active: boolean;
+	skuId: number;
 	sizes: VariantSize[];
 }
 
-// export interface ProductDetails {
-// 	_id: string;
-// 	offer_id: string;
-// 	title: string;
-// 	image: string;
-// 	rating: string;
-// 	sold: string;
-
-// 	price: {
-// 		currency: string;
-// 		amount: string;
-// 		unit: string;
-// 		overseas: string;
-// 	};
-
-// 	details: {
-// 		extract_product_variants: Variant[];
-// 		extract_product_attributes: Record<string, string>;
-// 		extract_product_description: {
-// 			images: string[];
-// 		};
-// 	};
-// }
-
 export interface ProductDetails {
-	_id: string;
-	offer_id: string;
-	title: string;
-	image: string;
-	rating: string;
-	sold: string;
-	weightKg: number;
-	weightInfo: string;
-	price: {
-		currency: string;
-		amount: string;
+	item: {
+		num_iid: number;
+		title: string;
+		price: number;
+		orginal_price: number;
+		nick: string;
+		num: number;
+		detail_url: string;
+		pic_url: string;
+
+		item_imgs: {
+			url: string;
+		}[];
+
+		desc: string;
+		desc_img: string[];
+
+		props: {
+			name: string;
+			value: string | null;
+		}[];
+
+		skus: {
+			sku: {
+				price: number;
+				quantity: number;
+				sku_id: number;
+				properties: string;
+				properties_name: string;
+				spec_id: string;
+			}[];
+		};
+
+		props_list: Record<string, string>;
+
+		seller_info: {
+			nick: string;
+			shop_name: string;
+			sid: string;
+			title: string;
+			zhuy: string;
+		};
+
+		video?: {
+			url: string;
+		};
+
 		unit: string;
-		overseas: string;
-	};
-	details: {
-		data: {
-			gallery: {
-				fields: {
-					offerImgList: string[];
-				};
-			};
-			Root: {
-				fields: {
-					dataJson: {
-						skuModel: {
-							skuProps: Array<{
-								prop: string;
-								value: Array<{ name: string; imageUrl: string }>;
-							}>;
-							skuInfoMap: Record<
-								// ← missing < was the core bug
-								string,
-								{ canBookCount: number; skuId: number }
-							>;
-						};
-					};
-				};
-			};
-			offerDetail: {
-				// ← moved inside data, not a sibling of it
-				featureAttributes: Array<{ name: string; value: string }>;
-			};
-			productPackInfo: {
-				fields: {
-					pieceWeightScale: {
-						pieceWeightScaleInfo: Array<{
-							sku1: string;
-							weight: number;
-							height: number;
-							length: number;
-							width: number;
-							volume: number;
-							skuId: number;
-						}>;
-						columnList: Array<{ name: string; label: string; precision: number; fid?: number }>;
-					};
-				};
-			};
-		};
+		location: string;
+		weight: string;
 	};
 }
 
-export interface ProductApiResponse {
-	updated: boolean;
-	product: ProductDetails;
-}
+const mapProductData = (response: ProductDetails) => {
+	const product = response.item;
 
-/* ================= MAPPER ================= */
+	const galleryImages = product.item_imgs?.map((img) => img.url) ?? [product.pic_url];
 
-// const mapProductData = (product: ProductDetails) => {
-// 	const variants = product.details?.extract_product_variants || [];
-
-// 	const colors = variants.map((v) => ({
-// 		name: v.color_name,
-// 		image: v.image,
-// 	}));
-
-// 	const galleryImages = [product.image, ...variants.map((v) => v.image)];
-
-// 	return {
-// 		id: product._id,
-// 		offer_id: product.offer_id,
-// 		name: product.title,
-// 		price: Number(product.price?.amount || 0),
-// 		overseasPrice: product.price?.overseas,
-// 		currency: product.price?.currency,
-// 		rating: Number(product.rating || 0),
-// 		reviewCount: 0,
-
-// 		image: product.image,
-// 		sold: product.sold,
-
-// 		colors,
-// 		variants,
-// 		galleryImages,
-
-// 		specifications: product.details?.extract_product_attributes || {},
-// 	};
-// };
-
-const mapProductData = (product: ProductDetails) => {
-	console.log('Raw product details data:', product);
-	const dataJson = product.details?.data?.Root?.fields?.dataJson;
-	const skuModel = dataJson?.skuModel;
-
-	// Colors come from skuProps (the "颜色" prop)
-	const colorProp = skuModel?.skuProps?.find((p) => p.prop === '颜色');
-	const colorValues = colorProp?.value || [];
-	const skuInfoMap = skuModel?.skuInfoMap || {};
-
-	// Build variants — one per color, with stock from skuInfoMap
-	// const variants = colorValues.map((color) => ({
-	// 	color_name: color.name,
-	// 	image: color.imageUrl,
-	// 	active: true,
-	// 	// This product has no sizes — wrap stock as a single "size" entry
-	// 	sizes: [
-	// 		{
-	// 			size_name: 'Standard',
-	// 			price: product.price?.amount || '0',
-	// 			stock: String(skuInfoMap[color.name]?.canBookCount ?? 0),
-	// 		},
-	// 	],
-	// }));
-
-	const findWeightBySku = (
-		pieceWeightScaleInfo: Array<{
-			sku1: string;
-			weight: number;
-			height: number;
-			length: number;
-			width: number;
-			volume: number;
-			skuId: number;
-		}>,
-		skuName: string,
-	) => {
-		return pieceWeightScaleInfo.find((item) => item.sku1 === skuName) ?? null;
-	};
-
-	const pieceWeightScaleInfo = product.details?.data?.productPackInfo?.fields?.pieceWeightScale?.pieceWeightScaleInfo ?? [];
-	const pieceWeightScaleInfoColumnList = product.details?.data?.productPackInfo?.fields?.pieceWeightScale?.columnList ?? [];
-
-	const variants = colorValues.map((color) => {
-		const weightInfo = findWeightBySku(pieceWeightScaleInfo, color.name);
-		const weightKg = weightInfo ? weightInfo.weight / 1000 : 0;
-
-		return {
-			color_name: color.name,
-			image: color.imageUrl,
-			active: true,
-			weightKg,
-			weightInfo, // attach full object if you need length/width/height later
-			sizes: [
-				{
-					size_name: 'Standard',
-					price: product.price?.amount || '0',
-					stock: String(skuInfoMap[color.name]?.canBookCount ?? 0),
-				},
-			],
-		};
-	});
-
-	const galleryImages = product.details?.data?.gallery?.fields?.offerImgList || [product.image];
-
-	// Build specifications from featureAttributes
-	const featureAttributes = (product.details?.data as any)?.offerDetail?.featureAttributes || [];
 	const specifications: Record<string, string> = {};
-	featureAttributes.forEach((attr: { name: string; value: string }) => {
-		if (attr.name && attr.value) {
-			specifications[attr.name] = attr.value;
+	product.props?.forEach((prop) => {
+		if (prop.name && prop.value) {
+			specifications[prop.name] = prop.value;
 		}
 	});
 
-	const colors = colorValues.map((c) => ({
-		name: c.name,
-		image: c.imageUrl,
-	}));
+	const variants: Variant[] =
+		product.skus?.sku?.map((sku) => ({
+			color_name: sku.properties_name,
+			image: product.pic_url,
+			active: true,
+			skuId: sku.sku_id,
+			sizes: [
+				{
+					size_name: 'Default',
+					price: String(sku.price),
+					stock: String(sku.quantity),
+				},
+			],
+		})) ?? [];
 
 	return {
-		id: product._id,
-		offer_id: product.offer_id,
+		id: String(product.num_iid),
+		offer_id: String(product.num_iid),
 		name: product.title,
-		price: Number(product.price?.amount || 0),
-		overseasPrice: product.price?.overseas,
-		currency: product.price?.currency,
-		rating: Number(product.rating || 0),
+		price: product.price,
+		overseasPrice: product.orginal_price,
+		currency: 'CNY',
+
+		rating: 0,
 		reviewCount: 0,
-		image: product.image,
-		sold: product.sold,
-		colors,
-		variants,
+		sold: String(product.num),
+
+		image: product.pic_url,
 		galleryImages,
+
+		colors: variants.map((v) => ({
+			name: v.color_name,
+			image: v.image,
+		})),
+
+		variants,
 		specifications,
-		pieceWeightScaleInfo,
-		pieceWeightScaleInfoColumnList,
+		description: product.desc,
+
+		seller: product.seller_info,
+		unit: product.unit,
+		location: product.location,
+		video: product.video?.url,
 	};
 };
 
@@ -264,24 +152,17 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 		enabled: !!productId,
 		staleTime: 0,
 		clientOnly: true,
-
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to load product');
 		},
 	});
-	// console.log('API response for product details:', data);
 
-	// const productRaw = { product: data };
-	// console.log('Raw product data from API:', data);
 	const product = useMemo(() => {
 		if (!data) return null;
 		return mapProductData(data);
 	}, [JSON.stringify(data)]);
 
 	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-	const [selectedSize, setSelectedSize] = useState<string | null>(null);
-	const [qty, setQty] = useState<Record<string, number>>({});
-
 	const [selectedColorQty, setSelectedColorQty] = useState<Record<number, Record<string, number>>>({});
 
 	const updateColorQty = (colorIndex: number, size: string, type: 'inc' | 'dec', stock: number) => {
@@ -294,14 +175,12 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 			}
 			if (type === 'dec' && current > 0) {
 				const updated = current - 1;
-				// remove size key if qty hits 0 to keep object clean
 				const newColorQty = { ...colorQty };
 				if (updated === 0) {
 					delete newColorQty[size];
 				} else {
 					newColorQty[size] = updated;
 				}
-				// remove color key entirely if no sizes left
 				const newState = { ...prev, [colorIndex]: newColorQty };
 				if (Object.keys(newColorQty).length === 0) {
 					delete newState[colorIndex];
@@ -317,12 +196,7 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 	}
 
 	const selectedVariant = product.variants[selectedColorIndex];
-
-	const sizes = selectedVariant?.sizes?.map((s) => s.size_name) || [];
-
 	const mainImage = selectedVariant?.image || product.image;
-
-	console.log('product.pieceWeightScaleInfoColumnList', product.pieceWeightScaleInfoColumnList);
 
 	return (
 		<div className="px-2 py-3">
@@ -345,44 +219,14 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 
 					{/* INFO */}
 					<div className="col-span-7">
-						{/* <ProductInfo
-							product={{
-								id: product.id,
-								name: product.name,
-								price: product.price,
-								currency: product.currency,
-								overseas: product.overseasPrice,
-								solded: product.sold,
-								description: product.sold,
-								inStock: true,
-								stockCount: null,
-
-								colors: product.colors,
-								image: mainImage,
-
-								variants: product.variants,
-
-								rating: product.rating,
-								reviewCount: product.reviewCount,
-
-								selectedColorIndex,
-								setSelectedColorIndex,
-							}}
-							qty={qty}
-							setQty={setQty}
-						/> */}
-
 						<ProductInfo
 							product={{
 								id: product.id,
 								name: product.name,
 								price: product.price,
 								currency: product.currency,
-								overseas: product.overseasPrice,
 								solded: product.sold,
-								description: product.sold,
-								inStock: true,
-								stockCount: null,
+								description: product.description,
 								colors: product.colors,
 								image: mainImage,
 								variants: product.variants,
@@ -396,31 +240,17 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 
 					{/* TABS */}
 					<div className="col-span-12 bg-white rounded-lg p-5">
-						<SellerInfo />
-						{/* <ProductTabs description={product.name} specifications={product.specifications} reviews={[]} /> */}
-						<ProductTabs
-							description={product.name} // keep as fallback until API provides description text
-							specifications={product.specifications}
-							reviews={[]}
-						/>
-						<PieceWeightScaleInfoTable data={product.pieceWeightScaleInfo} columns={product.pieceWeightScaleInfoColumnList} />
+						<SellerInfo seller={product.seller} />
+						<ProductTabs description={product.description} specifications={product.specifications} reviews={[]} />
 					</div>
 				</div>
 
 				{/* RIGHT */}
 				<div className="col-span-3 sticky top-5 self-start">
-					{/* <CartSection
-						product={{
-							...product,
-							selectedVariant,
-							selectedSize,
-							qty,
-						}}
-					/> */}
 					<CartSection
 						product={{
 							...product,
-							selectedColorQty, // all selected colors + qtys
+							selectedColorQty,
 						}}
 					/>
 				</div>
