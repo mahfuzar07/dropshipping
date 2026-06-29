@@ -3,54 +3,75 @@ import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import { useAppData } from '@/hooks/use-appdata';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type NewLaunchResponse = {
-	page: number;
-	limit: number;
-	total: number;
-	total_pages: number;
-	results: Product[];
+	items: {
+		page: number;
+		page_count: number;
+		page_size: number;
+		real_total_results: number;
+		total_results: number;
+		item: Product[];
+	};
 };
 
-type Product = {
-	_id: string;
-	offer_id: string;
+export type Product = {
+	num_iid: string;
+	detail_url: string;
 	title: string;
 	url: string;
-	image: string;
-
-	product_name: string;
-	promotion: string;
-	rating: string;
-	sold: string;
-
-	price: {
-		amount: string;
-		currency: string;
-		overseas: string;
-		unit: string;
-	};
-
-	price_float: number;
-	seller_icon: string;
-	is_ad: boolean;
-	moq: null | number;
+	pic_url: string;
+	tag_percent: string;
+	price: number;
+	promotion_price: number;
+	sales: number;
 };
 
 export default function NewLaunch() {
+	const [filter, setFilter] = useState({
+		page: 1,
+		limit: 20,
+		search: '',
+		category: '',
+		brand: '',
+		minPrice: undefined as number | undefined,
+		maxPrice: undefined as number | undefined,
+		sortBy: '',
+		sortOrder: 'desc' as 'asc' | 'desc',
+	});
+	const filterParams = useMemo(
+		() => ({
+			page: filter.page,
+			limit: filter.limit,
+			...(filter.search.trim() && { search: filter.search.trim() }),
+			...(filter.category && { category: filter.category }),
+			...(filter.brand && { brand: filter.brand }),
+			...(filter.minPrice !== undefined && { minPrice: filter.minPrice }),
+			...(filter.maxPrice !== undefined && { maxPrice: filter.maxPrice }),
+			...(filter.sortBy && { sortBy: filter.sortBy }),
+			...(filter.sortOrder && { sortOrder: filter.sortOrder }),
+		}),
+		[filter],
+	);
 	const { data: newLaunchProducts, isLoading: isLoadingAddress } = useAppData<NewLaunchResponse, 'single'>({
-		key: [QueriesKey.NEW_LAUNCH_PRODUCTS],
-		api: apiEndpoint.products.NEW_LAUNCH_PRODUCTS(),
-		auth: true,
+		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
+		api: apiEndpoint.products.publicProducts,
+		queryParams: filterParams,
+		auth: false,
 		responseType: 'single',
+		refetchOnMount: true,
+		staleTime: 0,
+		enabled: true,
+		clientOnly: true,
 
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to add address');
 		},
 	});
 
-	const products = newLaunchProducts?.results || [];
+	const products = newLaunchProducts?.items.item || [];
 
 	return (
 		<div className="bg-gray-100 py-8">
@@ -61,7 +82,7 @@ export default function NewLaunch() {
 				{/* Product Grid */}
 				<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 					{products.map((product) => (
-						<ProductCard product={product} key={product?._id} />
+						<ProductCard product={product} key={product?.num_iid} />
 					))}
 				</div>
 			</div>
