@@ -40,10 +40,10 @@ export const apiEndpoint = {
 		SHIPMENT_TRACKING: () => `/api/order/shipments/track/`,
 	},
 	categories: {
-		category: '/api/products/categories-from-1688',
+		category: '/api/products/categories',
 
-		detail: (id: string | number) => `/api/products/categories-from-1688/${id}`,
-		delete: (id: string | number) => `/api/products/categories-from-1688/${id}`,
+		detail: (id: string | number) => `/api/products/categories/${id}`,
+		delete: (id: string | number) => `/api/products/categories/${id}`,
 	},
 	products: {
 		publicProducts: '/api/products/product-from-1688',
@@ -53,7 +53,7 @@ export const apiEndpoint = {
 		LATEST_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
 		NEW_LAUNCH_PRODUCTS: '/api/products/product-from-1688/?page=1&limit=12',
 		GIFT_DEEAS_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=2`,
-		CATEGORIES: () => `/api/products/categories-from-1688/`,
+		CATEGORIES: () => `/api/products/categories/`,
 		DETAILS: (id: string | number) => `/api/products/product-from-1688/${id}/`,
 		SEARCH_PRODUCTS: (key: string) => `/api/products/product-from-1688?search=${key}&page=1&limit=12`,
 		list: '/products',
