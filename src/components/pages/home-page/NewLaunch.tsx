@@ -32,7 +32,7 @@ export type Product = {
 export default function NewLaunch() {
 	const [filter, setFilter] = useState({
 		page: 1,
-		limit: 20,
+		limit: 5,
 		search: '',
 		category: '',
 		brand: '',

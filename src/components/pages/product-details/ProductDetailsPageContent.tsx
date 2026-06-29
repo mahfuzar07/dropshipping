@@ -254,13 +254,17 @@ const mapProductData = (product: ProductDetails) => {
 
 /* ================= COMPONENT ================= */
 
-export default function ProductDetailsPageContent({ productSlug }: { productSlug: string }) {
+export default function ProductDetailsPageContent({ productId }: { productId: number }) {
 	const { data, isLoading } = useAppData<ProductDetails, 'single'>({
-		key: [QueriesKey.PRODUCT_DETAIL, productSlug],
-		api: apiEndpoint.products.DETAILS(productSlug),
-		auth: true,
+		key: [QueriesKey.PRODUCT_DETAIL, productId],
+		api: apiEndpoint.products.productsDetails,
+		routeParams: { id: productId },
+		auth: false,
 		responseType: 'single',
-		enabled: !!productSlug,
+		enabled: !!productId,
+		staleTime: 0,
+		clientOnly: true,
+
 		onError: (error: any) => {
 			toast.error(error?.response?.data?.message || 'Failed to load product');
 		},

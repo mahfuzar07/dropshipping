@@ -47,6 +47,7 @@ export const apiEndpoint = {
 	},
 	products: {
 		publicProducts: '/api/products/product-from-1688',
+		productsDetails: '/api/products/product-from-1688/{id}',
 		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		// PRODUCTS_FILTER: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		LATEST_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,
