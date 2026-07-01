@@ -50,7 +50,9 @@ export default function ShopByCategory() {
 				<div className="flex items-center justify-between mb-2 md:mb-5">
 					<TypoTitle title="Shop By Category" className=" uppercase" align="left" />
 					<div className="flex items-center gap-2 text-primary shrink-0">
-						<Link href=""> View All Categories </Link>
+						<Link href="" className="flex items-center gap-1 text-sm md:text-base font-medium">
+							View All <span className='hidden md:block'>Categories</span>
+						</Link>
 						<ArrowRight size={18} />
 					</div>
 				</div>

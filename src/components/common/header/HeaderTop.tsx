@@ -19,7 +19,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 
 	return (
 		<div className="">
-			<div className="container mx-auto">
+			<div className="container mx-auto hidden md:block">
 				<div className="bg-white border-b border-gray-100 text-xs text-gray-600 flex justify-between items-center px-3 py-2">
 					<div className="flex items-center gap-4">
 						<span className="flex items-center gap-1.5">
@@ -70,7 +70,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 					</div>
 
 					{/* Center - Mobile brand */}
-					<div className="relative col-span-5 md:col-span-6 md:hidden h-15 w-full overflow-hidden rounded-xl mx-auto">
+					<div className="relative col-span-6 md:col-span-6 md:hidden md:h-15 h-13 w-full overflow-hidden rounded-xl mx-auto">
 						<Image src="/assets/brand.png" alt="brand" fill className="object-contain transition-transform duration-300 group-hover:scale-105" />
 					</div>
 
@@ -80,7 +80,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 					</div>
 
 					{/* Right Icons */}
-					<div className="flex md:col-span-3 col-span-5 items-center justify-end gap-3 2xl:gap-7">
+					<div className="flex md:col-span-3 col-span-4 items-center md:justify-end justify-center gap-1 md:gap-5 2xl:gap-7">
 						<div
 							className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center relative cursor-pointer md:hidden"
 							onClick={() => openDrawer({ drawerType: 'search' })}
@@ -109,9 +109,9 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							<ProfileContent isAuthenticated={isAuthenticated} user={user} logout={logout} />
 						</HoverPopover>
 
-						<div className="flex items-center">
+						<div className="md:flex hidden items-center">
 							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center">
-								<ShoppingCart size={24} strokeWidth={1.5} className="" />
+								<Heart size={24} strokeWidth={1.5} className="" />
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
@@ -124,12 +124,12 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 
 						<div className="flex items-center">
 							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center">
-								<Heart size={24} strokeWidth={1.5} className="" />
+								<ShoppingCart size={24} strokeWidth={1.5} className="" />
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-sm">Cart</p>
-								<div className="absolute -right-4 -top-3 h-3.5 w-3.5 md:h-4.5 md:w-4.5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
+								<p className="text-sm md:block hidden">Cart</p>
+								<div className="absolute -right-0 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									0
 								</div>
 							</div>

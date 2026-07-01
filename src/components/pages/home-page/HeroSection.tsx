@@ -12,7 +12,7 @@ export default function HeroSection() {
 	return (
 		<div className="w-full bg-white">
 			<div className="container mx-auto">
-				<div className="relative rounded-2xl overflow-hidden flex items-center w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[15/6]">
+				<div className="relative md:rounded-2xl overflow-hidden flex items-center w-full aspect-[10/16] md:aspect-[16/6] lg:aspect-[10/4] 2xl:aspect-[15/6]">
 					{/* Background Image */}
 					<Image src="/assets/hero/hero-bg.png" alt="Hero" fill className="object-cover object-center" priority />
 

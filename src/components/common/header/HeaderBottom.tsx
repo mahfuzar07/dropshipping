@@ -33,7 +33,7 @@ export interface MenuCategory {
 	id: string;
 	name: string;
 	slug: string;
-	
+
 	subcategories?: MenuCategory[];
 }
 
@@ -101,7 +101,7 @@ export default function HeaderBottom() {
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	return (
-		<div className="h-full w-full backdrop-blur-xl text-md items-center justify-center border-b mb-2">
+		<div className="h-full w-full backdrop-blur-xl text-md items-center justify-center border-b mb-2 md:block hidden">
 			<div className="container mx-auto px-3 h-full font-fredoka font-medium tracking-wide">
 				<div className="flex items-center justify-between  gap-2 h-full w-full">
 					<HoverPopover

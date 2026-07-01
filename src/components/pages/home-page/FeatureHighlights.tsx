@@ -9,14 +9,14 @@ const features = [
 
 export default function FeatureHighlights() {
 	return (
-		<section className="w-full bg-white py-5">
-			<div className="container mx-auto px-4 py-8 border border-border/50 rounded-md shadow">
-				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+		<section className="w-full bg-white md:py-5">
+			<div className="container mx-auto px-4 py-8 md:border border-border/50 rounded-md md:shadow">
+				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 sm:divide-x divide-gray-200">
 					{features.map((f, index) => {
 						return (
-							<div key={index} className="flex items-center justify-center gap-3 text-xs">
+							<div key={index} className="flex md:flex-row flex-col items-center justify-center gap-3 text-xs">
 								<div
-									className="w-12 h-12 bg-primary"
+									className="w-12 h-12 bg-primary shrink-0"
 									style={{
 										WebkitMaskImage: `url(${f.icon})`,
 										WebkitMaskRepeat: 'no-repeat',
@@ -24,9 +24,9 @@ export default function FeatureHighlights() {
 										WebkitMaskSize: 'contain',
 									}}
 								></div>
-								<div>
-									<h2 className="font-semibold text-base">{f.label}</h2>
-									<h5 className="text-muted-foreground">{f.subTitle}</h5>
+								<div className='text-center md:text-start'>
+									<h2 className="font-semibold text-sm md:text-base">{f.label}</h2>
+									<h5 className="text-muted-foreground md:text-sm text-[10px]">{f.subTitle}</h5>
 								</div>
 							</div>
 						);
