@@ -172,6 +172,7 @@ export default function SearchBar() {
 
 	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
 		key: ['image-search'],
+		// {{ApiUrl}}/api/products/item-search-img/?page=1&lang=en&start_price=5&end_price=5.5&sort=_cached_at&limit=2
 		api: apiEndpoint.products.imageSearch,
 		auth: true,
 		responseType: 'single',
@@ -191,7 +192,7 @@ export default function SearchBar() {
 				payload: formData,
 			});
 
-			console.log(res);
+			console.log('-----response', res);
 
 			router.push(`/product-list?imageSearch=${res?.searchId}`);
 		} catch (err) {

@@ -47,7 +47,7 @@ export const apiEndpoint = {
 	},
 	products: {
 		publicProducts: '/api/products/product-from-1688',
-		imageSearch: '/api/products/product-from-1688',
+		imageSearch: '/api/products/item-search-img',
 		productsDetails: '/api/products/product-from-1688/{id}',
 		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		// PRODUCTS_FILTER: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,

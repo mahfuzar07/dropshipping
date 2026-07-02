@@ -20,5 +20,6 @@ export const QueriesKey = {
 	CATEGORIES: 'categories',
 	PRODUCT_DETAIL: 'product-detail',
 	SEARCH_PRODUCTS: 'search-products',
+	SEARCH_IMAGE_PRODUCTS: 'item-search-img',
 	SHIPMENT_TRACKING: 'shipment-tracking',
 };
