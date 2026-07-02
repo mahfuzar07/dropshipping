@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Clock, X, Loader2, ChevronDown, Menu } from 'lucide-react';
+import { Search, Clock, X, Loader2, ChevronDown, Menu, ImageIcon, CameraIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -67,7 +67,7 @@ export default function SearchBar() {
 	const [open, setOpen] = useState(false);
 	const [wordIdx, setWordIdx] = useState(0);
 	const [history, setHistory] = useState<string[]>([]);
-
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	// debounced search results
 
 	const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -170,10 +170,41 @@ export default function SearchBar() {
 	const categories = Array.isArray(data) ? data : (data?.payload ?? []);
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
+	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
+		key: ['image-search'],
+		api: apiEndpoint.products.imageSearch,
+		auth: true,
+		responseType: 'single',
+		enabled: false,
+	});
+
+	const handleImageSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+
+		if (!file) return;
+
+		const formData = new FormData();
+		formData.append('image', file);
+
+		try {
+			const res = await create({
+				payload: formData,
+			});
+
+			console.log(res);
+
+			router.push(`/product-list?imageSearch=${res?.searchId}`);
+		} catch (err) {
+			console.error(err);
+		}
+
+		e.target.value = '';
+	};
+
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-3 border border-primary">
+			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-2 border border-primary">
 				<div>
 					<HoverPopover
 						className="w-[220px]"
@@ -217,6 +248,18 @@ export default function SearchBar() {
 						</motion.div>
 					)}
 				</AnimatePresence>
+
+				<input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSearch} />
+
+				<motion.button
+					onClick={() => fileInputRef.current?.click()}
+					whileTap={{ scale: 1 }}
+					whileHover={{ scale: 0.95 }}
+					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
+					className="flex items-center justify-center text-primary w-10 h-10 rounded-md hover:bg-primary/10 cursor-pointer"
+				>
+					{imageSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CameraIcon className="w-4 h-4 md:w-7 md:h-7" />}
+				</motion.button>
 
 				{/* Search button */}
 				<motion.button
