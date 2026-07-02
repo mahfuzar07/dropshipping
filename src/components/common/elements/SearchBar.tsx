@@ -171,7 +171,7 @@ export default function SearchBar() {
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
-		key: ['image-search'],
+		key: [QueriesKey.SEARCH_IMAGE_PRODUCTS],
 		// {{ApiUrl}}/api/products/item-search-img/?page=1&lang=en&start_price=5&end_price=5.5&sort=_cached_at&limit=2
 		api: apiEndpoint.products.imageSearch,
 		auth: true,
@@ -253,6 +253,7 @@ export default function SearchBar() {
 				<input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSearch} />
 
 				<motion.button
+					type="submit"
 					onClick={() => fileInputRef.current?.click()}
 					whileTap={{ scale: 1 }}
 					whileHover={{ scale: 0.95 }}
