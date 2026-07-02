@@ -11,6 +11,7 @@ export interface MenuCategory {
 	id: string;
 	name: string;
 	slug: string;
+	icon?: string;
 	subcategories?: MenuCategory[];
 }
 interface CategoryMenuProps {

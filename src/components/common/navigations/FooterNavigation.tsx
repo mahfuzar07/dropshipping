@@ -14,10 +14,10 @@ export default function FooterNavigation() {
 					<Home className="w-5 h-5 ext-muted-foreground" />
 					<span className="text-xs">Home</span>
 				</Link>
-				<Link href="/cart" className="flex flex-col items-center gap-1 p-2 ">
+				<div onClick={() => openDrawer({ drawerType: 'category-drawer' })} className="flex flex-col items-center gap-1 p-2">
 					<LayoutDashboard className="w-5 h-5" />
 					<span className="text-xs">Category</span>
-				</Link>
+				</div>
 
 				<Link href="/customer/wishlist" className="flex flex-col items-center gap-1 p-2">
 					<div className="relative cursor-pointer">

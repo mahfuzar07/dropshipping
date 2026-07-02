@@ -6,6 +6,7 @@ import DefaultDrawer from './drawer-item/DefaultDrawer';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import MobileSideMenu from './drawer-item/MobileSideMenu';
 import SearchDrawer from './drawer-item/SearchDrawer';
+import CategoryDrawer from './drawer-item/CategoryDrawer';
 
 // mapping drawer type to components
 const drawerComponents: Record<string, React.ComponentType<any>> = {
@@ -13,6 +14,7 @@ const drawerComponents: Record<string, React.ComponentType<any>> = {
 	'product-filter': ProductFilterDrawer,
 	'mobile-side-menu': MobileSideMenu,
 	search: SearchDrawer,
+	"category-drawer": CategoryDrawer
 };
 
 export default function DrawerWrapper() {
