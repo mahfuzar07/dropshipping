@@ -39,10 +39,10 @@ export default function FooterNavigation() {
 						<span className="text-xs">Account</span>
 					</Link>
 				) : (
-					<button onClick={() => openModal({ modalType: 'login-modal' })} className="flex flex-col items-center gap-1 p-2">
+					<Link href="/sign-in" className="flex flex-col items-center gap-1 p-2">
 						<User className="w-5 h-5" />
 						<span className="text-xs">Login</span>
-					</button>
+					</Link>
 				)}
 			</div>
 		</nav>
