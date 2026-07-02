@@ -2,7 +2,7 @@
 
 import { Search, Clock, X, Loader2, ChevronDown, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/axiosInstance';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
@@ -11,16 +11,9 @@ import HoverPopover from '@/components/ui/custom/HoverPopover';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { normalizeCategories } from '../header/HeaderBottom';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Product = {
-	_id: string;
-	title: string;
-	image: string;
-	rating: string;
-	price: { amount: string; currency: string };
-};
+import { Product } from '@/components/pages/home-page/NewLaunch';
+import { useLayoutStore } from '@/z-store/global/useLayoutStore';
+import { cn } from '@/lib/utils/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -68,24 +61,31 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export default function SearchBar() {
 	const router = useRouter();
-
+	const { drawerType } = useLayoutStore();
+	const isSearchDrawerOpen = drawerType === 'search';
 	const [query, setQuery] = useState('');
 	const [open, setOpen] = useState(false);
 	const [wordIdx, setWordIdx] = useState(0);
 	const [history, setHistory] = useState<string[]>([]);
 
 	// debounced search results
-	const [results, setResults] = useState<Product[]>([]);
-	const [searching, setSearching] = useState(false);
 
+	const [debouncedQuery, setDebouncedQuery] = useState('');
 	const wrapperRef = useRef<HTMLDivElement>(null);
-	const abortRef = useRef<AbortController | null>(null);
 
 	// ── Animated placeholder ──────────────────────────────────────────────────
 	useEffect(() => {
 		const id = setInterval(() => setWordIdx((i) => (i + 1) % WORDS.length), 2200);
 		return () => clearInterval(id);
 	}, []);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedQuery(query.trim());
+		}, 400);
+
+		return () => clearTimeout(timer);
+	}, [query]);
 
 	// ── Load history when dropdown opens ─────────────────────────────────────
 	useEffect(() => {
@@ -103,45 +103,30 @@ export default function SearchBar() {
 		return () => document.removeEventListener('pointerdown', handle);
 	}, []);
 
-	// ── Debounced API search (400ms) ──────────────────────────────────────────
-	useEffect(() => {
-		const q = query.trim();
+	const filterParams = useMemo(
+		() => ({
+			page: 1,
+			limit: 8,
+			...(debouncedQuery && {
+				search: debouncedQuery,
+			}),
+		}),
+		[debouncedQuery],
+	);
 
-		if (!q) {
-			setResults([]);
-			setSearching(false);
-			return;
-		}
+	const { data: searchData, isLoading: searching } = useAppData<any, 'single'>({
+		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
+		api: apiEndpoint.products.publicProducts,
+		queryParams: filterParams,
+		auth: false,
+		responseType: 'single',
+		refetchOnMount: true,
+		staleTime: 0,
+		enabled: !!debouncedQuery,
+		clientOnly: true,
+	});
 
-		setSearching(true);
-
-		// cancel previous request
-		abortRef.current?.abort();
-		abortRef.current = new AbortController();
-
-		const timer = setTimeout(async () => {
-			try {
-				const url = apiEndpoint.products.SEARCH_PRODUCTS(q);
-				const { data } = await authApi.get(url, {
-					signal: abortRef.current!.signal,
-				});
-				// API response: { results: Product[] } or Product[]
-				const products: Product[] = data?.results ?? data ?? [];
-				setResults(products.slice(0, 6));
-			} catch (err: any) {
-				if (err?.name !== 'CanceledError' && err?.name !== 'AbortError') {
-					setResults([]);
-				}
-			} finally {
-				setSearching(false);
-			}
-		}, 400);
-
-		return () => {
-			clearTimeout(timer);
-			abortRef.current?.abort();
-		};
-	}, [query]);
+	const results: Product[] = searchData?.items.item || [];
 
 	// ── Navigate ──────────────────────────────────────────────────────────────
 	const handleSearch = useCallback(
@@ -223,7 +208,10 @@ export default function SearchBar() {
 							animate={{ y: 0, opacity: 1 }}
 							exit={{ y: -10, opacity: 0 }}
 							transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-							className="absolute inset-0 flex items-center pointer-events-none z-0 left-66"
+							className={cn(
+								'absolute inset-0 flex items-center pointer-events-none z-0 transition-all duration-300',
+								isSearchDrawerOpen ? 'left-23' : 'left-66',
+							)}
 						>
 							<span className="text-primary text-sm md:text-base font-normal">{WORDS[wordIdx]}</span>
 						</motion.div>
@@ -272,7 +260,7 @@ export default function SearchBar() {
 									{!searching && results.length > 0 ? (
 										results.map((product, i) => (
 											<motion.button
-												key={product._id}
+												key={product.num_iid}
 												initial={{ opacity: 0, x: -10 }}
 												animate={{ opacity: 1, x: 0 }}
 												transition={{ delay: i * 0.04, duration: 0.22 }}
@@ -281,8 +269,8 @@ export default function SearchBar() {
 											>
 												{/* product image */}
 												<span className="w-9 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-													{product.image ? (
-														<img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+													{product.pic_url ? (
+														<img src={product.pic_url} alt={product.title} className="w-full h-full object-cover" />
 													) : (
 														<span className="w-full h-full flex items-center justify-center text-lg">🛍️</span>
 													)}
@@ -292,8 +280,8 @@ export default function SearchBar() {
 														<Highlight text={product.title} query={query} />
 													</span>
 													<span className="block font-play text-xs text-muted-foreground mt-0.5">
-														{product.price?.currency} {product.price?.amount}
-														{product.rating ? ` · ⭐ ${product.rating}` : ''}
+														{product.price}
+														{/* {product.rating ? ` · ⭐ ${product.rating}` : ''} */}
 													</span>
 												</span>
 											</motion.button>
@@ -335,7 +323,7 @@ export default function SearchBar() {
 											<span className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted flex-shrink-0">
 												<Clock className="w-3.5 h-3.5 text-orange-400" />
 											</span>
-											<span className="flex-1 text-sm font-medium text-foreground">{term}</span>
+											<span className="flex-1 text-sm font-medium text-foreground truncate">{term}</span>
 											<button
 												onMouseDown={(e) => handleDeleteHistory(e, term)}
 												className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-orange-100"
