@@ -228,7 +228,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -254,6 +254,14 @@ interface Order {
 	product_name: string;
 	product_image?: string;
 	variants: Variant[];
+	items?: Array<{
+		product_id: string;
+		product_name: string;
+		product_image: string;
+		variants: Variant[];
+		shipping_method?: string;
+		item_total: number;
+	}>;
 	shipping_method?: string;
 	status: string;
 	status_display?: string;
@@ -293,10 +301,33 @@ const getStatusInfo = (status: string, statusDisplay?: string) => {
 function OrderRow({ order }: { order: Order }) {
 	const { text: statusText, className: statusClass, iconColor } = getStatusInfo(order.status, order.status_display);
 
+	// Flatten all variants across all products in the order
+	const allVariants = useMemo(() => {
+		if (Array.isArray(order.items) && order.items.length > 0) {
+			return order.items.flatMap((item: any) =>
+				(item.variants || []).map((v: any) => ({
+					...v,
+					product_id: item.product_id,
+					product_name: item.product_name,
+					product_image: item.product_image || '',
+				}))
+			);
+		}
+		// Fallback for backward compatibility
+		return (order.variants || []).map((v) => ({
+			...v,
+			product_id: order.product_id,
+			product_name: order.product_name,
+			product_image: order.product_image || '',
+		}));
+	}, [order]);
+
 	// Calculate total quantity
-	const totalQuantity = order.variants.reduce((sum, v) => {
-		return sum + Object.values(v.quantity).reduce((a, b) => a + b, 0);
-	}, 0);
+	const totalQuantity = useMemo(() => {
+		return allVariants.reduce((sum, v) => {
+			return sum + Object.values(v.quantity).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
+		}, 0);
+	}, [allVariants]);
 
 	return (
 		<motion.div
@@ -347,42 +378,42 @@ function OrderRow({ order }: { order: Order }) {
 
 			{/* Products / Variants */}
 			<div className="p-6 space-y-6">
-				{order.variants.map((variantItem, idx) => {
+				{allVariants.map((variantItem, idx) => {
 					const variant = variantItem.variant || {};
-					const imageUrl = variant.image || order.product_image || '';
+					const imageUrl = variant.image || variantItem.product_image || '';
 					const color = variant.color_name || 'Standard';
 					const size = variant.sizes?.[0]?.size_name || 'Standard';
-					const qty = Object.values(variantItem.quantity)[0] || 0;
+					const qty = Number(Object.values(variantItem.quantity)[0]) || 0;
 					const unitPrice = variant.sizes?.[0]?.price || '0';
-
+ 
 					return (
 						<div key={idx} className="flex gap-5 group">
 							<div className="relative w-24 h-24 flex-shrink-0 rounded-2xl overflow-hidden border bg-muted shadow-sm">
 								{imageUrl && (
 									<Image
 										src={imageUrl}
-										alt={order.product_name}
+										alt={variantItem.product_name}
 										fill
 										className="object-cover group-hover:scale-105 transition-transform duration-300"
 									/>
 								)}
 							</div>
-
+ 
 							<div className="flex-1 min-w-0 pt-1">
 								<Link
-									href={`/product/${order.product_id}`}
+									href={`/product/${variantItem.product_id}`}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
 								>
-									{order.product_name}
+									{variantItem.product_name}
 								</Link>
-
+ 
 								<div className="mt-1.5 text-sm text-muted-foreground">
 									{color !== 'Standard' && <span>Color: {color}</span>}
 									{size && <span className="ml-3">Size: {size}</span>}
 								</div>
-
+ 
 								<div className="mt-3 flex items-center justify-between">
 									<div className="text-sm">
 										Quantity: <span className="font-semibold">{qty}</span>

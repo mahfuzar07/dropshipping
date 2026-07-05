@@ -55,6 +55,7 @@ type CartResponse = {
 type OrderPayload = {
 	shipping_charge: number;
 	address_id: number;
+	payment_method?: string;
 };
 
 /* ================= COMPONENT ================= */
@@ -119,6 +120,7 @@ export default function Step3Payment() {
 				shipping_charge: shipping?.price ?? 0,
 
 				address_id: (typeof address === 'number' ? address : (address as any)?.id) ?? 0,
+				payment_method: payType,
 			};
 
 			console.log('Order payload:', payload);

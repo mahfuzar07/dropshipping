@@ -257,7 +257,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -284,6 +284,14 @@ interface Order {
 	product_name: string;
 	product_image?: string;
 	variants: VariantItem[];
+	items?: Array<{
+		product_id: string;
+		product_name: string;
+		product_image: string;
+		variants: VariantItem[];
+		shipping_method?: string;
+		item_total: number;
+	}>;
 	address?: {
 		full_name: string;
 		phone: string;
@@ -294,6 +302,8 @@ interface Order {
 		postal_code: string;
 	};
 	shipping_method?: string;
+	shipping_charge?: string;
+	payment_method?: string;
 	status: string;
 	status_display?: string;
 	total_price: string;
@@ -343,6 +353,43 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 
 	const order: Order | null = orderResponse?.data || orderResponse;
 
+	// Flatten all variants across all products in the order
+	const allVariants = useMemo(() => {
+		if (!order) return [];
+		if (Array.isArray(order.items) && order.items.length > 0) {
+			return order.items.flatMap((item: any) =>
+				(item.variants || []).map((v: any) => ({
+					...v,
+					product_id: item.product_id,
+					product_name: item.product_name,
+					product_image: item.product_image || '',
+				}))
+			);
+		}
+		// Fallback for backward compatibility
+		return (order.variants || []).map((v) => ({
+			...v,
+			product_id: order.product_id,
+			product_name: order.product_name,
+			product_image: order.product_image || '',
+		}));
+	}, [order]);
+
+	// Calculate totals from variants
+	const totalQuantity = useMemo(() => {
+		return allVariants.reduce((sum, v) => {
+			return sum + Object.values(v.quantity).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
+		}, 0);
+	}, [allVariants]);
+
+	const subtotal = useMemo(() => {
+		return allVariants.reduce((sum, v) => {
+			const qty = Number(Object.values(v.quantity)[0]) || 0;
+			const price = Number(v.variant.sizes?.[0]?.price || 0);
+			return sum + qty * price;
+		}, 0);
+	}, [allVariants]);
+
 	if (isLoading || !order) {
 		return (
 			<div className="min-h-[60vh] flex items-center justify-center">
@@ -355,19 +402,8 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 	}
 
 	const { text: statusText, className: statusClass, iconColor } = getStatusInfo(order.status, order.status_display);
-
-	// Calculate totals from variants
-	const totalQuantity = order.variants.reduce((sum, v) => {
-		return sum + Object.values(v.quantity).reduce((a, b) => a + (b || 0), 0);
-	}, 0);
-
-	const subtotal = order.variants.reduce((sum, v) => {
-		const qty = Object.values(v.quantity)[0] || 0;
-		const price = Number(v.variant.sizes?.[0]?.price || 0);
-		return sum + qty * price;
-	}, 0);
-
 	const grandTotal = Number(order.total_price || 0);
+	const shipping = Number(order.shipping_charge || 0);
 
 	return (
 		<div className="px-4 md:px-6 py-8 md:py-12 font-hanken">
@@ -409,17 +445,17 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 						<div className="px-6 py-5 border-b flex items-center justify-between bg-muted/30">
 							<h2 className="text-xl font-semibold flex items-center gap-2">Ordered Items ({totalQuantity})</h2>
 							<p className="text-sm text-muted-foreground">
-								{order.variants.length} variant{order.variants.length > 1 ? 's' : ''}
+								{allVariants.length} variant{allVariants.length > 1 ? 's' : ''}
 							</p>
 						</div>
 
 						<div className="divide-y divide-border">
-							{order.variants.map((variantItem, index) => {
+							{allVariants.map((variantItem, index) => {
 								const v = variantItem.variant || {};
-								const imageUrl = v.image || order.product_image || '';
+								const imageUrl = v.image || variantItem.product_image || '';
 								const color = v.color_name || 'Standard';
 								const size = v.sizes?.[0]?.size_name || 'Standard';
-								const qty = Object.values(variantItem.quantity)[0] || 0;
+								const qty = Number(Object.values(variantItem.quantity)[0]) || 0;
 								const unitPrice = Number(v.sizes?.[0]?.price || 0);
 
 								return (
@@ -432,18 +468,18 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 									>
 										{/* Product Image */}
 										<div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded-xl overflow-hidden border">
-											{imageUrl && <Image src={imageUrl} alt={order.product_name} fill className="object-cover" />}
+											{imageUrl && <Image src={imageUrl} alt={variantItem.product_name} fill className="object-cover" />}
 										</div>
 
 										{/* Product Details */}
 										<div className="flex-1 min-w-0">
 											<Link
-												href={`/product/${order.product_id}`}
+												href={`/product/${variantItem.product_id}`}
 												target="_blank"
 												rel="noopener noreferrer"
 												className="font-semibold text-base leading-tight hover:text-orange-600 transition-colors line-clamp-2"
 											>
-												{order.product_name}
+												{variantItem.product_name}
 											</Link>
 
 											<div className="mt-1.5 text-sm text-muted-foreground">
@@ -486,6 +522,13 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 								<span className="capitalize">{order.shipping_method || 'Air'}</span>
 							</div>
 
+							{shipping > 0 && (
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">Shipping Charge</span>
+									<span>৳{shipping.toLocaleString()}</span>
+								</div>
+							)}
+
 							<div className="border-t pt-4 flex justify-between font-semibold text-base">
 								<span>Grand Total</span>
 								<span className="text-primary">৳{grandTotal.toLocaleString()}</span>
@@ -524,7 +567,9 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 							<CreditCard className="w-5 h-5 text-orange-500" />
 							Payment Information
 						</h3>
-						<div className="uppercase font-medium text-lg tracking-wider">Cash on Delivery (COD)</div>
+						<div className="uppercase font-medium text-lg tracking-wider">
+							{order.payment_method === 'card' ? 'Online Card Payment' : 'Cash on Delivery (COD)'}
+						</div>
 
 						<div className="mt-8 pt-6 border-t text-right">
 							<p className="text-xs text-muted-foreground">Total Payable Amount</p>

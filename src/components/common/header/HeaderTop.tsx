@@ -3,6 +3,10 @@ import { Search, User, ShoppingBasket, Menu, Bell, Heart, Truck, ShieldCheck, Sh
 import Image from 'next/image';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { useMemo } from 'react';
 
 import HoverPopover from '@/components/ui/custom/HoverPopover';
 import ProfileContent from './dropdown-content/ProfileContent';
@@ -16,6 +20,28 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 	const { openDrawer, openModal } = useLayoutStore();
 
 	const { logout, isAuthenticated, user } = useAuthStore();
+
+	const { data } = useAppData<any, 'single'>({
+		key: [QueriesKey.CART_DATA],
+		api: apiEndpoint.cart.GET_CART(),
+		auth: true,
+		responseType: 'single',
+		enabled: isAuthenticated,
+	});
+
+	const cartCount = useMemo(() => {
+		if (!isAuthenticated || !Array.isArray(data?.data)) return 0;
+		return data.data.reduce((total: number, item: any) => {
+			if (!Array.isArray(item?.variants)) return total;
+			return (
+				total +
+				item.variants.reduce((sum: number, v: any) => {
+					if (!v?.quantity || typeof v.quantity !== 'object') return sum;
+					return sum + Object.values(v.quantity).filter((q: any) => q > 0).length;
+				}, 0)
+			);
+		}, 0);
+	}, [data, isAuthenticated]);
 
 	return (
 		<div className="">
@@ -130,7 +156,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
 								<p className="text-sm md:block hidden">Cart</p>
 								<div className="absolute -right-0 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
-									0
+									{cartCount}
 								</div>
 							</div>
 						</div>

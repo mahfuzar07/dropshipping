@@ -75,7 +75,7 @@ export default function CartPageContent() {
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	// Fetch cart data using the custom hook
-	const { data, isLoading, refetch } = useAppData<CartResponse, 'single'>({
+	const { data, isLoading, update: updateCart, remove: removeCart } = useAppData<CartResponse, 'single'>({
 		key: [QueriesKey.CART_DATA],
 		api: apiEndpoint.cart.GET_CART(),
 		auth: true,
@@ -172,16 +172,17 @@ export default function CartPageContent() {
 			});
 
 			if (updatedVariants.length === 0) {
-				await authApi.delete(apiEndpoint.cart.REMOVE_FROM_CART(rawItem.id));
+				await removeCart({ id: rawItem.id });
 			} else {
-				await authApi.patch(apiEndpoint.cart.UPDATE_CART(rawItem.id), {
-					variants: updatedVariants,
+				await updateCart({
+					id: rawItem.id,
+					payload: { variants: updatedVariants } as any
 				});
 			}
 
 			toast.success('Item removed from cart');
-			refetch();
 		} catch (error) {
+			console.error('Remove item error:', error);
 			toast.error('Failed to remove item');
 		} finally {
 			setIsUpdating(false);
@@ -209,13 +210,14 @@ export default function CartPageContent() {
 				return vEntry;
 			});
 
-			await authApi.patch(apiEndpoint.cart.UPDATE_CART(rawItem.id), {
-				variants: updatedVariants,
+			await updateCart({
+				id: rawItem.id,
+				payload: { variants: updatedVariants } as any
 			});
 
 			toast.success('Quantity updated');
-			refetch();
 		} catch (error) {
+			console.error('Update quantity error:', error);
 			toast.error('Failed to update quantity');
 		} finally {
 			setIsUpdating(false);

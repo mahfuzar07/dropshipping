@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { addToCard } from '@/lib/api/cart';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLayoutStore } from '@/z-store/global/useLayoutStore';
+import { QueriesKey } from '@/lib/constants/queriesKey';
 
 export interface VariantSize {
 	size_name: string;
@@ -32,6 +35,8 @@ export default function CartSection({ product }: { product: any }) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const { isAuthenticated } = useAuthStore();
 	const router = useRouter();
+	const queryClient = useQueryClient();
+	const { openDrawer } = useLayoutStore();
 
 	const selectedColorQty: Record<number, Record<string, number>> = product?.selectedColorQty || {};
 	const variants: Variant[] = product?.variants || [];
@@ -110,6 +115,10 @@ export default function CartSection({ product }: { product: any }) {
 		try {
 			await addToCard(form as any);
 			toast.success('Product added to cart successfully!');
+			// Invalidate cart data so the badge and drawer update instantly
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.CART_DATA] });
+			// Open the cart drawer for a smooth UX
+			openDrawer({ drawerType: 'cart' });
 		} catch (err) {
 			toast.error('Failed to add product to cart.');
 		} finally {
@@ -117,8 +126,42 @@ export default function CartSection({ product }: { product: any }) {
 		}
 	};
 
-	const handleBuyNow = () => {
-		// TODO: implement buy now flow
+	const handleBuyNow = async () => {
+		setIsSubmitting(true);
+
+		const selectedVariants = Object.entries(selectedColorQty)
+			.filter(([, sizeMap]) => Object.values(sizeMap).some((q) => q > 0))
+			.map(([colorIndex, sizeMap]) => ({
+				variant: variants[Number(colorIndex)],
+				quantity: sizeMap,
+			}));
+
+		const form = {
+			product_id: product?.offer_id,
+			product_name: product?.name,
+			product_image: product?.image,
+			variants: selectedVariants.map((v) => ({
+				variant: {
+					color_name: v.variant?.color_name,
+					image: v.variant?.image,
+					weightKg: v.variant?.weightKg,
+					weightInfo: v.variant?.weightInfo,
+					sizes: v.variant?.sizes,
+				},
+				quantity: v.quantity,
+			})),
+			shipping_method: selectedShipping,
+		};
+
+		try {
+			await addToCard(form as any);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.CART_DATA] });
+			router.push('/checkout');
+		} catch (err) {
+			toast.error('Failed to process buy now.');
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	return (

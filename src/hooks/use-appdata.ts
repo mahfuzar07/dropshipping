@@ -126,7 +126,7 @@ const buildUrl = ({
 	if (id !== undefined) url += `/${id}`;
 	if (action) url += `/${action}`;
 
-	// url += '/';
+	url += '/';
 
 	if (queryParams) {
 		const params = new URLSearchParams();
@@ -354,9 +354,48 @@ export function useAppData<T, TResponse extends ResponseType = 'array'>(options:
 					}
 
 					if (responseType === 'single') {
+						if (id !== undefined) {
+							const oldData = old as any;
+							if (oldData && Array.isArray(oldData.data)) {
+								const updatedList = oldData.data.map((item: any) =>
+									String(item.id) === String(id) ? { ...item, ...data } : item
+								);
+								return {
+									...oldData,
+									data: updatedList,
+								};
+							}
+						} else if (method === 'POST') {
+							const oldData = old as any;
+							if (oldData && Array.isArray(oldData.data)) {
+								const newItem = (data as any)?.data || data;
+								if (newItem && newItem.id) {
+									const exists = oldData.data.some((item: any) => String(item.id) === String(newItem.id));
+									const updatedList = exists
+										? oldData.data.map((item: any) => (String(item.id) === String(newItem.id) ? newItem : item))
+										: [...oldData.data, newItem];
+									return {
+										...oldData,
+										data: updatedList,
+									};
+								}
+							}
+						}
 						return data;
 					}
 
+					return old;
+				});
+			} else if (method === 'DELETE' && id !== undefined) {
+				queryClient.setQueryData(queryKey, (old: unknown) => {
+					const oldData = old as any;
+					if (oldData && Array.isArray(oldData.data)) {
+						const updatedList = oldData.data.filter((item: any) => String(item.id) !== String(id));
+						return {
+							...oldData,
+							data: updatedList,
+						};
+					}
 					return old;
 				});
 			}
