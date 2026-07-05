@@ -24,7 +24,6 @@ export default function ProductsListPageContent() {
 	const searchParams = useSearchParams();
 
 	const {
-		selectedCategories,
 		discountOnly,
 		priceRange,
 		searchText,
@@ -35,7 +34,6 @@ export default function ProductsListPageContent() {
 		setSortBy,
 		setViewMode,
 		setSearchText,
-		setCategory,
 		setPriceRange,
 		toggleDiscount,
 		loadMoreProducts,
@@ -45,7 +43,7 @@ export default function ProductsListPageContent() {
 	} = useProductFilterStore();
 
 	/* ================================================================
-	   1. INIT STORE FROM URL — once on mount
+	   1. INIT PRICE/DISCOUNT/SORT FROM URL — once on mount only
 	   ================================================================ */
 	const didInitFromURL = useRef(false);
 
@@ -53,19 +51,30 @@ export default function ProductsListPageContent() {
 		if (didInitFromURL.current) return;
 		didInitFromURL.current = true;
 
-		const q = searchParams.get('search') || '';
-		const cat = searchParams.get('category');
 		const minP = searchParams.get('min_price');
 		const maxP = searchParams.get('max_price');
 		const disc = searchParams.get('discount');
 		const sort = searchParams.get('sort');
 
-		if (q) setSearchText(q);
-		if (cat) setCategory(Number(cat));
 		if (minP || maxP) setPriceRange([Number(minP ?? 0), Number(maxP ?? 1_000_000_000)]);
 		if (disc === 'true') toggleDiscount();
 		if (sort) setSortBy(sort);
 	}, []);
+
+	/* ================================================================
+	   1a. SYNC "search" FROM URL — reactive (not mount-only)
+	   CategoryMenu navigates client-side to /product-list?search=X
+	   while this page instance may already be mounted (same route,
+	   just a query change), so a mount-only effect misses it and the
+	   stale searchText from the store stays put.
+	   ================================================================ */
+	useEffect(() => {
+		const qFromURL = searchParams.get('search') || '';
+		if (qFromURL !== searchText) {
+			setSearchText(qFromURL);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams]);
 
 	/* ================================================================
 	   2. DEBOUNCE searchText (400 ms)
@@ -92,14 +101,13 @@ export default function ProductsListPageContent() {
 		const params = new URLSearchParams();
 
 		if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
-		if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
 		if (discountOnly) params.set('discount', 'true');
 		if (priceRange[0] > 0) params.set('min_price', String(priceRange[0]));
 		if (priceRange[1] < 1_000_000_000) params.set('max_price', String(priceRange[1]));
 		if (sortBy && sortBy !== 'newest') params.set('sort', sortBy);
 
 		updateURL(params);
-	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy, updateURL]);
+	}, [debouncedSearch, discountOnly, priceRange, sortBy, updateURL]);
 
 	/* ================================================================
 	   4. ACCUMULATED PRODUCTS
@@ -112,7 +120,6 @@ export default function ProductsListPageContent() {
 	   ================================================================ */
 	const prevFiltersRef = useRef({
 		debouncedSearch,
-		selectedCategories,
 		discountOnly,
 		priceRange,
 		selectedRatings,
@@ -127,7 +134,6 @@ export default function ProductsListPageContent() {
 			prev.discountOnly !== discountOnly ||
 			prev.sortBy !== sortBy ||
 			JSON.stringify(prev.priceRange) !== JSON.stringify(priceRange) ||
-			JSON.stringify(prev.selectedCategories) !== JSON.stringify(selectedCategories) ||
 			JSON.stringify(prev.selectedRatings) !== JSON.stringify(selectedRatings);
 
 		if (changed) {
@@ -136,14 +142,13 @@ export default function ProductsListPageContent() {
 			resetPagination();
 			prevFiltersRef.current = {
 				debouncedSearch,
-				selectedCategories,
 				discountOnly,
 				priceRange,
 				selectedRatings,
 				sortBy,
 			};
 		}
-	}, [debouncedSearch, selectedCategories, discountOnly, priceRange, selectedRatings, sortBy]);
+	}, [debouncedSearch, discountOnly, priceRange, selectedRatings, sortBy]);
 
 	/* ================================================================
 	   6. API PARAMS
@@ -153,13 +158,12 @@ export default function ProductsListPageContent() {
 			page: pagination.page_number ?? 1,
 			limit: pagination.page_size ?? 20,
 			...(debouncedSearch.trim() && { search: debouncedSearch.trim() }),
-			...(selectedCategories.length > 0 && { category: selectedCategories.join(',') }),
 			...(discountOnly && { discount: true }),
 			...(priceRange[0] > 0 && { minPrice: priceRange[0] }),
 			...(priceRange[1] < 1_000_000_000 && { maxPrice: priceRange[1] }),
 			...(sortBy && sortBy !== 'newest' && { sortBy }),
 		}),
-		[pagination.page_number, pagination.page_size, debouncedSearch, selectedCategories, discountOnly, priceRange, sortBy],
+		[pagination.page_number, pagination.page_size, debouncedSearch, discountOnly, priceRange, sortBy],
 	);
 
 	/* ================================================================

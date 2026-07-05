@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 interface FilterState {
 	searchText: string;
-	selectedCategories: number[];
+	selectedCategory: string; // single category name, only used for sidebar highlight — '' মানে কোনো ক্যাটাগরি সিলেক্টেড না
 	discountOnly: boolean;
 	priceRange: [number, number];
 	selectedRatings: number[];
@@ -17,8 +17,7 @@ interface FilterState {
 		hasMore?: boolean;
 	};
 	setSearchText: (searchText: string) => void;
-	toggleCategory: (categoryId: number | string) => void;
-	setCategory: (categoryId: number | null) => void;
+	setCategory: (categoryName: string | null) => void;
 	toggleDiscount: () => void;
 	setPriceRange: (priceRange: [number, number]) => void;
 	toggleRating: (rating: number) => void;
@@ -34,7 +33,7 @@ interface FilterState {
 
 export const useProductFilterStore = create<FilterState>((set, get) => ({
 	searchText: '',
-	selectedCategories: [],
+	selectedCategory: '',
 	discountOnly: false,
 	priceRange: [0, 1000000000],
 	selectedRatings: [],
@@ -49,17 +48,20 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 		hasMore: true,
 	},
 
-	setSearchText: (searchText) => set({ searchText }),
+	setSearchText: (searchText) =>
+		set((state) => ({
+			searchText,
+			// user typed something that doesn't match the selected category anymore → clear the highlight
+			selectedCategory: state.selectedCategory && state.selectedCategory !== searchText ? '' : state.selectedCategory,
+		})),
 
-	toggleCategory: (categoryId) =>
+	// there's no separate "category search" backend param — selecting a
+	// category IS just searching by that name. Same click again clears both.
+	setCategory: (categoryName) =>
 		set((state) => {
-			const id = typeof categoryId === 'string' ? Number(categoryId) : categoryId;
-			return {
-				selectedCategories: state.selectedCategories.includes(id) ? [] : [id],
-			};
+			const next = categoryName === null || state.selectedCategory === categoryName ? '' : categoryName;
+			return { selectedCategory: next, searchText: next };
 		}),
-
-	setCategory: (categoryId) => set({ selectedCategories: categoryId === null ? [] : [categoryId] }),
 
 	toggleDiscount: () => set((state) => ({ discountOnly: !state.discountOnly })),
 
@@ -113,13 +115,12 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 			},
 		})),
 
-	// AFTER (correct):
 	clearAllFilters: () =>
 		set({
 			searchText: '',
-			selectedCategories: [],
+			selectedCategory: '',
 			discountOnly: false,
-			priceRange: [0, 1_000_000_000], // ← restored to full range
+			priceRange: [0, 1_000_000_000],
 			selectedRatings: [],
 			pagination: {
 				...get().pagination,

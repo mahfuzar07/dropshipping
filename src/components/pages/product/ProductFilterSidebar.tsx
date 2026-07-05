@@ -16,7 +16,7 @@ const categories = [
 ];
 
 export default function ProductFilterSidebar() {
-	const { selectedCategories, discountOnly, priceRange, searchText, toggleCategory, toggleDiscount, setPriceRange, setSearchText, clearAllFilters } =
+	const { selectedCategory, discountOnly, priceRange, searchText, setCategory, toggleDiscount, setPriceRange, setSearchText, clearAllFilters } =
 		useProductFilterStore();
 
 	const [minPrice, setMinPrice] = useState(priceRange[0].toString());
@@ -84,7 +84,7 @@ export default function ProductFilterSidebar() {
 					)}
 				</div>
 
-				{/* Categories */}
+				{/* Categories - single select by name */}
 				<div className="mb-3 border-b border-border/50 pb-3">
 					<h4
 						onClick={() => toggleSection('categories')}
@@ -99,7 +99,7 @@ export default function ProductFilterSidebar() {
 							{categories.map((cat) => (
 								<div key={cat.id} className="flex justify-between">
 									<div className="flex items-center gap-2">
-										<Checkbox checked={selectedCategories.includes(cat.id)} onCheckedChange={() => toggleCategory(cat.id)} />
+										<Checkbox checked={selectedCategory === cat.name} onCheckedChange={() => setCategory(cat.name)} />
 										<span>{cat.name}</span>
 									</div>
 									<span className="text-xs text-gray-400">({cat.product_count})</span>
