@@ -16,12 +16,13 @@ import { normalizeCategories } from '@/components/common/header/HeaderBottom';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
+import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
 
 export interface Category {
 	id: number;
 	name: string;
 	slug: string;
-	icon: string;
+	icon?: string;
 	subcategories: Category[];
 }
 
@@ -31,6 +32,7 @@ export interface CategoriesResponse {
 }
 
 export default function ShopByCategory() {
+	const setCategory = useProductFilterStore((state) => state.setCategory);
 	const { data, isLoading } = useAppData<CategoriesResponse, 'single'>({
 		key: [QueriesKey.CATEGORIES],
 		api: apiEndpoint.products.CATEGORIES(),
@@ -44,6 +46,10 @@ export default function ShopByCategory() {
 		return icon.startsWith('/') || icon.startsWith('http://') || icon.startsWith('https://');
 	};
 
+	const handleClick = (item: Category) => {
+		setCategory(item.name);
+	};
+
 	return (
 		<section className="md:py-10 py-5 bg-white">
 			<div className="container mx-auto md:px-3 px-3">
@@ -51,7 +57,7 @@ export default function ShopByCategory() {
 					<TypoTitle title="Shop By Category" className=" uppercase" align="left" />
 					<div className="flex items-center gap-2 text-primary shrink-0">
 						<Link href="" className="flex items-center gap-1 text-sm md:text-base font-medium">
-							View All <span className='hidden md:block'>Categories</span>
+							View All <span className="hidden md:block">Categories</span>
 						</Link>
 						<ArrowRight size={18} />
 					</div>
@@ -75,7 +81,7 @@ export default function ShopByCategory() {
 					>
 						{parentCategories.map((category) => (
 							<SwiperSlide key={category.id}>
-								<Link href={`/products?category=${category.name}`}>
+								<Link href={`/product-list?search=${category.name}`} onClick={() => handleClick(category)}>
 									<div className="group cursor-pointer rounded-lg py-5 text-center transition-all duration-300">
 										<div className="flex flex-col items-center space-y-5">
 											<div className="md:w-30 w-22 aspect-square rounded-full flex items-center justify-center bg-store-secondary-muted">

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils/utils';
+import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
 
 // unified type (recursive)
 export interface MenuCategory {
@@ -21,11 +22,20 @@ interface CategoryMenuProps {
 
 export default function CategoryMenu({ categories, columnClassName }: CategoryMenuProps) {
 	const [activePath, setActivePath] = useState<MenuCategory[]>([]);
+	const setCategory = useProductFilterStore((state) => state.setCategory);
 
 	const handleHover = (level: number, item: MenuCategory) => {
 		const newPath = activePath.slice(0, level);
 		newPath[level] = item;
 		setActivePath(newPath);
+	};
+
+	// clicking a category should immediately update the filter store
+	// (so the destination page renders with it already applied, no
+	// waiting on the URL-sync effect there) — the <Link> below still
+	// handles the actual redirect.
+	const handleClick = (item: MenuCategory) => {
+		setCategory(item.name);
 	};
 
 	// build columns dynamically
@@ -54,9 +64,10 @@ export default function CategoryMenu({ categories, columnClassName }: CategoryMe
 
 							return (
 								<Link
-									href={`/product-list?category=${encodeURIComponent(item.name)}`}
+									href={`/product-list?search=${encodeURIComponent(item.name)}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
+									onClick={() => handleClick(item)}
 									className={`flex w-full group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
 									${isActive ? 'bg-primary text-white font-medium' : 'hover:bg-gray-100'}
 								`}

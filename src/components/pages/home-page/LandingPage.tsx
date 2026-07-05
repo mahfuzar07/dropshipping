@@ -19,11 +19,11 @@ export default function LandingPage() {
 			<HeroSection />
 			<FeatureHighlights />
 			<ShopByCategory/>
-			<TopSelling />
+			{/* <TopSelling />
 			<GiftIdeas />
 			<WordlWideStore/>
 			<SmallKitchenAndHouseholdSection />
-			<LatestDeal />
+			<LatestDeal /> */}
 			<NewLaunch />
 		</div>
 	);
