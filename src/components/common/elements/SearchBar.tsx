@@ -174,7 +174,7 @@ export default function SearchBar() {
 
 	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
 		key: [QueriesKey.SEARCH_IMAGE_PRODUCTS],
-		// {{ApiUrl}}/api/products/item-search-img/?page=1&lang=en&start_price=5&end_price=5.5&sort=_cached_at&limit=2
+
 		api: apiEndpoint.products.imageSearch,
 		auth: true,
 		responseType: 'single',
@@ -194,9 +194,8 @@ export default function SearchBar() {
 				payload: formData,
 			});
 
-			console.log('-----response', res);
-
 			router.push(`/product-list?imageSearch=${res?.searchId}`);
+			closeDrawer();
 		} catch (err) {
 			console.error(err);
 		}
@@ -207,13 +206,13 @@ export default function SearchBar() {
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-2 border border-primary">
+			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-1 border border-primary">
 				<div className="">
 					<HoverPopover
 						width="min-w-[160px]"
 						align="left"
 						trigger={
-							<div className="relative py-2.5 min-w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary">
+							<div className="relative py-2.5 min-w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary/20 mr-2">
 								All Categories
 								<ChevronDown strokeWidth={2} size={18} />
 							</div>
@@ -263,7 +262,7 @@ export default function SearchBar() {
 					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
 					className="flex items-center justify-center text-primary w-10 h-10 rounded-md hover:bg-primary/10 cursor-pointer"
 				>
-					{imageSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CameraIcon className="w-4 h-4 md:w-7 md:h-7" />}
+					{imageSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CameraIcon className="w-6 h-6 md:w-7 md:h-7" />}
 				</motion.button>
 
 				{/* Search button */}
