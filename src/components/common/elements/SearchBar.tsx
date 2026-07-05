@@ -160,7 +160,7 @@ export default function SearchBar() {
 
 	const { data, isLoading } = useAppData<any, 'single'>({
 		key: [QueriesKey.CATEGORIES],
-		api: apiEndpoint.categories.category,
+		api: apiEndpoint.products.CATEGORIES(),
 		auth: true,
 		responseType: 'single',
 		enabled: true,
@@ -168,7 +168,8 @@ export default function SearchBar() {
 		staleTime: 2 * 60 * 1000,
 	});
 
-	const categories = Array.isArray(data) ? data : (data?.payload ?? []);
+	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
+
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
@@ -207,17 +208,18 @@ export default function SearchBar() {
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
 			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-2 border border-primary">
-				<div>
+				<div className="">
 					<HoverPopover
-						className="w-[220px]"
+						width="min-w-[160px]"
+						align="left"
 						trigger={
-							<div className="relative py-2.5 w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary">
+							<div className="relative py-2.5 min-w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary">
 								All Categories
 								<ChevronDown strokeWidth={2} size={18} />
 							</div>
 						}
 					>
-						<CategoryMenu categories={normalizedCategories} />
+						<CategoryMenu categories={normalizedCategories} columnClassName="min-w-[200px]" />
 					</HoverPopover>
 				</div>
 
