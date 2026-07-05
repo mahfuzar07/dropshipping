@@ -54,7 +54,7 @@ export default function CategoryMenu({ categories, columnClassName }: CategoryMe
 
 							return (
 								<Link
-									href={`/category/${item.slug}`}
+									href={`/product-list?category=${encodeURIComponent(item.name)}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
 									className={`flex w-full group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
