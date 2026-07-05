@@ -63,7 +63,7 @@ export const apiEndpoint = {
 	cart: {
 		ADD_TO_CART: () => '/api/cart/',
 		GET_CART: () => '/api/cart/',
-		REMOVE_FROM_CART: () => '/api/cart/',
-		UPDATE_CART: (id: string | number) => `/api/cart/update/${id}/`,
+		REMOVE_FROM_CART: (id: string | number) => `/api/cart/${id}/`,
+		UPDATE_CART: (id: string | number) => `/api/cart/${id}/`,
 	},
 };

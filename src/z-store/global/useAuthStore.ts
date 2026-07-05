@@ -12,23 +12,35 @@ interface AuthState {
 	logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
 	isAuthenticated: false,
 	hasHydrated: false,
 
 	loginCustomer: async (payload) => {
-		await api.post(apiEndpoint.auth.customer.signIn, payload);
-		await api.get(apiEndpoint.auth.verifyMe).then((res) => {
-			set({ user: res.data.payload, isAuthenticated: true });
+		const { signIn } = await import('next-auth/react');
+		const result = await signIn('credentials', {
+			email: payload.phone,
+			password: payload.password,
+			redirect: false,
 		});
+
+		if (result?.error) {
+			throw new Error(result.error);
+		}
+
+		await get().checkAuth();
 	},
 
 	checkAuth: async () => {
 		try {
-			const res = await authApi.get(apiEndpoint.auth.verifyMe);
+			const res = await authApi.get(apiEndpoint.users.PROFILE());
+			const profile = res.data;
+			profile.name = profile.first_name || profile.last_name 
+				? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim()
+				: '';
 			set({
-				user: res.data.payload,
+				user: profile,
 				isAuthenticated: true,
 				hasHydrated: true,
 			});
@@ -38,7 +50,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 	},
 
 	logout: async () => {
-		await authApi.post(apiEndpoint.auth.signOut);
+		const { signOut } = await import('next-auth/react');
+		await signOut({ redirect: false });
 		set({ user: null, isAuthenticated: false });
 	},
 }));

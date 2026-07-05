@@ -12,6 +12,7 @@ import { CartItemComponent } from './CartItemComponent';
 import OrderSummary from '../checkout/OrderSummary';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { authApi } from '@/lib/axiosInstance';
 
 type Variant = {
 	price: string;
@@ -74,7 +75,7 @@ export default function CartPageContent() {
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	// Fetch cart data using the custom hook
-	const { data, isLoading } = useAppData<CartResponse, 'single'>({
+	const { data, isLoading, refetch } = useAppData<CartResponse, 'single'>({
 		key: [QueriesKey.CART_DATA],
 		api: apiEndpoint.cart.GET_CART(),
 		auth: true,
@@ -82,40 +83,104 @@ export default function CartPageContent() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
 
+	const rawItems = useMemo(() => (Array.isArray((data as any)?.data) ? (data as any).data : []), [data]);
 
+	const items = useMemo(() => {
+		const mappedItems: any[] = [];
+		rawItems.forEach((rawItem: any) => {
+			const variants = Array.isArray(rawItem.variants) ? rawItem.variants : [];
+			variants.forEach((vEntry: any) => {
+				const colorName = vEntry.variant?.color_name;
+				const image = vEntry.variant?.image || rawItem.product_image;
+				const sizes = Array.isArray(vEntry.variant?.sizes) ? vEntry.variant.sizes : [];
+				const quantities = vEntry.quantity || {};
 
-	const items = data?.items || [];
+				Object.entries(quantities).forEach(([sizeName, qty]) => {
+					const qtyNum = Number(qty);
+					if (qtyNum <= 0) return;
 
-	const { create: addToCard, isMutating: isAddressLoading } = useAppData<CartPayload, 'single'>({
-		key: [QueriesKey.CART_DATA],
-		api: apiEndpoint.cart.ADD_TO_CART(),
-		auth: true,
-		responseType: 'single',
-		enabled: false,
-		onSuccess: () => {
-			toast.success('Address added successfully!');
-		},
+					const sizeDetail = sizes.find((s: any) => s.size_name === sizeName);
+					const sizePrice = Number(sizeDetail?.price || 0);
 
-		onError: (error: any) => {
-			toast.error(error?.response?.data?.message || 'Failed to add address');
-		},
-	});
+					mappedItems.push({
+						uniqueKey: `${rawItem.id}-${colorName}-${sizeName}`,
+						id: rawItem.id,
+						product_id: rawItem.product_id,
+						color_name: colorName,
+						size_name: sizeName,
+						product: {
+							_id: rawItem.product_id,
+							product_name: rawItem.product_name,
+							image: image,
+							title: `${rawItem.product_name} (${colorName} - ${sizeName})`,
+							price: {
+								unit: 'pcs',
+								amount: String(sizePrice),
+								currency: '৳',
+								overseas: '',
+							},
+							rating: '',
+							sold: '',
+							offer_id: rawItem.product_id,
+							moq: null,
+							url: '',
+							is_ad: false,
+							promotion: null,
+							seller_icon: null,
+						},
+						quantity: {
+							[sizeName]: qtyNum,
+						},
+						variant: [
+							{
+								price: String(sizePrice),
+								stock: String(sizeDetail?.stock || 0),
+								quantity: qtyNum,
+								size_name: sizeName,
+							}
+						],
+						total_price: sizePrice * qtyNum,
+						added_at: rawItem.created_at,
+						rawItem,
+					});
+				});
+			});
+		});
+		return mappedItems;
+	}, [rawItems]);
 
-	const handleRemoveItem = async (itemId: number) => {
+	const handleRemoveItem = async (uniqueKey: string) => {
+		const itemToRemove = items.find((item) => item.uniqueKey === uniqueKey);
+		if (!itemToRemove) return;
+
 		setIsUpdating(true);
 		try {
-			// Call API to remove item
-			const response = await fetch(`/api/cart/${itemId}`, {
-				method: 'DELETE',
+			const { rawItem, color_name, size_name } = itemToRemove;
+			
+			const updatedVariants = rawItem.variants.map((vEntry: any) => {
+				if (vEntry.variant?.color_name === color_name) {
+					const updatedQuantity = { ...vEntry.quantity };
+					delete updatedQuantity[size_name];
+					return {
+						...vEntry,
+						quantity: updatedQuantity,
+					};
+				}
+				return vEntry;
+			}).filter((vEntry: any) => {
+				return Object.values(vEntry.quantity).some((qty: any) => Number(qty) > 0);
 			});
 
-			if (!response.ok) {
-				throw new Error('Failed to remove item');
+			if (updatedVariants.length === 0) {
+				await authApi.delete(apiEndpoint.cart.REMOVE_FROM_CART(rawItem.id));
+			} else {
+				await authApi.patch(apiEndpoint.cart.UPDATE_CART(rawItem.id), {
+					variants: updatedVariants,
+				});
 			}
 
 			toast.success('Item removed from cart');
-			// Refresh cart data after successful removal
-			window.location.reload();
+			refetch();
 		} catch (error) {
 			toast.error('Failed to remove item');
 		} finally {
@@ -123,25 +188,33 @@ export default function CartPageContent() {
 		}
 	};
 
-	const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+	const handleUpdateQuantity = async (uniqueKey: string, newQuantity: number) => {
+		const itemToUpdate = items.find((item) => item.uniqueKey === uniqueKey);
+		if (!itemToUpdate) return;
+
 		setIsUpdating(true);
 		try {
-			// Call API to update quantity
-			const response = await fetch(`/api/cart/${itemId}`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ quantity: newQuantity }),
+			const { rawItem, color_name, size_name } = itemToUpdate;
+			
+			const updatedVariants = rawItem.variants.map((vEntry: any) => {
+				if (vEntry.variant?.color_name === color_name) {
+					return {
+						...vEntry,
+						quantity: {
+							...vEntry.quantity,
+							[size_name]: newQuantity,
+						},
+					};
+				}
+				return vEntry;
 			});
 
-			if (!response.ok) {
-				throw new Error('Failed to update quantity');
-			}
+			await authApi.patch(apiEndpoint.cart.UPDATE_CART(rawItem.id), {
+				variants: updatedVariants,
+			});
 
 			toast.success('Quantity updated');
-			// Refresh cart data after successful update
-			window.location.reload();
+			refetch();
 		} catch (error) {
 			toast.error('Failed to update quantity');
 		} finally {
@@ -224,7 +297,7 @@ export default function CartPageContent() {
 							<AnimatePresence mode="popLayout">
 								{items.map((item, index) => (
 									<motion.div
-										key={item.id}
+										key={item.uniqueKey}
 										initial={{ opacity: 0, y: 20, scale: 0.95 }}
 										animate={{ opacity: 1, y: 0, scale: 1 }}
 										exit={{ opacity: 0, y: -20, scale: 0.95 }}

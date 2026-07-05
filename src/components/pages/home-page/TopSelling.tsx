@@ -59,7 +59,7 @@ export default function TopSelling() {
 		minPrice: undefined as number | undefined,
 		maxPrice: undefined as number | undefined,
 		sortBy: '',
-		sortOrder: 'desc' as 'asc' | 'desc',
+		// sortOrder: 'desc' as 'asc' | 'desc',
 	});
 	const filterParams = useMemo(
 		() => ({
@@ -71,7 +71,7 @@ export default function TopSelling() {
 			...(filter.minPrice !== undefined && { minPrice: filter.minPrice }),
 			...(filter.maxPrice !== undefined && { maxPrice: filter.maxPrice }),
 			...(filter.sortBy && { sortBy: filter.sortBy }),
-			...(filter.sortOrder && { sortOrder: filter.sortOrder }),
+			// ...(filter.sortOrder && { sortOrder: filter.sortOrder }),
 		}),
 		[filter],
 	);

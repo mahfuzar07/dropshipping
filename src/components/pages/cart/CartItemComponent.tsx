@@ -41,8 +41,8 @@ interface CartItem {
 
 interface CartItemProps {
 	item: CartItem;
-	onRemove?: (itemId: number) => void;
-	onUpdateQuantity?: (itemId: number, newQuantity: number) => void;
+	onRemove?: (itemKey: string) => void;
+	onUpdateQuantity?: (itemKey: string, newQuantity: number) => void;
 }
 
 export function CartItemComponent({ item, onRemove, onUpdateQuantity }: CartItemProps) {
@@ -58,7 +58,7 @@ export function CartItemComponent({ item, onRemove, onUpdateQuantity }: CartItem
 	const handleRemoveItem = async () => {
 		setIsRemoving(true);
 		try {
-			onRemove?.(id);
+			onRemove?.((item as any).uniqueKey);
 		} finally {
 			setIsRemoving(false);
 		}
@@ -66,7 +66,7 @@ export function CartItemComponent({ item, onRemove, onUpdateQuantity }: CartItem
 
 	const handleQuantityChange = (newQuantity: number) => {
 		const validQuantity = Math.max(1, newQuantity);
-		onUpdateQuantity?.(id, validQuantity);
+		onUpdateQuantity?.((item as any).uniqueKey, validQuantity);
 	};
 
 	const handleSaveForLater = () => {

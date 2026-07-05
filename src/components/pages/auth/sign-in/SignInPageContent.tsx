@@ -16,8 +16,8 @@ export default function SignInPageContent() {
 	const { data: session, status } = useSession();
 
 	const [showPassword, setShowPassword] = useState(false);
-	const [email, setEmail] = useState('user101@bawsny.com');
-	const [password, setPassword] = useState('1234');
+	const [email, setEmail] = useState('user101@gmail.com');
+	const [password, setPassword] = useState('12345678');
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
 	const router = useRouter();
