@@ -61,7 +61,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export default function SearchBar() {
 	const router = useRouter();
-	const { drawerType } = useLayoutStore();
+	const { drawerType, closeDrawer } = useLayoutStore();
 	const isSearchDrawerOpen = drawerType === 'search';
 	const [query, setQuery] = useState('');
 	const [open, setOpen] = useState(false);
@@ -138,6 +138,7 @@ export default function SearchBar() {
 			setOpen(false);
 			setQuery(q);
 			router.push(`/product-list?search=${encodeURIComponent(q)}`);
+			closeDrawer();
 		},
 		[router],
 	);
