@@ -278,7 +278,7 @@ export default function ProductsListPageContent() {
 	   RENDER
 	   ================================================================ */
 	return (
-		<div className="container mx-auto py-3">
+		<div className="container mx-auto p-3">
 			<div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 				{/* Sidebar */}
 				<div className="col-span-3 sticky top-5 hidden md:block">
@@ -288,13 +288,13 @@ export default function ProductsListPageContent() {
 				{/* Products */}
 				<div className="col-span-9">
 					{/* Toolbar */}
-					<div className="flex items-center justify-between mb-6">
-						<span className="text-md text-gray-600">
+					<div className="flex md:flex-row flex-col-reverse gap-2   md:items-center justify-between mb-6">
+						<span className="text-sm text-gray-600">
 							<strong>{filteredProducts.length}</strong> Products Found
 							{pagination.hasMore && !isLoading && <span className="text-sm font-normal text-muted-foreground"> +more</span>}
 						</span>
 
-						<div className="flex gap-3">
+						<div className="flex justify-between gap-3">
 							<ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
 								<ToggleGroupItem value="grid">
 									<LayoutGrid />
