@@ -10,10 +10,7 @@ import {
 	ChevronUp,
 	ClipboardList,
 	ShoppingCart,
-	Shirt,
 	TicketPercent,
-	LayersPlus,
-	Contact,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -26,26 +23,8 @@ interface MenuItem {
 
 const sidebarItems: MenuItem[] = [
 	{ icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
-
-	{
-		icon: Contact,
-		label: 'Work Space',
-		subItems: [
-			{ label: 'Departments', href: '/admin/department' },
-			{ label: 'Employee List', href: '/admin/employee' },
-		],
-	},
 	{ icon: Users, label: 'Customers', href: '/admin/customers' },
 	{ icon: ClipboardList, label: 'Categories', href: '/admin/categories' },
-	{
-		icon: Shirt,
-		label: 'Products',
-		subItems: [
-			{ label: 'All Products', href: '/admin/products' },
-			{ label: 'Add Product', href: '/admin/add-product' },
-		],
-	},
-
 	{
 		icon: ShoppingCart,
 		label: 'Orders',
@@ -54,16 +33,7 @@ const sidebarItems: MenuItem[] = [
 			{ label: 'Fulfillment & Shipping', href: '/admin/fulfillment' },
 		],
 	},
-
 	{ icon: TicketPercent, label: 'Coupons', href: '/admin/coupons' },
-	{
-		icon: LayersPlus,
-		label: 'Attributes',
-		subItems: [
-			{ label: 'All Attributes', href: '/admin/attributes' },
-			{ label: 'Create Attributes', href: '/admin/add-attribute' },
-		],
-	},
 	{ icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
 	{
 		icon: Settings,

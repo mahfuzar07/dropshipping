@@ -1,535 +1,460 @@
 'use client';
+
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import {
-	Search,
-	Filter,
 	Eye,
-	Clock,
 	Printer,
 	ShieldAlert,
-	Merge,
-	Split,
 	Trash2,
 	Plus,
-	Check,
-	AlertCircle,
-	XCircle
+	Calendar,
+	Truck,
+	User,
+	MapPin,
+	CreditCard,
 } from 'lucide-react';
+import DataTable, { DataTableColumnConfig } from '@/components/ui/custom/DataTable';
+import { SortingState } from '@tanstack/react-table';
 
-// Order Type definitions
-interface OrderItemType {
-	id: string;
-	name: string;
-	quantity: number;
-	price: number;
-	variant: string;
+interface OrderItem {
+	product_id: string;
+	product_name: string;
+	product_image: string;
+	item_total?: number | string;
+	variants: Array<{
+		variant: {
+			image?: string;
+			color_name?: string;
+			sizes?: Array<{ size_name: string; price: string }>;
+		};
+		quantity: Record<string, number>;
+	}>;
 }
 
-interface OrderType {
-	id: string;
-	orderNumber: string;
-	customerName: string;
-	customerEmail: string;
-	phone: string;
-	date: string;
-	status: 'Pending' | 'Confirmed' | 'Processing' | 'Packed' | 'Shipped' | 'In Transit' | 'Delivered' | 'Cancelled' | 'Refunded' | 'Returned';
-	totalPrice: number;
-	shippingMethod: 'air' | 'sea';
-	address: string;
-	items: OrderItemType[];
-	riskScore: number; // 0 to 100
-	riskReasons: string[];
+interface Order {
+	id: number;
+	order_number: string;
+	product_name: string;
+	product_id: string;
+	product_image: string;
+	variants: any[];
+	items?: OrderItem[];
+	total_price: string;
+	shipping_method: string;
+	shipping_charge: string;
+	payment_method: string;
+	status: string;
+	status_display: string;
+	created_at: string;
+	address?: {
+		full_name: string;
+		phone: string;
+		address: string;
+		address_line2?: string;
+		city: string;
+		district: string;
+		postal_code: string;
+	};
 }
 
-const initialOrders: OrderType[] = [
-	{
-		id: 'ord-1',
-		orderNumber: '839201',
-		customerName: 'Jamil Hasan',
-		customerEmail: 'jamil.hasan@gmail.com',
-		phone: '01712345678',
-		date: '2026-06-24',
-		status: 'Pending',
-		totalPrice: 1540,
-		shippingMethod: 'air',
-		address: 'House 42, Road 12, Dhanmondi, Dhaka',
-		items: [
-			{ id: 'item-1', name: 'Wireless Bluetooth Earbuds Pro', quantity: 1, price: 1200, variant: 'Color: Black' },
-			{ id: 'item-2', name: 'Universal Travel Adapter USB-C', quantity: 1, price: 340, variant: 'Standard' }
-		],
-		riskScore: 12,
-		riskReasons: []
-	},
-	{
-		id: 'ord-2',
-		orderNumber: '920391',
-		customerName: 'Farhana Chowdhury',
-		customerEmail: 'farhana.chowdhury@outlook.com',
-		phone: '01887654321',
-		date: '2026-06-23',
-		status: 'Processing',
-		totalPrice: 2450,
-		shippingMethod: 'air',
-		address: 'Flat 4B, Sector 3, Uttara, Dhaka',
-		items: [
-			{ id: 'item-3', name: 'Premium Leather Smart Watch', quantity: 1, price: 2450, variant: 'Brown Strap' }
-		],
-		riskScore: 68,
-		riskReasons: ['Multiple recent order cancellations', 'High shipping destination match rate failure']
-	},
-	{
-		id: 'ord-3',
-		orderNumber: '104928',
-		customerName: 'Sajid Islam',
-		customerEmail: 'sajid99@gmail.com',
-		phone: '01911223344',
-		date: '2026-06-24',
-		status: 'Shipped',
-		totalPrice: 850,
-		shippingMethod: 'sea',
-		address: 'Vill: Sonapur, P.O: Sonapur, Feni Sadar, Feni',
-		items: [
-			{ id: 'item-4', name: 'Ergonomic Memory Foam Pillow', quantity: 2, price: 425, variant: 'Size: L' }
-		],
-		riskScore: 25,
-		riskReasons: []
-	},
-	{
-		id: 'ord-4',
-		orderNumber: '758192',
-		customerName: 'Rakibul Islam',
-		customerEmail: 'rakib@gmail.com',
-		phone: '01555554444',
-		date: '2026-06-21',
-		status: 'Delivered',
-		totalPrice: 1200,
-		shippingMethod: 'air',
-		address: 'Cha-89/1, North Badda, Dhaka',
-		items: [
-			{ id: 'item-5', name: 'Wireless Bluetooth Earbuds Pro', quantity: 1, price: 1200, variant: 'Color: White' }
-		],
-		riskScore: 5,
-		riskReasons: []
-	}
-];
+export default function AdminOrderManagementPage() {
+	const queryClient = useQueryClient();
+	const [pageIndex, setPageIndex] = useState(0);
+	const [pageSize, setPageSize] = useState(10);
+	const [globalSearch, setGlobalSearch] = useState('');
+	const [columnFilters, setColumnFilters] = useState<Record<string, any>>({});
+	const [sorting, setSorting] = useState<SortingState>([]);
 
-export default function OrderManagementPage() {
-	const [orders, setOrders] = useState<OrderType[]>(initialOrders);
-	const [selectedTab, setSelectedTab] = useState<string>('All');
-	const [searchQuery, setSearchQuery] = useState('');
-	const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null);
-	const [selectedOrdersForBulk, setSelectedOrdersForBulk] = useState<string[]>([]);
-
-	// Modals State
+	// Detail & Edit Modals State
+	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
-	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isEditOpen, setIsEditOpen] = useState(false);
-	const [isSplitOpen, setIsSplitOpen] = useState(false);
-	const [isMergeOpen, setIsMergeOpen] = useState(false);
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isSlipPrintOpen, setIsSlipPrintOpen] = useState(false);
 
-	// Manual Order Creation State
-	const [newOrderName, setNewOrderName] = useState('');
-	const [newOrderPhone, setNewOrderPhone] = useState('');
-	const [newOrderAddress, setNewOrderAddress] = useState('');
-	const [newOrderProduct, setNewOrderProduct] = useState('Wireless Bluetooth Earbuds Pro');
-	const [newOrderPrice, setNewOrderPrice] = useState('1200');
-	const [newOrderQty, setNewOrderQty] = useState('1');
+	// Editing states
+	const [editAddressLine, setEditAddressLine] = useState('');
+	const [editTotalPrice, setEditTotalPrice] = useState('0');
+	const [editStatus, setEditStatus] = useState('pending');
 
-	// Order Editing State
-	const [editAddress, setEditAddress] = useState('');
-	const [editPrice, setEditPrice] = useState(0);
+	// Create states
+	const [createEmail, setCreateEmail] = useState('');
+	const [createFullName, setCreateFullName] = useState('');
+	const [createPhone, setCreatePhone] = useState('');
+	const [createAddress, setCreateAddress] = useState('');
+	const [createCity, setCreateCity] = useState('');
+	const [createDistrict, setCreateDistrict] = useState('');
+	const [createZip, setCreateZip] = useState('');
 
-	// Filter & Search Logic
-	const filteredOrders = useMemo(() => {
-		return orders.filter((order) => {
-			const matchesTab = selectedTab === 'All' || order.status === selectedTab;
-			const matchesSearch =
-				order.orderNumber.includes(searchQuery) ||
-				order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				order.phone.includes(searchQuery);
-			return matchesTab && matchesSearch;
+	// Build URL Query Params for Server-Side Filtering/Pagination
+	const queryParams = useMemo(() => {
+		const params = new URLSearchParams();
+		params.set('view', 'admin');
+		params.set('page', String(pageIndex + 1));
+		params.set('limit', String(pageSize));
+
+		if (globalSearch) {
+			params.set('search', globalSearch);
+		}
+
+		Object.entries(columnFilters).forEach(([key, val]) => {
+			if (key === 'search') return;
+			if (val === 'ALL_VALS') return;
+			if (typeof val === 'object' && val !== null) {
+				if (val.min) params.set(`${key}_min`, val.min);
+				if (val.max) params.set(`${key}_max`, val.max);
+				if (val.start) params.set(`${key}_start`, val.start);
+				if (val.end) params.set(`${key}_end`, val.end);
+			} else {
+				params.set(key, String(val));
+			}
 		});
-	}, [orders, selectedTab, searchQuery]);
 
-	// Order Handlers
-	const handleStatusChange = (orderId: string, newStatus: OrderType['status']) => {
-		setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-		toast.success(`Order status updated to ${newStatus}`);
-		if (selectedOrder && selectedOrder.id === orderId) {
-			setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+		if (sorting.length > 0) {
+			const sortStr = sorting.map(s => `${s.desc ? '-' : ''}${s.id}`).join(',');
+			params.set('ordering', sortStr);
 		}
-	};
 
-	const handleCreateOrder = (e: React.FormEvent) => {
-		e.preventDefault();
-		const newOrd: OrderType = {
-			id: `ord-${Date.now()}`,
-			orderNumber: Math.floor(100000 + Math.random() * 900000).toString(),
-			customerName: newOrderName,
-			customerEmail: `${newOrderName.toLowerCase().replace(/\s/g, '')}@gmail.com`,
-			phone: newOrderPhone,
-			date: new Date().toISOString().split('T')[0],
-			status: 'Pending',
-			totalPrice: parseFloat(newOrderPrice) * parseInt(newOrderQty),
-			shippingMethod: 'air',
-			address: newOrderAddress,
-			items: [
-				{
-					id: `item-${Date.now()}`,
-					name: newOrderProduct,
-					quantity: parseInt(newOrderQty),
-					price: parseFloat(newOrderPrice),
-					variant: 'Standard'
-				}
-			],
-			riskScore: 10,
-			riskReasons: []
-		};
-		setOrders([newOrd, ...orders]);
-		setIsCreateOpen(false);
-		toast.success('Manual order created successfully!');
-	};
+		return params.toString();
+	}, [pageIndex, pageSize, globalSearch, columnFilters, sorting]);
 
-	const handleEditOrder = () => {
-		if (!selectedOrder) return;
-		setOrders(prev =>
-			prev.map(o =>
-				o.id === selectedOrder.id ? { ...o, address: editAddress, totalPrice: editPrice } : o
+	// Fetch dynamic orders list from backend
+	const { data: ordersResponse, isLoading, isError, refetch } = useAppData<any, 'single'>({
+		key: [QueriesKey.USER_ORDERS, queryParams],
+		api: `${apiEndpoint.orders.ORDERS()}?${queryParams}`,
+		auth: true,
+		responseType: 'single',
+		onError: (error) => {
+			toast.error('Failed to load orders from backend');
+		}
+	});
+
+	const orders: Order[] = ordersResponse?.data || ordersResponse?.results || [];
+	const totalCount = ordersResponse?.count || orders.length;
+
+	// Column Definition
+	const columnsConfig: DataTableColumnConfig<Order>[] = [
+		{
+			key: 'order_number',
+			label: 'Order No.',
+			sortable: true,
+			filterable: true,
+			render: (row) => <span className="font-bold text-slate-800">#{row.order_number}</span>
+		},
+		{
+			key: 'created_at',
+			label: 'Date',
+			sortable: true,
+			filterable: true,
+			filterType: 'date-range',
+			render: (row) => new Date(row.created_at).toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric'
+			})
+		},
+		{
+			key: 'customer',
+			label: 'Customer',
+			render: (row) => (
+				<div>
+					<p className="font-semibold text-slate-800">{row.address?.full_name || 'Guest Customer'}</p>
+					<p className="text-xs text-slate-400">{row.address?.phone || ''}</p>
+				</div>
 			)
-		);
-		setIsEditOpen(false);
-		setIsDetailOpen(false);
-		toast.success('Order details updated');
+		},
+		{
+			key: 'status',
+			label: 'Status',
+			filterable: true,
+			filterType: 'select',
+			filterOptions: [
+				{ label: 'Pending', value: 'pending' },
+				{ label: 'Confirmed', value: 'confirmed' },
+				{ label: 'Processing', value: 'processing' },
+				{ label: 'Packed', value: 'packed' },
+				{ label: 'Shipped', value: 'shipped' },
+				{ label: 'Delivered', value: 'delivered' },
+				{ label: 'Cancelled', value: 'cancelled' },
+			],
+			render: (row) => {
+				const statusMap: Record<string, string> = {
+					pending: 'bg-amber-50 text-amber-600 border-amber-200',
+					confirmed: 'bg-sky-50 text-sky-600 border-sky-200',
+					processing: 'bg-blue-50 text-blue-600 border-blue-200',
+					packed: 'bg-purple-50 text-purple-600 border-purple-200',
+					shipped: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+					delivered: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+					cancelled: 'bg-rose-50 text-rose-600 border-rose-200',
+				};
+				const cls = statusMap[row.status?.toLowerCase()] || 'bg-slate-50 text-slate-600 border-slate-200';
+				return <Badge className={cls}>{row.status_display || row.status}</Badge>;
+			}
+		},
+		{
+			key: 'shipping_method',
+			label: 'Shipping',
+			sortable: true,
+			filterable: true,
+			filterType: 'select',
+			filterOptions: [
+				{ label: 'Air', value: 'air' },
+				{ label: 'Sea', value: 'sea' }
+			],
+			render: (row) => <Badge variant="outline" className="uppercase text-xs">{row.shipping_method || 'Air'}</Badge>
+		},
+		{
+			key: 'total_price',
+			label: 'Grand Total',
+			sortable: true,
+			filterable: true,
+			filterType: 'number-range',
+			render: (row) => <span className="font-semibold text-slate-800">৳{Number(row.total_price || 0).toLocaleString()}</span>
+		}
+	];
+
+	// CRUD Handlers
+	const handleViewOrder = (order: Order) => {
+		setSelectedOrder(order);
+		setIsDetailOpen(true);
 	};
 
-	const handleCancelOrder = (orderId: string) => {
-		handleStatusChange(orderId, 'Cancelled');
-		setIsDetailOpen(false);
+	const handleEditOrderOpen = (order: Order) => {
+		setSelectedOrder(order);
+		setEditAddressLine(order.address?.address || '');
+		setEditTotalPrice(order.total_price);
+		setEditStatus(order.status);
+		setIsEditOpen(true);
 	};
 
-	const handleMergeOrders = (targetOrderId: string) => {
-		// Simulation: merge ord-1 and ord-2 together
-		const ord1 = orders.find(o => o.id === 'ord-1');
-		const ord2 = orders.find(o => o.id === 'ord-2');
-		if (ord1 && ord2) {
-			const merged: OrderType = {
-				...ord1,
-				orderNumber: `M-${ord1.orderNumber}`,
-				totalPrice: ord1.totalPrice + ord2.totalPrice,
-				items: [...ord1.items, ...ord2.items],
-				status: 'Pending'
+	const handleSaveOrderChanges = async () => {
+		if (!selectedOrder) return;
+		try {
+			const payload = {
+				status: editStatus,
+				total_price: editTotalPrice,
+				address: {
+					...(selectedOrder.address || {}),
+					address: editAddressLine
+				}
 			};
-			setOrders(prev => prev.filter(o => o.id !== 'ord-1' && o.id !== 'ord-2').concat(merged));
-			setIsMergeOpen(false);
-			toast.success('Orders successfully merged!');
+			await axios.patch(`/api/order/orders/${selectedOrder.id}/`, payload);
+			toast.success('Order successfully updated');
+			setIsEditOpen(false);
+			setIsDetailOpen(false);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Failed to save order details');
 		}
 	};
 
-	const handleSplitOrder = () => {
-		// Simulation: Split multi-item orders
-		if (!selectedOrder || selectedOrder.items.length < 2) {
-			toast.error('Order must have multiple items to split');
-			return;
+	const handleDeleteOrder = async (order: Order) => {
+		if (!confirm(`Are you sure you want to delete order #${order.order_number}?`)) return;
+		try {
+			await axios.delete(`/api/order/orders/${order.id}/`);
+			toast.success('Order deleted successfully');
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Failed to delete order');
 		}
-		const itemToSplit = selectedOrder.items[1];
-		const remainingItems = [selectedOrder.items[0]];
-
-		const splitOrd: OrderType = {
-			...selectedOrder,
-			id: `ord-split-${Date.now()}`,
-			orderNumber: `${selectedOrder.orderNumber}-B`,
-			totalPrice: itemToSplit.price * itemToSplit.quantity,
-			items: [itemToSplit]
-		};
-
-		setOrders(prev =>
-			prev
-				.map(o =>
-					o.id === selectedOrder.id
-						? {
-								...o,
-								orderNumber: `${o.orderNumber}-A`,
-								totalPrice: o.totalPrice - splitOrd.totalPrice,
-								items: remainingItems
-						  }
-						: o
-				)
-				.concat(splitOrd)
-		);
-		setIsSplitOpen(false);
-		setIsDetailOpen(false);
-		toast.success('Order split completed successfully!');
 	};
 
-	const handleBulkAction = (action: string) => {
-		if (selectedOrdersForBulk.length === 0) {
-			toast.error('No orders selected');
-			return;
-		}
-		if (action === 'process') {
-			setOrders(prev =>
-				prev.map(o =>
-					selectedOrdersForBulk.includes(o.id) ? { ...o, status: 'Processing' } : o
-				)
+	// Bulk Actions
+	const handleBulkStatusUpdate = async (selected: Order[], nextStatus: string) => {
+		try {
+			await Promise.all(
+				selected.map((o) => axios.patch(`/api/order/orders/${o.id}/`, { status: nextStatus }))
 			);
-			toast.success('Bulk status updated to Processing');
-		} else if (action === 'print') {
-			setIsSlipPrintOpen(true);
+			toast.success(`Bulk status updated to ${nextStatus}`);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Bulk update failed');
 		}
-		setSelectedOrdersForBulk([]);
+	};
+
+	const handleBulkDelete = async (selected: Order[]) => {
+		if (!confirm(`Delete ${selected.length} orders?`)) return;
+		try {
+			await Promise.all(
+				selected.map((o) => axios.delete(`/api/order/orders/${o.id}/`))
+			);
+			toast.success('Bulk delete completed');
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Bulk delete failed');
+		}
+	};
+
+	const bulkActionsConfig = [
+		{
+			label: 'Mark Confirmed',
+			onClick: (rows: Order[]) => handleBulkStatusUpdate(rows, 'confirmed'),
+		},
+		{
+			label: 'Mark Processing',
+			onClick: (rows: Order[]) => handleBulkStatusUpdate(rows, 'processing'),
+		},
+		{
+			label: 'Delete Orders',
+			onClick: handleBulkDelete,
+			variant: 'destructive' as const,
+		}
+	];
+
+	// Create order handler
+	const handleCreateOrder = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			// Step 1: Create delivery address
+			const addressRes = await axios.post('/api/user/delivery-addresses/', {
+				full_name: createFullName,
+				phone: createPhone,
+				address: createAddress,
+				city: createCity,
+				district: createDistrict,
+				postal_code: createZip,
+			});
+			const addressId = addressRes.data.id;
+
+			// Step 2: Create consolidated order
+			await axios.post('/api/order/orders/', {
+				address_id: addressId,
+				shipping_charge: '150',
+				payment_method: 'cod',
+			});
+
+			toast.success('Consolidated order created successfully!');
+			setIsCreateOpen(false);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Failed to create manual order');
+		}
 	};
 
 	return (
 		<div className="space-y-6 font-play">
-			{/* Top Bar actions */}
+			{/* Header */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border shadow-sm">
 				<div>
 					<h2 className="text-xl font-bold text-slate-800">Order Management</h2>
-					<p className="text-xs text-slate-400">Process, merge, split, dispatch and print courier manifests.</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button onClick={() => setIsCreateOpen(true)} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-2">
-						<Plus size={16} /> Create Order
-					</Button>
+					<p className="text-xs text-slate-400">Process dispatch status, review shipping methods, and manage courier receipts.</p>
 				</div>
 			</div>
 
-			{/* Filters and search */}
-			<div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white p-4 rounded-xl border">
-				{/* Tab status selectors */}
-				<div className="flex flex-wrap gap-1.5 overflow-x-auto w-full xl:w-auto">
-					{['All', 'Pending', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled'].map((tab) => (
-						<button
-							key={tab}
-							onClick={() => setSelectedTab(tab)}
-							className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition duration-200 border ${
-								selectedTab === tab
-									? 'bg-orange-50 border-orange-200 text-[#F16A38]'
-									: 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
-							}`}
-						>
-							{tab}
-						</button>
-					))}
-				</div>
+			{/* Main Data Table */}
+			<DataTable<Order>
+				data={orders}
+				columnsConfig={columnsConfig}
+				isLoading={isLoading}
+				isError={isError}
+				totalCount={totalCount}
+				pageIndex={pageIndex}
+				pageSize={pageSize}
+				onPageChange={setPageIndex}
+				onPageSizeChange={setPageSize}
+				onSortingChange={setSorting}
+				onFiltersChange={(filters) => {
+					setColumnFilters(filters);
+					if (filters.search !== undefined) {
+						setGlobalSearch(filters.search);
+					}
+				}}
+				onRefresh={refetch}
+				onCreate={() => setIsCreateOpen(true)}
+				onView={handleViewOrder}
+				onEdit={handleEditOrderOpen}
+				onDelete={handleDeleteOrder}
+				bulkActions={bulkActionsConfig}
+				exportName="orders-report"
+			/>
 
-				<div className="flex items-center gap-2 w-full xl:w-auto">
-					<div className="relative flex-1 xl:w-64">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-						<Input
-							placeholder="Search Order, Customer..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-9 h-9"
-						/>
-					</div>
-					{selectedOrdersForBulk.length > 0 && (
-						<div className="flex items-center gap-1">
-							<Button size="sm" variant="outline" onClick={() => handleBulkAction('process')} className="h-9 gap-1 text-slate-700">
-								<Check size={14} /> Process ({selectedOrdersForBulk.length})
-							</Button>
-							<Button size="sm" variant="outline" onClick={() => handleBulkAction('print')} className="h-9 gap-1 text-slate-700">
-								<Printer size={14} /> Print Slips
-							</Button>
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* Order Listing Table */}
-			<Card className="shadow-sm">
-				<CardContent className="p-0">
-					<div className="overflow-x-auto">
-						<table className="w-full text-left text-sm border-collapse">
-							<thead>
-								<tr className="border-b bg-slate-50 text-slate-400 font-semibold uppercase text-xs">
-									<th className="py-3 px-4 w-12 text-center">
-										<input
-											type="checkbox"
-											onChange={(e) => {
-												if (e.target.checked) {
-													setSelectedOrdersForBulk(filteredOrders.map(o => o.id));
-												} else {
-													setSelectedOrdersForBulk([]);
-												}
-											}}
-											checked={selectedOrdersForBulk.length === filteredOrders.length && filteredOrders.length > 0}
-											className="rounded border-slate-300"
-										/>
-									</th>
-									<th className="py-3 px-4">Order No.</th>
-									<th className="py-3 px-4">Date</th>
-									<th className="py-3 px-4">Customer</th>
-									<th className="py-3 px-4">Status</th>
-									<th className="py-3 px-4">Method</th>
-									<th className="py-3 px-4">Total</th>
-									<th className="py-3 px-4">Risk Rating</th>
-									<th className="py-3 px-4 text-center">Action</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y">
-								{filteredOrders.map((order) => (
-									<tr key={order.id} className="hover:bg-slate-50/50 duration-200">
-										<td className="py-3 px-4 text-center">
-											<input
-												type="checkbox"
-												checked={selectedOrdersForBulk.includes(order.id)}
-												onChange={(e) => {
-													if (e.target.checked) {
-														setSelectedOrdersForBulk([...selectedOrdersForBulk, order.id]);
-													} else {
-														setSelectedOrdersForBulk(selectedOrdersForBulk.filter(id => id !== order.id));
-													}
-												}}
-												className="rounded border-slate-300"
-											/>
-										</td>
-										<td className="py-3 px-4 font-bold text-slate-800">#{order.orderNumber}</td>
-										<td className="py-3 px-4 text-slate-500">{order.date}</td>
-										<td className="py-3 px-4">
-											<div>
-												<p className="font-semibold text-slate-800">{order.customerName}</p>
-												<p className="text-xs text-slate-400">{order.phone}</p>
-											</div>
-										</td>
-										<td className="py-3 px-4">
-											<Badge
-												className={`
-													${order.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' : ''}
-													${order.status === 'Confirmed' ? 'bg-sky-50 text-sky-600 border-sky-200' : ''}
-													${order.status === 'Processing' ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}
-													${order.status === 'Shipped' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}
-													${order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : ''}
-													${order.status === 'Cancelled' ? 'bg-rose-50 text-rose-600 border-rose-200' : ''}
-												`}
-											>
-												{order.status}
-											</Badge>
-										</td>
-										<td className="py-3 px-4 uppercase font-semibold text-xs text-slate-600">{order.shippingMethod}</td>
-										<td className="py-3 px-4 font-bold text-slate-700">৳{order.totalPrice}</td>
-										<td className="py-3 px-4">
-											<div className="flex items-center gap-1.5">
-												<div className={`w-2.5 h-2.5 rounded-full ${order.riskScore > 50 ? 'bg-rose-500' : order.riskScore > 20 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-												<span className="text-xs font-semibold text-slate-600">{order.riskScore > 50 ? 'High' : order.riskScore > 20 ? 'Medium' : 'Low'} ({order.riskScore}%)</span>
-											</div>
-										</td>
-										<td className="py-3 px-4 text-center">
-											<Button
-												size="sm"
-												variant="ghost"
-												onClick={() => {
-													setSelectedOrder(order);
-													setEditAddress(order.address);
-													setEditPrice(order.totalPrice);
-													setIsDetailOpen(true);
-												}}
-												className="hover:text-[#F16A38] text-slate-600"
-											>
-												<Eye size={16} className="mr-1" /> View
-											</Button>
-										</td>
-									</tr>
-								))}
-								{filteredOrders.length === 0 && (
-									<tr>
-										<td colSpan={9} className="py-10 text-center text-slate-400 font-semibold">
-											No orders match current criteria.
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* Order Details Drawer / Modal */}
+			{/* Order Details Dialog */}
 			{selectedOrder && (
 				<Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
 					<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white">
 						<DialogHeader>
 							<div className="flex justify-between items-center pr-6">
-								<DialogTitle className="text-xl font-bold">Order Details #{selectedOrder.orderNumber}</DialogTitle>
-								<Badge className="bg-indigo-50 border border-indigo-200 text-indigo-600">Risk Score: {selectedOrder.riskScore}%</Badge>
+								<DialogTitle className="text-xl font-bold">Order Details #{selectedOrder.order_number}</DialogTitle>
+								<Badge className="bg-indigo-50 border border-indigo-200 text-indigo-600">
+									Shipping: {selectedOrder.shipping_method?.toUpperCase() || 'Air'}
+								</Badge>
 							</div>
 							<DialogDescription>
-								Verify dropshipping risk factors and manage shipping pipeline.
+								Review customer shipping address, invoice details, and dispatch status.
 							</DialogDescription>
 						</DialogHeader>
-
-						{/* Quick warning alert if high risk */}
-						{selectedOrder.riskScore > 50 && (
-							<div className="bg-rose-50 border border-rose-200 rounded-lg p-3.5 flex gap-2.5 text-rose-700 text-sm">
-								<ShieldAlert className="shrink-0" />
-								<div>
-									<p className="font-bold">Fraud Alert Warning</p>
-									<ul className="list-disc pl-4 mt-1 text-xs space-y-0.5">
-										{selectedOrder.riskReasons.map((reason, idx) => (
-											<li key={idx}>{reason}</li>
-										))}
-									</ul>
-								</div>
-							</div>
-						)}
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
 							{/* Client Details */}
 							<div className="space-y-4">
 								<div>
-									<h4 className="font-semibold text-slate-700 text-sm border-b pb-1.5 mb-2 uppercase">Customer details</h4>
-									<p className="text-sm font-bold text-slate-800">{selectedOrder.customerName}</p>
-									<p className="text-xs text-slate-500">{selectedOrder.customerEmail}</p>
-									<p className="text-xs text-slate-500">Phone: {selectedOrder.phone}</p>
+									<h4 className="font-semibold text-slate-700 text-xs border-b pb-1.5 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+										<User className="h-4 w-4 text-orange-500" /> Customer Details
+									</h4>
+									<p className="text-sm font-bold text-slate-800">{selectedOrder.address?.full_name || 'Guest User'}</p>
+									<p className="text-xs text-slate-500">Phone: {selectedOrder.address?.phone || 'No phone'}</p>
 								</div>
 								<div>
-									<h4 className="font-semibold text-slate-700 text-sm border-b pb-1.5 mb-2 uppercase">Shipping Address</h4>
-									<p className="text-xs text-slate-600 leading-relaxed">{selectedOrder.address}</p>
+									<h4 className="font-semibold text-slate-700 text-xs border-b pb-1.5 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+										<MapPin className="h-4 w-4 text-orange-500" /> Shipping Address
+									</h4>
+									{selectedOrder.address ? (
+										<div className="text-xs text-slate-600 leading-relaxed">
+											<p>{selectedOrder.address.address}</p>
+											{selectedOrder.address.address_line2 && <p>{selectedOrder.address.address_line2}</p>}
+											<p>{selectedOrder.address.district}, {selectedOrder.address.city} - {selectedOrder.address.postal_code}</p>
+										</div>
+									) : (
+										<p className="text-xs text-slate-400">No address recorded</p>
+									)}
 								</div>
 							</div>
 
 							{/* Actions Control */}
 							<div className="space-y-4">
 								<div>
-									<h4 className="font-semibold text-slate-700 text-sm border-b pb-1.5 mb-2 uppercase">Fulfillment Controls</h4>
+									<h4 className="font-semibold text-slate-700 text-xs border-b pb-1.5 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+										<Truck className="h-4 w-4 text-orange-500" /> Fulfillment Status
+									</h4>
 									<div className="flex gap-2">
 										<Select
 											value={selectedOrder.status}
-											onValueChange={(val) => handleStatusChange(selectedOrder.id, val as OrderType['status'])}
+											onValueChange={(val) => {
+												setEditStatus(val);
+												handleStatusChangeDirect(selectedOrder.id, val);
+											}}
 										>
 											<SelectTrigger className="w-full">
 												<SelectValue placeholder="Update status" />
 											</SelectTrigger>
 											<SelectContent>
-												{['Pending', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'In Transit', 'Delivered', 'Cancelled', 'Refunded', 'Returned'].map((s) => (
-													<SelectItem key={s} value={s}>{s}</SelectItem>
+												{['pending', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'].map((s) => (
+													<SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
 												))}
 											</SelectContent>
 										</Select>
 									</div>
 								</div>
 
-								{/* Order Editing or Splitting/Merging actions */}
-								<div className="flex flex-wrap gap-2">
-									<Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} className="text-xs font-semibold text-slate-700">
+								{/* Control operations */}
+								<div className="flex flex-wrap gap-2 pt-2">
+									<Button variant="outline" size="sm" onClick={() => handleEditOrderOpen(selectedOrder)} className="text-xs font-semibold text-slate-700">
 										Edit Address/Price
 									</Button>
-									<Button variant="outline" size="sm" onClick={() => setIsSplitOpen(true)} className="text-xs font-semibold text-slate-700 gap-1.5">
-										<Split size={14} /> Split Order
-									</Button>
-									<Button variant="outline" size="sm" onClick={() => setIsMergeOpen(true)} className="text-xs font-semibold text-slate-700 gap-1.5">
-										<Merge size={14} /> Merge Order
-									</Button>
-									<Button variant="destructive" size="sm" onClick={() => handleCancelOrder(selectedOrder.id)} className="text-xs font-semibold gap-1.5">
-										<Trash2 size={14} /> Cancel Order
+									<Button variant="destructive" size="sm" onClick={() => handleDeleteOrder(selectedOrder)} className="text-xs font-semibold">
+										Delete Order
 									</Button>
 								</div>
 							</div>
@@ -537,30 +462,43 @@ export default function OrderManagementPage() {
 
 						{/* Items list */}
 						<div className="mt-6">
-							<h4 className="font-semibold text-slate-700 text-sm border-b pb-1.5 mb-3 uppercase">Order items</h4>
+							<h4 className="font-semibold text-slate-700 text-xs border-b pb-1.5 mb-3 uppercase tracking-wide">
+								Order Items
+							</h4>
 							<div className="space-y-2.5">
-								{selectedOrder.items.map((item) => (
-									<div key={item.id} className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg">
+								{selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+									selectedOrder.items.map((item, idx) => (
+										<div key={idx} className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg">
+											<div>
+												<p className="font-bold text-slate-800 text-sm">{item.product_name}</p>
+												<p className="text-xs text-slate-400">ID: {item.product_id}</p>
+											</div>
+											<div className="text-right">
+												<p className="text-xs font-bold text-[#F16A38]">৳{Number(item.item_total || 0).toLocaleString()}</p>
+											</div>
+										</div>
+									))
+								) : (
+									<div className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg">
 										<div>
-											<p className="font-bold text-slate-800 text-sm">{item.name}</p>
-											<p className="text-xs text-slate-400">{item.variant}</p>
+											<p className="font-bold text-slate-800 text-sm">{selectedOrder.product_name || 'Legacy Order Product'}</p>
+											<p className="text-xs text-slate-400">ID: {selectedOrder.product_id}</p>
 										</div>
 										<div className="text-right">
-											<p className="text-sm font-semibold text-slate-700">{item.quantity} x ৳{item.price}</p>
-											<p className="text-xs font-bold text-[#F16A38]">৳{item.quantity * item.price}</p>
+											<p className="text-xs font-bold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</p>
 										</div>
 									</div>
-								))}
+								)}
 							</div>
 							<div className="flex justify-between items-center border-t pt-3.5 mt-4">
 								<span className="font-bold text-slate-700">Grand Total</span>
-								<span className="text-lg font-extrabold text-[#F16A38]">৳{selectedOrder.totalPrice}</span>
+								<span className="text-lg font-extrabold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</span>
 							</div>
 						</div>
 
 						<DialogFooter className="mt-6 border-t pt-4">
 							<Button variant="outline" onClick={() => setIsDetailOpen(false)}>Close Details</Button>
-							<Button onClick={() => setIsSlipPrintOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold gap-2">
+							<Button onClick={() => setIsSlipPrintOpen(true)} className="bg-indigo-650 hover:bg-indigo-705 text-white font-semibold gap-2">
 								<Printer size={16} /> Print Packing Slip
 							</Button>
 						</DialogFooter>
@@ -573,34 +511,42 @@ export default function OrderManagementPage() {
 				<DialogContent className="max-w-md bg-white">
 					<DialogHeader>
 						<DialogTitle className="text-lg font-bold">Manual Order Creation</DialogTitle>
-						<DialogDescription>Create orders for phone or walk-in dropshipping queries.</DialogDescription>
+						<DialogDescription>Input client details to register a manual dropshipping delivery.</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleCreateOrder} className="space-y-4">
 						<div>
-							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Customer Name</label>
-							<Input required value={newOrderName} onChange={e => setNewOrderName(e.target.value)} placeholder="Full name" />
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Customer Full Name</label>
+							<Input required value={createFullName} onChange={e => setCreateFullName(e.target.value)} placeholder="Full name" />
 						</div>
 						<div>
-							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Phone Number</label>
-							<Input required value={newOrderPhone} onChange={e => setNewOrderPhone(e.target.value)} placeholder="01XXXXXXXXX" />
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Customer Phone</label>
+							<Input required value={createPhone} onChange={e => setCreatePhone(e.target.value)} placeholder="01XXXXXXXXX" />
 						</div>
 						<div>
-							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Delivery Address</label>
-							<Input required value={newOrderAddress} onChange={e => setNewOrderAddress(e.target.value)} placeholder="Full street address, district" />
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Email Address (Optional)</label>
+							<Input value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="name@domain.com" />
 						</div>
-						<div className="grid grid-cols-2 gap-3">
+						<div>
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Street Address</label>
+							<Input required value={createAddress} onChange={e => setCreateAddress(e.target.value)} placeholder="House, Road, Area" />
+						</div>
+						<div className="grid grid-cols-3 gap-2">
 							<div>
-								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Price (৳)</label>
-								<Input required type="number" value={newOrderPrice} onChange={e => setNewOrderPrice(e.target.value)} />
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">City</label>
+								<Input required value={createCity} onChange={e => setCreateCity(e.target.value)} placeholder="Dhaka" />
 							</div>
 							<div>
-								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Quantity</label>
-								<Input required type="number" value={newOrderQty} onChange={e => setNewOrderQty(e.target.value)} />
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">District</label>
+								<Input required value={createDistrict} onChange={e => setCreateDistrict(e.target.value)} placeholder="Dhaka" />
+							</div>
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Zip Code</label>
+								<Input required value={createZip} onChange={e => setCreateZip(e.target.value)} placeholder="1212" />
 							</div>
 						</div>
 						<DialogFooter className="pt-4">
 							<Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Place Order</Button>
+							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-650 font-semibold">Place Order</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>
@@ -611,70 +557,34 @@ export default function OrderManagementPage() {
 				<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
 					<DialogContent className="max-w-md bg-white">
 						<DialogHeader>
-							<DialogTitle className="text-lg font-bold">Edit Order #{selectedOrder.orderNumber}</DialogTitle>
+							<DialogTitle className="text-lg font-bold">Edit Order #{selectedOrder.order_number}</DialogTitle>
 						</DialogHeader>
 						<div className="space-y-4">
 							<div>
-								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Shipping Address</label>
-								<Input value={editAddress} onChange={e => setEditAddress(e.target.value)} />
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Shipping Address Line</label>
+								<Input value={editAddressLine} onChange={e => setEditAddressLine(e.target.value)} />
 							</div>
 							<div>
 								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Grand Total (৳)</label>
-								<Input type="number" value={editPrice} onChange={e => setEditPrice(parseFloat(e.target.value))} />
+								<Input type="number" value={editTotalPrice} onChange={e => setEditTotalPrice(e.target.value)} />
+							</div>
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Fulfillment Status</label>
+								<Select value={editStatus} onValueChange={setEditStatus}>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{['pending', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'].map((s) => (
+											<SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 						<DialogFooter className="pt-4">
 							<Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-							<Button onClick={handleEditOrder} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Save Changes</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			)}
-
-			{/* Order Split Modal */}
-			{selectedOrder && (
-				<Dialog open={isSplitOpen} onOpenChange={setIsSplitOpen}>
-					<DialogContent className="max-w-md bg-white">
-						<DialogHeader>
-							<DialogTitle className="text-lg font-bold">Split Order #{selectedOrder.orderNumber}</DialogTitle>
-							<DialogDescription>Split items into separate parcel consignments.</DialogDescription>
-						</DialogHeader>
-						<div className="space-y-3 p-3 bg-slate-50 border rounded-lg">
-							<p className="text-xs font-semibold text-slate-500 uppercase">Items to split</p>
-							{selectedOrder.items.map((i, index) => (
-								<div key={i.id} className="flex justify-between text-sm py-1.5 border-b last:border-0">
-									<span>{i.name} (x{i.quantity})</span>
-									<span className="font-bold text-slate-700">৳{i.price * i.quantity}</span>
-								</div>
-							))}
-						</div>
-						<DialogFooter className="pt-4">
-							<Button variant="outline" onClick={() => setIsSplitOpen(false)}>Cancel</Button>
-							<Button onClick={handleSplitOrder} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">Execute Split</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			)}
-
-			{/* Order Merge Modal */}
-			{selectedOrder && (
-				<Dialog open={isMergeOpen} onOpenChange={setIsMergeOpen}>
-					<DialogContent className="max-w-md bg-white">
-						<DialogHeader>
-							<DialogTitle className="text-lg font-bold">Merge Consignments</DialogTitle>
-							<DialogDescription>Combine orders directed to identical customer phone numbers.</DialogDescription>
-						</DialogHeader>
-						<div className="space-y-4">
-							<p className="text-sm text-slate-600">The system found another open order for <strong>{selectedOrder.customerName}</strong>. Merging will bundle them into a single shipment.</p>
-							<div className="p-3 bg-slate-50 border rounded-lg space-y-2 text-xs">
-								<p className="font-semibold text-slate-500 uppercase">Orders to Merge</p>
-								<p>• Order #839201 (৳1,540)</p>
-								<p>• Order #920391 (৳2,450)</p>
-							</div>
-						</div>
-						<DialogFooter className="pt-4">
-							<Button variant="outline" onClick={() => setIsMergeOpen(false)}>Cancel</Button>
-							<Button onClick={() => handleMergeOrders(selectedOrder.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Confirm Merge</Button>
+							<Button onClick={handleSaveOrderChanges} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Save Changes</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
@@ -687,8 +597,7 @@ export default function OrderManagementPage() {
 						<DialogHeader>
 							<DialogTitle className="text-lg font-bold">Courier Invoice / Packing Slip Preview</DialogTitle>
 						</DialogHeader>
-						{/* Print layout representation */}
-						<div className="border border-dashed p-6 bg-slate-50 rounded-lg space-y-6 text-slate-800 font-sans print-area" id="printable-area">
+						<div className="border border-dashed p-6 bg-slate-50 rounded-lg space-y-6 text-slate-800 font-sans" id="printable-area">
 							<div className="flex justify-between items-start border-b pb-4">
 								<div>
 									<h2 className="text-2xl font-black text-[#F16A38]">UPDATE SHIPPING</h2>
@@ -696,23 +605,23 @@ export default function OrderManagementPage() {
 								</div>
 								<div className="text-right">
 									<h4 className="font-extrabold text-sm text-indigo-600 uppercase">Packing Slip</h4>
-									<p className="text-xs font-semibold">Order: #{selectedOrder.orderNumber}</p>
-									<p className="text-xs text-slate-500">Date: {selectedOrder.date}</p>
+									<p className="text-xs font-semibold">Order: #{selectedOrder.order_number}</p>
+									<p className="text-xs text-slate-500">Date: {new Date(selectedOrder.created_at).toLocaleDateString('en-US')}</p>
 								</div>
 							</div>
 
 							<div className="grid grid-cols-2 gap-4 text-xs">
 								<div>
 									<h5 className="font-bold text-slate-500 uppercase mb-1">Ship To:</h5>
-									<p className="font-bold">{selectedOrder.customerName}</p>
-									<p>{selectedOrder.phone}</p>
-									<p>{selectedOrder.address}</p>
+									<p className="font-bold">{selectedOrder.address?.full_name || 'Guest User'}</p>
+									<p>{selectedOrder.address?.phone || ''}</p>
+									<p>{selectedOrder.address?.address || ''}</p>
 								</div>
 								<div className="text-right">
 									<h5 className="font-bold text-slate-500 uppercase mb-1">Carrier Details:</h5>
 									<p className="font-bold">SKY SHIP LOGISTICS</p>
-									<p>Method: {selectedOrder.shippingMethod.toUpperCase()}</p>
-									<p className="font-bold text-[#F16A38]">Cash On Delivery (COD)</p>
+									<p>Method: {selectedOrder.shipping_method?.toUpperCase() || 'Air'}</p>
+									<p className="font-bold text-[#F16A38] uppercase">{selectedOrder.payment_method === 'card' ? 'Online Card Payment' : 'Cash On Delivery (COD)'}</p>
 								</div>
 							</div>
 
@@ -721,39 +630,35 @@ export default function OrderManagementPage() {
 								<thead>
 									<tr className="border-b-2 border-slate-300 font-bold">
 										<th className="pb-2">Description</th>
-										<th className="pb-2 text-center">Qty</th>
 										<th className="pb-2 text-right">Price</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y">
-									{selectedOrder.items.map((i) => (
-										<tr key={i.id} className="py-2">
+									{selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+										selectedOrder.items.map((i, idx) => (
+											<tr key={idx} className="py-2">
+												<td className="py-2">
+													<p className="font-bold">{i.product_name}</p>
+													<p className="text-slate-400 text-[10px]">ID: {i.product_id}</p>
+												</td>
+												<td className="py-2 text-right">৳{Number(i.item_total || 0).toLocaleString()}</td>
+											</tr>
+										))
+									) : (
+										<tr className="py-2">
 											<td className="py-2">
-												<p className="font-bold">{i.name}</p>
-												<p className="text-slate-400 text-[10px]">{i.variant}</p>
+												<p className="font-bold">{selectedOrder.product_name || 'Legacy Order Product'}</p>
+												<p className="text-slate-400 text-[10px]">ID: {selectedOrder.product_id}</p>
 											</td>
-											<td className="py-2 text-center">{i.quantity}</td>
-											<td className="py-2 text-right">৳{i.price}</td>
+											<td className="py-2 text-right">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</td>
 										</tr>
-									))}
+									)}
 								</tbody>
 							</table>
 
 							<div className="border-t pt-4 text-right text-xs">
-								<p className="font-bold">Subtotal: ৳{selectedOrder.totalPrice}</p>
-								<p className="text-lg font-black text-[#F16A38] mt-1">Total COD Amount: ৳{selectedOrder.totalPrice}</p>
-							</div>
-
-							{/* Customs Declaration mock bar */}
-							<div className="bg-slate-200/60 p-3 rounded text-[10px] text-slate-600 flex justify-between items-center border">
-								<div>
-									<p className="font-bold">Customs Declaration (Dropship procurement CN-BD)</p>
-									<p>Content: E-Commerce goods. Total declared weight: 350g.</p>
-								</div>
-								<div className="text-right border-l pl-3 font-semibold">
-									<p>HS Code: 8518.21.00</p>
-									<p>SkyShip Clearance: Passed</p>
-								</div>
+								<p className="font-bold">Subtotal: ৳{Number(selectedOrder.total_price || 0).toLocaleString()}</p>
+								<p className="text-lg font-black text-[#F16A38] mt-1">Total COD Amount: ৳{Number(selectedOrder.total_price || 0).toLocaleString()}</p>
 							</div>
 						</div>
 						<DialogFooter className="gap-2">
@@ -770,4 +675,15 @@ export default function OrderManagementPage() {
 			)}
 		</div>
 	);
+
+	// Helper to change status directly from detail view dropdown
+	async function handleStatusChangeDirect(orderId: number, nextStatus: string) {
+		try {
+			await axios.patch(`/api/order/orders/${orderId}/`, { status: nextStatus });
+			toast.success(`Order status updated to ${nextStatus}`);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
+		} catch (e) {
+			toast.error('Failed to update status');
+		}
+	}
 }

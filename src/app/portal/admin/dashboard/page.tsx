@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -10,7 +11,6 @@ import {
 	RotateCcw,
 	Truck,
 	ShieldAlert,
-	Award,
 	CheckCircle,
 	ArrowUpRight,
 	Calendar
@@ -24,45 +24,176 @@ import {
 	Tooltip,
 	LineChart,
 	Line,
-	BarChart,
-	Bar,
 	CartesianGrid
 } from 'recharts';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 
-// Rich Mock and Combined Data for a stunning dashboard
-const revenueData = [
-	{ month: 'Jan', revenue: 120000, orders: 480 },
-	{ month: 'Feb', revenue: 190000, orders: 590 },
-	{ month: 'Mar', revenue: 170000, orders: 510 },
-	{ month: 'Apr', revenue: 240000, orders: 780 },
-	{ month: 'May', revenue: 310000, orders: 990 },
-	{ month: 'Jun', revenue: 450000, orders: 1240 },
-];
+interface Order {
+	id: number;
+	total_price: string;
+	status: string;
+	created_at: string;
+}
 
-const customerGrowthData = [
-	{ month: 'Jan', customers: 1200 },
-	{ month: 'Feb', customers: 1650 },
-	{ month: 'Mar', customers: 2100 },
-	{ month: 'Apr', customers: 2850 },
-	{ month: 'May', customers: 3900 },
-	{ month: 'Jun', customers: 5400 },
-];
-
-const topProducts = [
-	{ id: 1, name: 'Wireless Bluetooth Earbuds Pro', category: 'Electronics', sales: 450, revenue: '৳540,000', stock: 120, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=100&auto=format&fit=crop&q=60' },
-	{ id: 2, name: 'Premium Leather Smart Watch', category: 'Wearables', sales: 320, revenue: '৳416,000', stock: 85, image: 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=100&auto=format&fit=crop&q=60' },
-	{ id: 3, name: 'Ergonomic Memory Foam Pillow', category: 'Home & Living', sales: 290, revenue: '৳145,000', stock: 240, image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=100&auto=format&fit=crop&q=60' },
-	{ id: 4, name: 'Ultra-thin Portable Power Bank 20k', category: 'Accessories', sales: 210, revenue: '৳252,000', stock: 15, image: 'https://images.unsplash.com/photo-1609592424109-dd9892f1b17c?w=100&auto=format&fit=crop&q=60' }
-];
-
-const topCategories = [
-	{ name: 'Smart Electronics', productsCount: 142, salesVolume: '৳1,250,000', percentage: 45 },
-	{ name: 'Home Appliances', productsCount: 89, salesVolume: '৳780,000', percentage: 28 },
-	{ name: 'Fashion & Apparel', productsCount: 210, salesVolume: '৳480,000', percentage: 17 },
-	{ name: 'Kitchen Tools', productsCount: 65, salesVolume: '৳290,000', percentage: 10 }
-];
+interface CustomerUser {
+	id: number;
+	date_joined: string;
+}
 
 export default function AdminDashboardPage() {
+	// Fetch all orders
+	const { data: ordersResponse, isLoading: isOrdersLoading } = useAppData<any, 'single'>({
+		key: [QueriesKey.USER_ORDERS, 'admin-dashboard-orders'],
+		api: `${apiEndpoint.orders.ORDERS()}?view=admin&limit=1000`,
+		auth: true,
+		responseType: 'single'
+	});
+
+	// Fetch all customers
+	const { data: customersResponse, isLoading: isCustomersLoading } = useAppData<any, 'single'>({
+		key: [QueriesKey.ADMIN_CUSTOMERS, 'admin-dashboard-customers'],
+		api: `/api/user/users/?limit=1000`,
+		auth: true,
+		responseType: 'single'
+	});
+
+	const orders: Order[] = ordersResponse?.data || ordersResponse?.results || [];
+	const customers: CustomerUser[] = customersResponse?.data || customersResponse?.results || [];
+
+	// CALCULATIONS
+	const stats = useMemo(() => {
+		const now = new Date();
+		const todayStr = now.toISOString().split('T')[0];
+		
+		const oneWeekAgo = new Date();
+		oneWeekAgo.setDate(now.getDate() - 7);
+		
+		const oneMonthAgo = new Date();
+		oneMonthAgo.setDate(now.getDate() - 30);
+
+		let todaySales = 0;
+		let weeklySales = 0;
+		let monthlySales = 0;
+
+		const pipeline: Record<string, number> = {
+			pending: 0,
+			confirmed: 0,
+			processing: 0,
+			packed: 0,
+			shipped: 0,
+			delivered: 0,
+			cancelled: 0,
+			returned: 0,
+		};
+
+		orders.forEach(o => {
+			const oDate = new Date(o.created_at);
+			const oDateStr = o.created_at.split('T')[0];
+			const price = Number(o.total_price || 0);
+			const status = o.status?.toLowerCase() || '';
+
+			if (pipeline[status] !== undefined) {
+				pipeline[status] += 1;
+			}
+
+			if (status !== 'cancelled') {
+				if (oDateStr === todayStr) {
+					todaySales += price;
+				}
+				if (oDate >= oneWeekAgo) {
+					weeklySales += price;
+				}
+				if (oDate >= oneMonthAgo) {
+					monthlySales += price;
+				}
+			}
+		});
+
+		return {
+			todaySales,
+			weeklySales,
+			monthlySales,
+			pipeline
+		};
+	}, [orders]);
+
+	// Charts Data Calculation
+	const revenueData = useMemo(() => {
+		const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+		const monthlyStats: Record<string, { revenue: number; orders: number }> = {};
+		
+		// Initialize last 6 months
+		const now = new Date();
+		for (let i = 5; i >= 0; i--) {
+			const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+			const monthLabel = months[d.getMonth()];
+			monthlyStats[monthLabel] = { revenue: 0, orders: 0 };
+		}
+		
+		orders.forEach(o => {
+			const date = new Date(o.created_at);
+			const monthLabel = months[date.getMonth()];
+			if (monthlyStats[monthLabel]) {
+				monthlyStats[monthLabel].revenue += Number(o.total_price || 0);
+				monthlyStats[monthLabel].orders += 1;
+			}
+		});
+		
+		return Object.entries(monthlyStats).map(([month, data]) => ({
+			month,
+			revenue: data.revenue,
+			orders: data.orders
+		}));
+	}, [orders]);
+
+	const customerGrowthData = useMemo(() => {
+		const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+		const monthlyStats: Record<string, number> = {};
+		
+		const now = new Date();
+		for (let i = 5; i >= 0; i--) {
+			const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+			const monthLabel = months[d.getMonth()];
+			monthlyStats[monthLabel] = 0;
+		}
+		
+		customers.forEach(c => {
+			const date = new Date(c.date_joined);
+			const monthLabel = months[date.getMonth()];
+			if (monthlyStats[monthLabel] !== undefined) {
+				monthlyStats[monthLabel] += 1;
+			}
+		});
+		
+		// Cumulative count
+		let sum = Math.max(0, customers.length - Object.values(monthlyStats).reduce((a, b) => a + b, 0));
+		return Object.entries(monthlyStats).map(([month, count]) => {
+			sum += count;
+			return { month, customers: sum };
+		});
+	}, [customers]);
+
+	const formattedDate = useMemo(() => {
+		return new Date().toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+	}, []);
+
+	if (isOrdersLoading || isCustomersLoading) {
+		return (
+			<div className="min-h-[60vh] flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full mx-auto mb-4" />
+					<p className="text-muted-foreground">Loading dashboard analytics...</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-6 font-play">
 			{/* Overview header */}
@@ -73,7 +204,7 @@ export default function AdminDashboardPage() {
 				</div>
 				<div className="flex items-center gap-2 bg-slate-50 border px-4 py-2 rounded-lg text-sm font-semibold text-slate-600">
 					<Calendar size={16} />
-					<span>Jun 24, 2026</span>
+					<span>{formattedDate}</span>
 				</div>
 			</div>
 
@@ -84,9 +215,9 @@ export default function AdminDashboardPage() {
 						<div className="flex justify-between items-start">
 							<div>
 								<p className="text-sm font-medium text-slate-500">Today&apos;s Sales</p>
-								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳45,230</h3>
+								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳{stats.todaySales.toLocaleString()}</h3>
 								<span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5 mt-2">
-									<ArrowUpRight size={14} /> +12.4% from yesterday
+									<ArrowUpRight size={14} /> Live updates
 								</span>
 							</div>
 							<div className="p-3 bg-emerald-50 rounded-lg text-emerald-600">
@@ -101,9 +232,9 @@ export default function AdminDashboardPage() {
 						<div className="flex justify-between items-start">
 							<div>
 								<p className="text-sm font-medium text-slate-500">Total Customers</p>
-								<h3 className="text-2xl font-bold mt-1 text-slate-800">5,432</h3>
+								<h3 className="text-2xl font-bold mt-1 text-slate-800">{customers.length.toLocaleString()}</h3>
 								<span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5 mt-2">
-									<ArrowUpRight size={14} /> +8.1% this week
+									<ArrowUpRight size={14} /> Registered users
 								</span>
 							</div>
 							<div className="p-3 bg-blue-50 rounded-lg text-blue-600">
@@ -118,9 +249,9 @@ export default function AdminDashboardPage() {
 						<div className="flex justify-between items-start">
 							<div>
 								<p className="text-sm font-medium text-slate-500">Weekly Sales</p>
-								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳312,400</h3>
+								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳{stats.weeklySales.toLocaleString()}</h3>
 								<span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5 mt-2">
-									<ArrowUpRight size={14} /> +15.2% vs last week
+									<ArrowUpRight size={14} /> Last 7 days
 								</span>
 							</div>
 							<div className="p-3 bg-purple-50 rounded-lg text-purple-600">
@@ -135,9 +266,9 @@ export default function AdminDashboardPage() {
 						<div className="flex justify-between items-start">
 							<div>
 								<p className="text-sm font-medium text-slate-500">Monthly Sales</p>
-								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳1,480,000</h3>
+								<h3 className="text-2xl font-bold mt-1 text-slate-800">৳{stats.monthlySales.toLocaleString()}</h3>
 								<span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5 mt-2">
-									<ArrowUpRight size={14} /> +22.8% vs last month
+									<ArrowUpRight size={14} /> Last 30 days
 								</span>
 							</div>
 							<div className="p-3 bg-amber-50 rounded-lg text-amber-600">
@@ -151,22 +282,24 @@ export default function AdminDashboardPage() {
 			{/* Order Status Breakdown Metrics */}
 			<div>
 				<h3 className="text-lg font-bold text-slate-700 mb-3">Order Status Pipeline</h3>
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+				<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
 					{[
-						{ label: 'Pending', count: 18, color: 'text-amber-600 bg-amber-50', icon: Clock },
-						{ label: 'Processing', count: 24, color: 'text-blue-600 bg-blue-50', icon: TrendingUp },
-						{ label: 'Shipped', count: 42, color: 'text-indigo-600 bg-indigo-50', icon: Truck },
-						{ label: 'Delivered', count: 512, color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle },
-						{ label: 'Returned', count: 7, color: 'text-rose-600 bg-rose-50', icon: RotateCcw },
-						{ label: 'Refund Requests', count: 3, color: 'text-purple-600 bg-purple-50', icon: ShieldAlert }
+						{ label: 'Pending', count: stats.pipeline.pending, color: 'text-amber-600 bg-amber-50', icon: Clock },
+						{ label: 'Confirmed', count: stats.pipeline.confirmed, color: 'text-sky-600 bg-sky-50', icon: CheckCircle },
+						{ label: 'Processing', count: stats.pipeline.processing, color: 'text-blue-600 bg-blue-50', icon: TrendingUp },
+						{ label: 'Packed', count: stats.pipeline.packed, color: 'text-purple-600 bg-purple-50', icon: ShoppingCart },
+						{ label: 'Shipped', count: stats.pipeline.shipped, color: 'text-indigo-600 bg-indigo-50', icon: Truck },
+						{ label: 'Delivered', count: stats.pipeline.delivered, color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle },
+						{ label: 'Cancelled', count: stats.pipeline.cancelled, color: 'text-rose-600 bg-rose-50', icon: ShieldAlert },
+						{ label: 'Returned', count: stats.pipeline.returned, color: 'text-rose-650 bg-rose-50', icon: RotateCcw }
 					].map((item) => (
-						<div key={item.label} className="bg-white p-4 rounded-xl border flex items-center gap-3 shadow-sm">
+						<div key={item.label} className="bg-white p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-2 shadow-sm">
 							<div className={`p-2 rounded-lg ${item.color}`}>
-								<item.icon size={20} />
+								<item.icon size={18} />
 							</div>
 							<div>
-								<p className="text-xs text-slate-500 font-medium">{item.label}</p>
-								<p className="text-lg font-bold text-slate-800">{item.count}</p>
+								<p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{item.label}</p>
+								<p className="text-base font-bold text-slate-800">{item.count}</p>
 							</div>
 						</div>
 					))}
@@ -177,11 +310,9 @@ export default function AdminDashboardPage() {
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				{/* Revenue & Orders Trend */}
 				<Card className="lg:col-span-2 shadow-sm">
-					<CardHeader className="flex flex-row items-center justify-between pb-4">
-						<div>
-							<CardTitle className="text-lg font-bold text-slate-800">Revenue & Order Trends</CardTitle>
-							<CardDescription>Monthly representation of store turnover</CardDescription>
-						</div>
+					<CardHeader className="pb-4">
+						<CardTitle className="text-lg font-bold text-slate-800">Revenue Trends</CardTitle>
+						<CardDescription>Dynamic monthly shop billing breakdown</CardDescription>
 					</CardHeader>
 					<CardContent className="h-80">
 						<ResponsiveContainer width="100%" height="100%">
@@ -200,152 +331,18 @@ export default function AdminDashboardPage() {
 				<Card className="shadow-sm">
 					<CardHeader className="pb-4">
 						<CardTitle className="text-lg font-bold text-slate-800">Customer Growth</CardTitle>
-						<CardDescription>Active shopper registrations</CardDescription>
+						<CardDescription>Live onboarding trends of registered shoppers</CardDescription>
 					</CardHeader>
 					<CardContent className="h-80">
 						<ResponsiveContainer width="100%" height="100%">
-							<AreaChart data={customerGrowthData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+							<AreaChart data={customerGrowthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
 								<CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
 								<XAxis dataKey="month" stroke="#94A3B8" fontSize={12} tickLine={false} />
 								<YAxis stroke="#94A3B8" fontSize={12} tickLine={false} />
-								<Tooltip />
-								<Area type="monotone" dataKey="customers" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.1)" strokeWidth={2} />
+								<Tooltip formatter={(value) => [value, 'Customers']} />
+								<Area type="monotone" dataKey="customers" stroke="#4F46E5" fill="#EEF2FF" strokeWidth={2} />
 							</AreaChart>
 						</ResponsiveContainer>
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Supplier & Shipping Performance Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-				{/* Supplier Performance Metrics */}
-				<Card className="shadow-sm">
-					<CardHeader className="flex flex-row items-center gap-3">
-						<div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-							<Award size={20} />
-						</div>
-						<div>
-							<CardTitle className="text-base font-bold text-slate-800">Supplier Performance Metrics</CardTitle>
-							<CardDescription>Tracking 1688 and local suppliers</CardDescription>
-						</div>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{[
-							{ metric: 'Average Lead Time', value: '6.4 Days', desc: 'Sourcing to warehouse arrival', percent: 92 },
-							{ metric: 'Supplier Fill Rate', value: '98.2%', desc: 'Correct inventory supplied', percent: 98 },
-							{ metric: 'Cost Defect Rate', value: '0.4%', desc: 'Price errors on dispatch', percent: 99.6 }
-						].map((item) => (
-							<div key={item.metric} className="space-y-1">
-								<div className="flex justify-between text-sm">
-									<span className="font-semibold text-slate-700">{item.metric}</span>
-									<span className="font-bold text-[#F16A38]">{item.value}</span>
-								</div>
-								<p className="text-xs text-slate-400">{item.desc}</p>
-								<div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-									<div className="h-full bg-rose-400 rounded-full" style={{ width: `${item.percent}%` }} />
-								</div>
-							</div>
-						))}
-					</CardContent>
-				</Card>
-
-				{/* Shipping & Logistical Performance Metrics */}
-				<Card className="shadow-sm">
-					<CardHeader className="flex flex-row items-center gap-3">
-						<div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-							<Truck size={20} />
-						</div>
-						<div>
-							<CardTitle className="text-base font-bold text-slate-800">Shipping Performance Metrics</CardTitle>
-							<CardDescription>Tracking 3PL and courier efficiencies</CardDescription>
-						</div>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{[
-							{ metric: 'On-Time Delivery Rate', value: '94.8%', desc: 'Delivered within promised ETA', percent: 94.8 },
-							{ metric: 'Logistics Damage Rate', value: '0.12%', desc: 'Reported product breakages', percent: 99.8 },
-							{ metric: 'Average Shipping Days', value: '4.8 Days', desc: 'Dhaka vs rural BD zones', percent: 85 }
-						].map((item) => (
-							<div key={item.metric} className="space-y-1">
-								<div className="flex justify-between text-sm">
-									<span className="font-semibold text-slate-700">{item.metric}</span>
-									<span className="font-bold text-indigo-600">{item.value}</span>
-								</div>
-								<p className="text-xs text-slate-400">{item.desc}</p>
-								<div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-									<div className="h-full bg-indigo-500 rounded-full" style={{ width: `${item.percent}%` }} />
-								</div>
-							</div>
-						))}
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Products & Categories Breakdown Tables */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				{/* Top Selling Products */}
-				<Card className="lg:col-span-2 shadow-sm">
-					<CardHeader>
-						<CardTitle className="text-lg font-bold text-slate-800">Top Selling Products</CardTitle>
-						<CardDescription>Highest selling products this month</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="overflow-x-auto">
-							<table className="w-full text-left text-sm border-collapse">
-								<thead>
-									<tr className="border-b text-slate-400 font-semibold">
-										<th className="pb-3 pl-2">Product</th>
-										<th className="pb-3">Sales</th>
-										<th className="pb-3">Revenue</th>
-										<th className="pb-3 pr-2">Stock</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y">
-									{topProducts.map((prod) => (
-										<tr key={prod.id} className="hover:bg-slate-50/55 duration-200">
-											<td className="py-3 pl-2 flex items-center gap-3">
-												<img src={prod.image} alt={prod.name} className="w-10 h-10 object-cover rounded-md border" />
-												<div>
-													<p className="font-semibold text-slate-800 line-clamp-1">{prod.name}</p>
-													<p className="text-xs text-slate-400">{prod.category}</p>
-												</div>
-											</td>
-											<td className="py-3 text-slate-600 font-medium">{prod.sales} qty</td>
-											<td className="py-3 font-bold text-[#F16A38]">{prod.revenue}</td>
-											<td className="py-3 pr-2">
-												<span className={`px-2 py-0.5 rounded text-xs font-semibold ${prod.stock < 20 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600'}`}>
-													{prod.stock} left
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* Top Categories */}
-				<Card className="shadow-sm">
-					<CardHeader>
-						<CardTitle className="text-lg font-bold text-slate-800">Top Categories</CardTitle>
-						<CardDescription>Sales distribution by department</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{topCategories.map((cat) => (
-							<div key={cat.name} className="space-y-1">
-								<div className="flex justify-between items-center text-sm">
-									<div>
-										<span className="font-semibold text-slate-700">{cat.name}</span>
-										<span className="text-xs text-slate-400 block">{cat.productsCount} products</span>
-									</div>
-									<span className="font-bold text-slate-800">{cat.salesVolume}</span>
-								</div>
-								<div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-									<div className="h-full bg-orange-400 rounded-full" style={{ width: `${cat.percentage}%` }} />
-								</div>
-							</div>
-						))}
 					</CardContent>
 				</Card>
 			</div>

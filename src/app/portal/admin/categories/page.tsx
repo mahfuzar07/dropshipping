@@ -1,224 +1,260 @@
 'use client';
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import {
-	Folder,
-	Plus,
-	Edit,
-	Trash2,
-	ChevronRight,
-	ChevronDown,
-	Check,
-	FolderPlus
-} from 'lucide-react';
 
-interface CategoryNode {
-	id: string;
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { Folder, Plus, Edit, Trash2, FolderPlus } from 'lucide-react';
+import DataTable, { DataTableColumnConfig } from '@/components/ui/custom/DataTable';
+import { SortingState } from '@tanstack/react-table';
+
+interface Category {
+	id: number;
+	category_id: string;
 	name: string;
-	slug: string;
-	isActive: boolean;
-	children: CategoryNode[];
+	icon: string;
+	subcategories?: any[];
 }
 
-const initialCategories: CategoryNode[] = [
-	{
-		id: 'cat-1',
-		name: 'Smart Electronics',
-		slug: 'smart-electronics',
-		isActive: true,
-		children: [
-			{ id: 'cat-1-1', name: 'Smartphones & Accessories', slug: 'smartphones-accessories', isActive: true, children: [] },
-			{ id: 'cat-1-2', name: 'Smart Wearables & Watch', slug: 'smart-wearables-watch', isActive: true, children: [] },
-			{ id: 'cat-1-3', name: 'Bluetooth Earphones', slug: 'bluetooth-earphones', isActive: true, children: [] }
-		]
-	},
-	{
-		id: 'cat-2',
-		name: 'Home & Living',
-		slug: 'home-living',
-		isActive: true,
-		children: [
-			{ id: 'cat-2-1', name: 'Kitchen & Tableware', slug: 'kitchen-tableware', isActive: true, children: [] },
-			{ id: 'cat-2-2', name: 'Bedroom Accessories', slug: 'bedroom-accessories', isActive: true, children: [] }
-		]
-	},
-	{
-		id: 'cat-3',
-		name: 'Fashion & Apparel',
-		slug: 'fashion-apparel',
-		isActive: true,
-		children: []
-	}
-];
-
 export default function AdminCategoriesPage() {
-	const [categories, setCategories] = useState<CategoryNode[]>(initialCategories);
-	const [expandedNodes, setExpandedNodes] = useState<string[]>(['cat-1', 'cat-2']);
+	const queryClient = useQueryClient();
+	const [pageIndex, setPageIndex] = useState(0);
+	const [pageSize, setPageSize] = useState(10);
+	const [globalSearch, setGlobalSearch] = useState('');
+	const [columnFilters, setColumnFilters] = useState<Record<string, any>>({});
+	const [sorting, setSorting] = useState<SortingState>([]);
 
-	// Modals State
+	// Modal controls
+	const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	const [isEdit, setIsEdit] = useState(false);
-	const [catName, setCatName] = useState('');
-	const [selectedNode, setSelectedNode] = useState<CategoryNode | null>(null);
 
-	const toggleNode = (nodeId: string) => {
-		setExpandedNodes(prev =>
-			prev.includes(nodeId) ? prev.filter(id => id !== nodeId) : [...prev, nodeId]
-		);
-	};
+	// Form values
+	const [name, setName] = useState('');
+	const [categoryId, setCategoryId] = useState('');
+	const [icon, setIcon] = useState('');
 
+	// Build URL Query Params for Server-Side Filtering/Pagination
+	const queryParams = useMemo(() => {
+		const params = new URLSearchParams();
+		params.set('view', 'admin');
+		params.set('page', String(pageIndex + 1));
+		params.set('limit', String(pageSize));
+
+		if (globalSearch) {
+			params.set('search', globalSearch);
+		}
+
+		Object.entries(columnFilters).forEach(([key, val]) => {
+			if (key === 'search') return;
+			if (val === 'ALL_VALS') return;
+			params.set(key, String(val));
+		});
+
+		if (sorting.length > 0) {
+			const sortStr = sorting.map(s => `${s.desc ? '-' : ''}${s.id}`).join(',');
+			params.set('ordering', sortStr);
+		}
+
+		return params.toString();
+	}, [pageIndex, pageSize, globalSearch, columnFilters, sorting]);
+
+	// Fetch categories from backend
+	const { data: categoriesResponse, isLoading, isError, refetch } = useAppData<any, 'single'>({
+		key: [QueriesKey.CATEGORIES, queryParams],
+		api: `/api/products/categories/?${queryParams}`,
+		auth: true,
+		responseType: 'single',
+		onError: () => {
+			toast.error('Failed to load categories');
+		}
+	});
+
+	const categories: Category[] = categoriesResponse?.data || categoriesResponse?.results || [];
+	const totalCount = categoriesResponse?.count || categories.length;
+
+	// Column Configuration
+	const columnsConfig: DataTableColumnConfig<Category>[] = [
+		{
+			key: 'id',
+			label: 'ID',
+			sortable: true
+		},
+		{
+			key: 'icon',
+			label: 'Icon',
+			render: (row) => (
+				<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#F16A38] text-lg font-bold border border-orange-100">
+					{row.icon || '📁'}
+				</div>
+			)
+		},
+		{
+			key: 'name',
+			label: 'Category Name',
+			sortable: true,
+			filterable: true,
+			render: (row) => <span className="font-semibold text-slate-800">{row.name}</span>
+		},
+		{
+			key: 'category_id',
+			label: 'Category Slug/ID',
+			sortable: true,
+			filterable: true,
+			render: (row) => <Badge variant="outline" className="text-xs">{row.category_id}</Badge>
+		},
+		{
+			key: 'subcategories',
+			label: 'Subcategories',
+			render: (row) => <span className="text-muted-foreground text-sm font-medium">{row.subcategories?.length || 0} sub-groups</span>
+		}
+	];
+
+	// Action Handlers
 	const handleAddCategory = () => {
 		setIsEdit(false);
-		setCatName('');
+		setName('');
+		setCategoryId('');
+		setIcon('📁');
 		setIsOpen(true);
 	};
 
-	const handleSaveCategory = (e: React.FormEvent) => {
+	const handleEditCategoryOpen = (cat: Category) => {
+		setSelectedCategory(cat);
+		setName(cat.name);
+		setCategoryId(cat.category_id);
+		setIcon(cat.icon || '📁');
+		setIsEdit(true);
+		setIsOpen(true);
+	};
+
+	const handleSaveCategory = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!catName.trim()) return;
+		if (!name.trim() || !categoryId.trim()) return;
 
-		if (isEdit && selectedNode) {
-			// Edit existing category
-			setCategories(prev =>
-				prev.map(c => {
-					if (c.id === selectedNode.id) return { ...c, name: catName, slug: catName.toLowerCase().replace(/\s+/g, '-') };
-					return {
-						...c,
-						children: c.children.map(child =>
-							child.id === selectedNode.id ? { ...child, name: catName, slug: catName.toLowerCase().replace(/\s+/g, '-') } : child
-						)
-					};
-				})
-			);
-			toast.success('Category updated successfully!');
-		} else {
-			// Add new root category
-			const newCat: CategoryNode = {
-				id: `cat-${Date.now()}`,
-				name: catName,
-				slug: catName.toLowerCase().replace(/\s+/g, '-'),
-				isActive: true,
-				children: []
+		try {
+			const payload = {
+				name,
+				category_id: categoryId.toLowerCase().replace(/\s+/g, '-'),
+				icon: icon || '📁'
 			};
-			setCategories([...categories, newCat]);
-			toast.success('Category added successfully!');
+
+			if (isEdit && selectedCategory) {
+				await axios.patch(`/api/products/categories/${selectedCategory.id}/`, payload);
+				toast.success('Category updated successfully');
+			} else {
+				await axios.post('/api/products/categories/', payload);
+				toast.success('New category registered');
+			}
+
+			setIsOpen(false);
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.CATEGORIES] });
+		} catch (e) {
+			toast.error('Failed to save category');
 		}
-		setIsOpen(false);
 	};
 
-	const handleDeleteCategory = (catId: string) => {
-		setCategories(prev =>
-			prev.filter(c => c.id !== catId).map(c => ({
-				...c,
-				children: c.children.filter(child => child.id !== catId)
-			}))
-		);
-		toast.success('Category successfully deleted!');
+	const handleDeleteCategory = async (cat: Category) => {
+		if (!confirm(`Are you sure you want to delete category "${cat.name}"?`)) return;
+		try {
+			await axios.delete(`/api/products/categories/${cat.id}/`);
+			toast.success('Category deleted successfully');
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.CATEGORIES] });
+		} catch (e) {
+			toast.error('Failed to delete category');
+		}
 	};
 
-	// Recursively render MPTT categories tree
-	const renderCategoryNode = (node: CategoryNode, depth = 0) => {
-		const hasChildren = node.children && node.children.length > 0;
-		const isExpanded = expandedNodes.includes(node.id);
-
-		return (
-			<div key={node.id} className="space-y-1.5 font-play">
-				<div
-					className="flex items-center justify-between p-3 bg-white hover:bg-slate-50 border rounded-xl duration-200 group"
-					style={{ marginLeft: `${depth * 24}px` }}
-				>
-					<div className="flex items-center gap-2">
-						{hasChildren ? (
-							<button onClick={() => toggleNode(node.id)} className="text-slate-400 hover:text-slate-600 focus:outline-none">
-								{isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-							</button>
-						) : (
-							<span className="w-4" />
-						)}
-						<Folder className="text-[#F16A38] shrink-0" size={18} />
-						<span className="font-semibold text-slate-800 text-sm">{node.name}</span>
-						<Badge variant="outline" className="text-[10px] text-slate-400 bg-slate-50 border border-slate-100">
-							/{node.slug}
-						</Badge>
-					</div>
-
-					<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 duration-200">
-						<Button
-							size="sm"
-							variant="ghost"
-							onClick={() => {
-								setSelectedNode(node);
-								setCatName(node.name);
-								setIsEdit(true);
-								setIsOpen(true);
-							}}
-							className="text-slate-600 hover:text-indigo-600"
-						>
-							<Edit size={14} />
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							onClick={() => handleDeleteCategory(node.id)}
-							className="text-slate-600 hover:text-rose-600"
-						>
-							<Trash2 size={14} />
-						</Button>
-					</div>
-				</div>
-
-				{hasChildren && isExpanded && (
-					<div className="space-y-1.5">
-						{node.children.map(child => renderCategoryNode(child, depth + 1))}
-					</div>
-				)}
-			</div>
-		);
+	const handleBulkDelete = async (selected: Category[]) => {
+		if (!confirm(`Delete ${selected.length} categories?`)) return;
+		try {
+			await Promise.all(
+				selected.map((c) => axios.delete(`/api/products/categories/${c.id}/`))
+			);
+			toast.success('Bulk deletion finished');
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.CATEGORIES] });
+		} catch (e) {
+			toast.error('Bulk deletion failed');
+		}
 	};
+
+	const bulkActionsConfig = [
+		{
+			label: 'Delete Selected',
+			onClick: handleBulkDelete,
+			variant: 'destructive' as const
+		}
+	];
 
 	return (
-		<div className="space-y-6 font-play max-w-4xl mx-auto">
-			{/* Top Bar actions */}
+		<div className="space-y-6 font-play">
+			{/* Header */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border shadow-sm">
 				<div>
-					<h2 className="text-xl font-bold text-slate-800">Categories (MPTT Tree)</h2>
-					<p className="text-xs text-slate-400">Configure nesting categories tree to manage storefront navigation schemas.</p>
+					<h2 className="text-xl font-bold text-slate-800">Categories Management</h2>
+					<p className="text-xs text-slate-400">Configure root and nested product groups for storefront navigation navigation schemas.</p>
 				</div>
-				<Button onClick={handleAddCategory} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
-					<FolderPlus size={16} /> Add Category
-				</Button>
 			</div>
 
-			{/* Tree List container */}
-			<Card className="shadow-sm">
-				<CardContent className="p-6 space-y-3 bg-slate-50/40">
-					{categories.map(node => renderCategoryNode(node))}
-				</CardContent>
-			</Card>
+			{/* Main Data Table */}
+			<DataTable<Category>
+				data={categories}
+				columnsConfig={columnsConfig}
+				isLoading={isLoading}
+				isError={isError}
+				totalCount={totalCount}
+				pageIndex={pageIndex}
+				pageSize={pageSize}
+				onPageChange={setPageIndex}
+				onPageSizeChange={setPageSize}
+				onSortingChange={setSorting}
+				onFiltersChange={(filters) => {
+					setColumnFilters(filters);
+					if (filters.search !== undefined) {
+						setGlobalSearch(filters.search);
+					}
+				}}
+				onRefresh={refetch}
+				onCreate={handleAddCategory}
+				onEdit={handleEditCategoryOpen}
+				onDelete={handleDeleteCategory}
+				bulkActions={bulkActionsConfig}
+				exportName="categories-report"
+			/>
 
 			{/* Add/Edit Modal */}
 			<Dialog open={isOpen} onOpenChange={setIsOpen}>
-				<DialogContent className="max-w-sm bg-white">
+				<DialogContent className="max-w-md bg-white">
 					<DialogHeader>
 						<DialogTitle className="text-base font-bold">
-							{isEdit ? 'Edit Category' : 'Create Root Category'}
+							{isEdit ? 'Edit Category Settings' : 'Create Category'}
 						</DialogTitle>
+						<DialogDescription>Setup root navigation categories.</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleSaveCategory} className="space-y-4">
 						<div>
 							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Category Name</label>
-							<Input required value={catName} onChange={e => setCatName(e.target.value)} placeholder="e.g. Smart Wearables" />
+							<Input required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Smart Watch" />
 						</div>
-						<DialogFooter className="pt-2">
+						<div>
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Slug / Unique ID</label>
+							<Input required value={categoryId} onChange={e => setCategoryId(e.target.value)} placeholder="e.g. smart-watch" />
+						</div>
+						<div>
+							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Icon Emoji</label>
+							<Input value={icon} onChange={e => setIcon(e.target.value)} placeholder="e.g. ⌚" />
+						</div>
+						<DialogFooter className="pt-4">
 							<Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1">
-								<Check size={14} /> Save Category
-							</Button>
+							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Save Category</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>

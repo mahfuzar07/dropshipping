@@ -32,8 +32,16 @@ export const apiEndpoint = {
 		remove: (id: string | number) => `/users/${id}`,
 		create: '/users',
 	},
+	coupons: {
+		COUPONS: () => `/api/order/coupons/`,
+		COUPON_DETAIL: (id: string | number) => `/api/order/coupons/${id}/`,
+	},
+	customers: {
+		LIST: () => `/api/user/users/`,
+		DETAIL: (id: string | number) => `/api/user/users/${id}/`,
+	},
 	orders: {
-		ORDERS: () => `/api/order/orders`,
+		ORDERS: () => `/api/order/orders/`,
 		ORDERS_CREATE: () => `/api/order/orders/`,
 		ORDERS_DETAILS: (id: string | number) => `/api/order/orders/${id}/`,
 		SHIPMENT_METHODS: () => `/api/order/shipment-method/`,

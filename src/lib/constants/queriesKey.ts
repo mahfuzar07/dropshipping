@@ -22,4 +22,7 @@ export const QueriesKey = {
 	SEARCH_PRODUCTS: 'search-products',
 	SEARCH_IMAGE_PRODUCTS: 'item-search-img',
 	SHIPMENT_TRACKING: 'shipment-tracking',
+	ADMIN_COUPONS: 'admin-coupons',
+	ADMIN_CUSTOMERS: 'admin-customers',
+	ADMIN_CATEGORIES: 'admin-categories',
 };
