@@ -6,10 +6,7 @@ import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-
-
 export default function ProductCard({ product }: { product: Product }) {
-
 	if (!product) return null;
 
 	console.log('Rendering ProductCard for:', product);
@@ -25,7 +22,6 @@ export default function ProductCard({ product }: { product: Product }) {
 			{/* Image Container - Fixed aspect ratio */}
 			<Link
 				href={`/product/${product.num_iid}`}
-				target="_blank"
 				rel="noopener noreferrer"
 				className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
 			>

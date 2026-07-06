@@ -85,6 +85,8 @@ export interface ProductDetails {
 const mapProductData = (response: ProductDetails) => {
 	const product = response.item;
 
+	console.log("product", product);
+
 	const galleryImages = product.item_imgs?.map((img) => img.url) ?? [product.pic_url];
 
 	const specifications: Record<string, string> = {};
@@ -199,12 +201,12 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 	const mainImage = selectedVariant?.image || product.image;
 
 	return (
-		<div className="px-2 py-3">
+		<div className="py-3">
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
 				{/* LEFT */}
-				<div className="col-span-9 grid grid-cols-1 md:grid-cols-12 gap-6">
+				<div className="md:col-span-9 col-span-1 grid grid-cols-1 md:grid-cols-12 gap-6">
 					{/* IMAGE */}
-					<div className="col-span-5">
+					<div className="md:col-span-5 col-span-12">
 						<ProductImageGallery
 							images={product.galleryImages}
 							productName={product.name}
@@ -218,7 +220,7 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 					</div>
 
 					{/* INFO */}
-					<div className="col-span-7">
+					<div className="md:col-span-7 col-span-12">
 						<ProductInfo
 							product={{
 								id: product.id,
@@ -237,6 +239,14 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 							updateColorQty={updateColorQty}
 						/>
 					</div>
+					<div className="md:hidden col-span-12">
+						<CartSection
+							product={{
+								...product,
+								selectedColorQty,
+							}}
+						/>
+					</div>
 
 					{/* TABS */}
 					<div className="col-span-12 bg-white rounded-lg p-5">
@@ -246,7 +256,7 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 				</div>
 
 				{/* RIGHT */}
-				<div className="col-span-3 sticky top-5 self-start">
+				<div className="md:col-span-3 col-span-1 sticky top-5 self-start hidden md::block">
 					<CartSection
 						product={{
 							...product,
