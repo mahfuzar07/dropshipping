@@ -17,7 +17,7 @@ export default function ProductCard({ product }: { product: Product }) {
 				hidden: { opacity: 0, y: 20 },
 				show: { opacity: 1, y: 0 },
 			}}
-			className="group cursor-pointer bg-white overflow-hidden rounded-xl h-full flex flex-col transition-all duration-300"
+			className="group cursor-pointer bg-white overflow-hidden rounded h-full flex flex-col transition-all duration-300"
 		>
 			{/* Image Container - Fixed aspect ratio */}
 			<Link
@@ -25,7 +25,7 @@ export default function ProductCard({ product }: { product: Product }) {
 				rel="noopener noreferrer"
 				className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
 			>
-				<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded-2xl">
+				<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded">
 					<Image
 						src={product?.pic_url || '/placeholder.png'}
 						alt={product?.title || 'Product'}
