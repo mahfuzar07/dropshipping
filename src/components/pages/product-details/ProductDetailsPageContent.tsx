@@ -11,6 +11,7 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
+import ProductDetailsSkeleton from '@/components/common/loader/ProductDetailsSkeleton';
 
 /* ================= TYPES ================= */
 
@@ -85,21 +86,26 @@ export interface ProductDetails {
 const mapProductData = (response: ProductDetails) => {
 	const product = response.item;
 
-	console.log("product", product);
+	console.log('product', product);
 
-	const galleryImages = product.item_imgs?.map((img) => img.url) ?? [product.pic_url];
+	const galleryImages = Array.isArray(product.item_imgs) ? product.item_imgs.map((img) => img?.url).filter((url): url is string => Boolean(url)) : [];
+
+	const image = product.pic_url || galleryImages[0] || '/images/product-placeholder.png';
 
 	const specifications: Record<string, string> = {};
-	product.props?.forEach((prop) => {
-		if (prop.name && prop.value) {
-			specifications[prop.name] = prop.value;
-		}
-	});
 
-	const variants: Variant[] =
-		product.skus?.sku?.map((sku) => ({
+	if (Array.isArray(product.props)) {
+		product.props.forEach((prop) => {
+			if (prop?.name && prop?.value) {
+				specifications[prop.name] = prop.value;
+			}
+		});
+	}
+
+const variants: Variant[] = Array.isArray(product.skus?.sku)
+	? product.skus.sku.map((sku) => ({
 			color_name: sku.properties_name,
-			image: product.pic_url,
+			image,
 			active: true,
 			skuId: sku.sku_id,
 			sizes: [
@@ -109,7 +115,8 @@ const mapProductData = (response: ProductDetails) => {
 					stock: String(sku.quantity),
 				},
 			],
-		})) ?? [];
+		}))
+	: [];
 
 	return {
 		id: String(product.num_iid),
@@ -194,7 +201,7 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 	};
 
 	if (isLoading || !product) {
-		return <LoadingSkeleton />;
+		return <ProductDetailsSkeleton />;
 	}
 
 	const selectedVariant = product.variants[selectedColorIndex];
@@ -256,7 +263,7 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 				</div>
 
 				{/* RIGHT */}
-				<div className="md:col-span-3 col-span-1 sticky top-5 self-start hidden md::block">
+				<div className="md:col-span-3 col-span-1 sticky top-5 self-start hidden md:block">
 					<CartSection
 						product={{
 							...product,
