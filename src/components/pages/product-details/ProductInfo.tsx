@@ -56,7 +56,7 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 
 	return (
 		<div className="space-y-5">
-			<h1 className="text-3xl lg:text-2xl font-semibold font-hanken">{product.name}</h1>
+			<h1 className="text-xl lg:text-2xl font-semibold font-hanken">{product.name}</h1>
 
 			{/* Rating */}
 			<div className="flex items-center justify-between">
