@@ -67,7 +67,7 @@ export default function AdminCustomerManagementPage() {
 		});
 
 		if (sorting.length > 0) {
-			const sortStr = sorting.map(s => `${s.desc ? '-' : ''}${s.id}`).join(',');
+			const sortStr = sorting.map((s) => `${s.desc ? '-' : ''}${s.id}`).join(',');
 			params.set('ordering', sortStr);
 		}
 
@@ -75,14 +75,19 @@ export default function AdminCustomerManagementPage() {
 	}, [pageIndex, pageSize, globalSearch, columnFilters, sorting]);
 
 	// Fetch customers/users list from backend
-	const { data: customersResponse, isLoading, isError, refetch } = useAppData<any, 'single'>({
+	const {
+		data: customersResponse,
+		isLoading,
+		isError,
+		refetch,
+	} = useAppData<any, 'single'>({
 		key: [QueriesKey.ADMIN_CUSTOMERS, queryParams],
-		api: `/api/user/users/?${queryParams}`,
+		api: `/api/user/customer/?${queryParams}`,
 		auth: true,
 		responseType: 'single',
 		onError: () => {
 			toast.error('Failed to load customers');
-		}
+		},
 	});
 
 	const customers: CustomerUser[] = customersResponse?.data || customersResponse?.results || [];
@@ -105,13 +110,17 @@ export default function AdminCustomerManagementPage() {
 						<p className="text-[11px] text-slate-400">ID: {row.id}</p>
 					</div>
 				</div>
-			)
+			),
 		},
 		{
 			key: 'first_name',
 			label: 'Full Name',
 			sortable: true,
-			render: (row) => <span className="font-semibold text-slate-800">{row.first_name} {row.last_name}</span>
+			render: (row) => (
+				<span className="font-semibold text-slate-800">
+					{row.first_name} {row.last_name}
+				</span>
+			),
 		},
 		{
 			key: 'email',
@@ -122,7 +131,7 @@ export default function AdminCustomerManagementPage() {
 				<span className="flex items-center gap-1 text-slate-600 text-xs">
 					<Mail size={13} className="text-slate-400" /> {row.email}
 				</span>
-			)
+			),
 		},
 		{
 			key: 'user_type',
@@ -132,9 +141,13 @@ export default function AdminCustomerManagementPage() {
 			filterOptions: [
 				{ label: 'Customer', value: 'Customer' },
 				{ label: 'Seller', value: 'Seller' },
-				{ label: 'Admin', value: 'Admin' }
+				{ label: 'Admin', value: 'Admin' },
 			],
-			render: (row) => <Badge variant="outline" className="capitalize text-xs">{row.user_type || 'Customer'}</Badge>
+			render: (row) => (
+				<Badge variant="outline" className="capitalize text-xs">
+					{row.user_type || 'Customer'}
+				</Badge>
+			),
 		},
 		{
 			key: 'is_verified',
@@ -143,7 +156,7 @@ export default function AdminCustomerManagementPage() {
 			filterType: 'select',
 			filterOptions: [
 				{ label: 'Verified', value: 'true' },
-				{ label: 'Unverified', value: 'false' }
+				{ label: 'Unverified', value: 'false' },
 			],
 			render: (row) => (
 				<button onClick={() => handleToggleVerification(row)} className="focus:outline-none cursor-pointer">
@@ -151,7 +164,7 @@ export default function AdminCustomerManagementPage() {
 						{row.is_verified ? 'Verified' : 'Pending'}
 					</Badge>
 				</button>
-			)
+			),
 		},
 		{
 			key: 'date_joined',
@@ -161,7 +174,7 @@ export default function AdminCustomerManagementPage() {
 				<span className="flex items-center gap-1 text-slate-500 text-xs">
 					<Calendar size={13} /> {new Date(row.date_joined).toLocaleDateString('en-US')}
 				</span>
-			)
+			),
 		},
 		{
 			key: 'is_active',
@@ -170,7 +183,7 @@ export default function AdminCustomerManagementPage() {
 			filterType: 'select',
 			filterOptions: [
 				{ label: 'Active', value: 'true' },
-				{ label: 'Blacklisted/Suspended', value: 'false' }
+				{ label: 'Blacklisted/Suspended', value: 'false' },
 			],
 			render: (row) => (
 				<button onClick={() => handleToggleActive(row)} className="focus:outline-none cursor-pointer">
@@ -178,8 +191,8 @@ export default function AdminCustomerManagementPage() {
 						{row.is_active ? 'Active' : 'Suspended'}
 					</Badge>
 				</button>
-			)
-		}
+			),
+		},
 	];
 
 	// Action Handlers
@@ -217,7 +230,7 @@ export default function AdminCustomerManagementPage() {
 				first_name: firstName,
 				last_name: lastName,
 				user_type: userType,
-				is_active: true
+				is_active: true,
 			};
 
 			if (password) {
@@ -273,9 +286,7 @@ export default function AdminCustomerManagementPage() {
 	const handleBulkDelete = async (selected: CustomerUser[]) => {
 		if (!confirm(`Delete ${selected.length} customer accounts?`)) return;
 		try {
-			await Promise.all(
-				selected.map((c) => axios.delete(`/api/user/users/${c.id}/`))
-			);
+			await Promise.all(selected.map((c) => axios.delete(`/api/user/users/${c.id}/`)));
 			toast.success('Bulk accounts deletion completed');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
@@ -287,8 +298,8 @@ export default function AdminCustomerManagementPage() {
 		{
 			label: 'Delete Accounts',
 			onClick: handleBulkDelete,
-			variant: 'destructive' as const
-		}
+			variant: 'destructive' as const,
+		},
 	];
 
 	return (
@@ -331,29 +342,27 @@ export default function AdminCustomerManagementPage() {
 			<Dialog open={isOpen} onOpenChange={setIsOpen}>
 				<DialogContent className="max-w-md bg-white">
 					<DialogHeader>
-						<DialogTitle className="text-base font-bold">
-							{isEdit ? 'Edit Customer Settings' : 'Register Customer Account'}
-						</DialogTitle>
+						<DialogTitle className="text-base font-bold">{isEdit ? 'Edit Customer Settings' : 'Register Customer Account'}</DialogTitle>
 						<DialogDescription>Setup logins and customer profiles.</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleSaveCustomer} className="space-y-4">
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">First Name</label>
-								<Input required value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="e.g. Jamil" />
+								<Input required value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="e.g. Jamil" />
 							</div>
 							<div>
 								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Last Name</label>
-								<Input required value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g. Hasan" />
+								<Input required value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="e.g. Hasan" />
 							</div>
 						</div>
 						<div>
 							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Username</label>
-							<Input required value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. jamil_hasan" />
+							<Input required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. jamil_hasan" />
 						</div>
 						<div>
 							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Email Address</label>
-							<Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. jamil@domain.com" />
+							<Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. jamil@domain.com" />
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div>
@@ -371,12 +380,22 @@ export default function AdminCustomerManagementPage() {
 							</div>
 							<div>
 								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Password</label>
-								<Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEdit ? 'Leave blank to keep same' : 'Required'} required={!isEdit} />
+								<Input
+									type="password"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									placeholder={isEdit ? 'Leave blank to keep same' : 'Required'}
+									required={!isEdit}
+								/>
 							</div>
 						</div>
 						<DialogFooter className="pt-4">
-							<Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Save Account</Button>
+							<Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+								Cancel
+							</Button>
+							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">
+								Save Account
+							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>
