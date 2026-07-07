@@ -17,6 +17,7 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import { Product, ProductResponse } from '../home-page/NewLaunch';
+import ProductPagination from '@/components/common/elements/Productpagination';
 
 export default function ProductsListPageContent() {
 	const router = useRouter();
@@ -36,7 +37,6 @@ export default function ProductsListPageContent() {
 		setSearchText,
 		setPriceRange,
 		toggleDiscount,
-		loadMoreProducts,
 		resetPagination,
 		clearAllFilters,
 		setPaginationData,
@@ -61,13 +61,6 @@ export default function ProductsListPageContent() {
 		if (sort) setSortBy(sort);
 	}, []);
 
-	/* ================================================================
-	   1a. SYNC "search" FROM URL — reactive (not mount-only)
-	   CategoryMenu navigates client-side to /product-list?search=X
-	   while this page instance may already be mounted (same route,
-	   just a query change), so a mount-only effect misses it and the
-	   stale searchText from the store stays put.
-	   ================================================================ */
 	useEffect(() => {
 		const qFromURL = searchParams.get('search') || '';
 		if (qFromURL !== searchText) {
@@ -110,13 +103,7 @@ export default function ProductsListPageContent() {
 	}, [debouncedSearch, discountOnly, priceRange, sortBy, updateURL]);
 
 	/* ================================================================
-	   4. ACCUMULATED PRODUCTS
-	   ================================================================ */
-	const [accumulatedProducts, setAccumulatedProducts] = useState<Product[]>([]);
-	const lastRenderedPageRef = useRef<number>(0);
-
-	/* ================================================================
-	   5. FILTER CHANGE → RESET
+	   4. FILTER CHANGE → RESET TO PAGE 1
 	   ================================================================ */
 	const prevFiltersRef = useRef({
 		debouncedSearch,
@@ -137,8 +124,6 @@ export default function ProductsListPageContent() {
 			JSON.stringify(prev.selectedRatings) !== JSON.stringify(selectedRatings);
 
 		if (changed) {
-			setAccumulatedProducts([]);
-			lastRenderedPageRef.current = 0;
 			resetPagination();
 			prevFiltersRef.current = {
 				debouncedSearch,
@@ -151,7 +136,7 @@ export default function ProductsListPageContent() {
 	}, [debouncedSearch, discountOnly, priceRange, selectedRatings, sortBy]);
 
 	/* ================================================================
-	   6. API PARAMS
+	   5. API PARAMS
 	   ================================================================ */
 	const filterParams = useMemo(
 		() => ({
@@ -167,7 +152,7 @@ export default function ProductsListPageContent() {
 	);
 
 	/* ================================================================
-	   7. FETCH
+	   6. FETCH
 	   ================================================================ */
 	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
 		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
@@ -185,23 +170,12 @@ export default function ProductsListPageContent() {
 	});
 
 	/* ================================================================
-	   8. ACCUMULATE pages
+	   7. SYNC PAGINATION META FROM RESPONSE (current page only, no accumulation)
 	   ================================================================ */
 	useEffect(() => {
-		const items: Product[] = data?.items?.item ?? [];
 		const currentPage = filterParams.page;
 		const totalPages = data?.items?.page_count ?? 1;
-		const total = data?.items?.total_results ?? items.length;
-
-		if (!items.length) return;
-		if (currentPage === lastRenderedPageRef.current) return;
-		lastRenderedPageRef.current = currentPage;
-
-		setAccumulatedProducts((prev) => {
-			if (currentPage === 1) return items;
-			const seen = new Set(prev.map((p) => p.num_iid));
-			return [...prev, ...items.filter((p) => !seen.has(p.num_iid))];
-		});
+		const total = data?.items?.total_results ?? 0;
 
 		setPaginationData({
 			count: total,
@@ -210,19 +184,16 @@ export default function ProductsListPageContent() {
 			total_pages: totalPages,
 			hasMore: currentPage < totalPages,
 		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [data]);
 
 	/* ================================================================
-	   9. LOADING STATES
+	   8. CLIENT-SIDE RATING FILTER + SORT (applied on the current page only)
 	   ================================================================ */
-	const isInitialLoading = isLoading && accumulatedProducts.length === 0;
-	const isLoadingMore = isLoading && accumulatedProducts.length > 0;
+	const products: Product[] = data?.items?.item ?? [];
 
-	/* ================================================================
-	   10. CLIENT-SIDE RATING FILTER + SORT
-	   ================================================================ */
 	const filteredProducts = useMemo(() => {
-		let list = [...accumulatedProducts];
+		let list = [...products];
 
 		if (selectedRatings.length) {
 			list = list.filter((p) => selectedRatings.includes(Number((p as any).rating || 0)));
@@ -232,45 +203,34 @@ export default function ProductsListPageContent() {
 		if (sortBy === 'price-high') list.sort((a, b) => b.promotion_price - a.promotion_price);
 
 		return list;
-	}, [accumulatedProducts, selectedRatings, sortBy]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [data, selectedRatings, sortBy]);
 
 	/* ================================================================
-	   11. INFINITE SCROLL
+	   9. PAGE CHANGE HANDLER
 	   ================================================================ */
-	const isFetchingRef = useRef(isLoading);
-	const hasMoreRef = useRef(pagination.hasMore);
+	const handlePageChange = (page: number) => {
+		const totalPages = pagination.total_pages ?? 1;
+		if (page < 1 || page > totalPages || page === pagination.page_number) return;
 
-	useEffect(() => {
-		isFetchingRef.current = isLoading;
-	}, [isLoading]);
-	useEffect(() => {
-		hasMoreRef.current = pagination.hasMore;
-	}, [pagination.hasMore]);
+		setPaginationData({
+			count: pagination.count ?? 0,
+			page_number: page,
+			page_size: pagination.page_size ?? 20,
+			total_pages: totalPages,
+			hasMore: page < totalPages,
+		});
 
-	const loadMoreRef = useCallback(
-		(node: HTMLDivElement | null) => {
-			if (!node) return;
-			const observer = new IntersectionObserver(
-				([entry]) => {
-					if (entry.isIntersecting && hasMoreRef.current && !isFetchingRef.current) {
-						loadMoreProducts();
-					}
-				},
-				{ threshold: 0.1 },
-			);
-			observer.observe(node);
-			return () => observer.disconnect();
-		},
-		[loadMoreProducts],
-	);
+		if (typeof window !== 'undefined') {
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+	};
 
 	/* ================================================================
-	   12. CLEAR ALL
+	   10. CLEAR ALL
 	   ================================================================ */
 	const handleClearAll = () => {
 		clearAllFilters();
-		setAccumulatedProducts([]);
-		lastRenderedPageRef.current = 0;
 		router.replace(pathname, { scroll: false });
 	};
 
@@ -290,8 +250,7 @@ export default function ProductsListPageContent() {
 					{/* Toolbar */}
 					<div className="flex md:flex-row flex-col-reverse gap-2   md:items-center justify-between mb-6">
 						<span className="text-sm text-gray-600">
-							<strong>{filteredProducts.length}</strong> Products Found
-							{pagination.hasMore && !isLoading && <span className="text-sm font-normal text-muted-foreground"> +more</span>}
+							<strong>{pagination.count ?? filteredProducts.length}</strong> Products Found
 						</span>
 
 						<div className="flex justify-between gap-3">
@@ -317,8 +276,8 @@ export default function ProductsListPageContent() {
 						</div>
 					</div>
 
-					{/* Initial skeleton */}
-					{isInitialLoading ? (
+					{/* Skeleton while loading */}
+					{isLoading ? (
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<ProductCardSkeleton key={i} />
@@ -339,22 +298,8 @@ export default function ProductsListPageContent() {
 								))}
 							</div>
 
-							{/* Infinite scroll sentinel */}
-							<div ref={loadMoreRef} className="mt-6 min-h-[80px]">
-								{isLoadingMore ? (
-									<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-										{Array.from({ length: 4 }).map((_, i) => (
-											<ProductCardSkeleton key={`more-${i}`} />
-										))}
-									</div>
-								) : pagination.hasMore ? (
-									<p className="py-8 text-center text-sm text-muted-foreground">scroll for more products</p>
-								) : (
-									<p className="py-8 text-center text-sm text-muted-foreground">
-										all <strong>{filteredProducts.length}</strong> products shown
-									</p>
-								)}
-							</div>
+							{/* Pagination */}
+							<ProductPagination currentPage={pagination.page_number ?? 1} totalPages={pagination.total_pages ?? 1} onPageChange={handlePageChange} />
 						</>
 					) : (
 						<div className="text-center py-20">

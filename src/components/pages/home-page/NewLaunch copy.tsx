@@ -1,11 +1,10 @@
 'use client';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
-import ProductPagination from '@/components/common/elements/Productpagination';
 import { useAppData } from '@/hooks/use-appdata';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export type ProductResponse = {
@@ -73,30 +72,68 @@ export default function NewLaunch() {
 	});
 
 	/* ================================================================
-	   CURRENT PAGE PRODUCTS + PAGINATION META (no accumulation)
+	   ACCUMULATED PRODUCTS + PAGINATION STATE
 	   ================================================================ */
-	const products: Product[] = data?.items?.item ?? [];
-	const currentPage = filter.page;
-	const totalPages = data?.items?.page_count ?? 1;
+	const [accumulatedProducts, setAccumulatedProducts] = useState<Product[]>([]);
+	const [hasMore, setHasMore] = useState(true);
+	const lastRenderedPageRef = useRef<number>(0);
 
-	const handlePageChange = (page: number) => {
-		if (page < 1 || page > totalPages || page === filter.page) return;
+	useEffect(() => {
+		const items: Product[] = data?.items?.item ?? [];
+		const currentPage = filterParams.page;
+		const totalPages = data?.items?.page_count ?? 1;
 
-		setFilter((prev) => ({ ...prev, page }));
+		if (!items.length) return;
+		if (currentPage === lastRenderedPageRef.current) return;
+		lastRenderedPageRef.current = currentPage;
 
-		if (typeof window !== 'undefined') {
-			window.scrollTo({ top: 0, behavior: 'smooth' });
-		}
-	};
+		setAccumulatedProducts((prev) => {
+			if (currentPage === 1) return items;
+			const seen = new Set(prev.map((p) => p.num_iid));
+			return [...prev, ...items.filter((p) => !seen.has(p.num_iid))];
+		});
+
+		setHasMore(currentPage < totalPages);
+	}, [data]);
+
+	/* ================================================================
+	   INFINITE SCROLL
+	   ================================================================ */
+	const isFetchingRef = useRef(isLoading);
+	const hasMoreRef = useRef(hasMore);
+
+	useEffect(() => {
+		isFetchingRef.current = isLoading;
+	}, [isLoading]);
+	useEffect(() => {
+		hasMoreRef.current = hasMore;
+	}, [hasMore]);
+
+	const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+		if (!node) return;
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting && hasMoreRef.current && !isFetchingRef.current) {
+					setFilter((prev) => ({ ...prev, page: prev.page + 1 }));
+				}
+			},
+			{ threshold: 0.1 },
+		);
+		observer.observe(node);
+		return () => observer.disconnect();
+	}, []);
+
+	const isInitialLoading = isLoading && accumulatedProducts.length === 0;
+	const isLoadingMore = isLoading && accumulatedProducts.length > 0;
 
 	return (
-		<div className="py-8">
+		<div className="bg-gray-100 py-8">
 			<div className="container mx-auto px-4">
 				{/* Title */}
 				<h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-tight">NEW LAUNCHES</h2>
 
-				{/* Skeleton while loading */}
-				{isLoading ? (
+				{/* Initial skeleton */}
+				{isInitialLoading ? (
 					<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 						{Array.from({ length: 10 }).map((_, i) => (
 							<ProductCardSkeleton key={i} />
@@ -106,13 +143,21 @@ export default function NewLaunch() {
 					<>
 						{/* Product Grid */}
 						<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-							{products.map((product) => (
+							{accumulatedProducts.map((product) => (
 								<ProductCard product={product} key={product.num_iid} />
 							))}
 						</div>
 
-						{/* Pagination */}
-						<ProductPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+						{/* Infinite scroll sentinel */}
+						<div ref={loadMoreRef} className="mt-6 min-h-[80px]">
+							{isLoadingMore && (
+								<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+									{Array.from({ length: 5 }).map((_, i) => (
+										<ProductCardSkeleton key={`more-${i}`} />
+									))}
+								</div>
+							)}
+						</div>
 					</>
 				)}
 			</div>
