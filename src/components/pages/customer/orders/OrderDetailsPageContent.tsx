@@ -261,11 +261,14 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, MapPin, CreditCard, Calendar, Truck } from 'lucide-react';
+import { ShoppingBag, MapPin, CreditCard, Calendar, Truck, Printer } from 'lucide-react';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import axios from 'axios';
+import { authApi } from '@/lib/axiosInstance';
 
 interface VariantItem {
 	variant: {
@@ -363,7 +366,7 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 					product_id: item.product_id,
 					product_name: item.product_name,
 					product_image: item.product_image || '',
-				}))
+				})),
 			);
 		}
 		// Fallback for backward compatibility
@@ -389,6 +392,36 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 			return sum + qty * price;
 		}, 0);
 	}, [allVariants]);
+
+	const handlePrintLabel = async (orderId: string | number) => {
+		const toastId = toast.loading('Generating shipping label PDF from backend...');
+		try {
+			const response = await authApi.get(`/api/order/orders/${orderId}/print-label/`, {
+				responseType: 'blob',
+			});
+			const blob = new Blob([response.data], { type: 'application/pdf' });
+			const url = window.URL.createObjectURL(blob);
+			window.open(url, '_blank');
+			toast.success('Label generated successfully!', { id: toastId });
+		} catch (err) {
+			toast.error('Failed to generate shipping label PDF', { id: toastId });
+		}
+	};
+
+	const handlePrintInvoice = async (orderId: string | number) => {
+		const toastId = toast.loading('Generating invoice PDF from backend...');
+		try {
+			const response = await authApi.get(`/api/order/orders/${orderId}/print-invoice/`, {
+				responseType: 'blob',
+			});
+			const blob = new Blob([response.data], { type: 'application/pdf' });
+			const url = window.URL.createObjectURL(blob);
+			window.open(url, '_blank');
+			toast.success('Invoice generated successfully!', { id: toastId });
+		} catch (err) {
+			toast.error('Failed to generate invoice PDF', { id: toastId });
+		}
+	};
 
 	if (isLoading || !order) {
 		return (
@@ -431,9 +464,19 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 						</div>
 					</div>
 
-					<div className={`px-6 py-2.5 rounded-full text-sm font-medium border flex items-center gap-2 ${statusClass}`}>
-						<div className={`w-3 h-3 rounded-full ${iconColor.replace('text-', 'bg-')}`} />
-						{statusText}
+					<div className="flex items-center gap-3">
+						<Button onClick={() => handlePrintLabel(order.id)} className="bg-slate-900 text-white hover:bg-slate-800 font-semibold gap-1.5">
+							<Printer className="w-4 h-4" /> Print Label
+						</Button>
+
+						<Button onClick={() => handlePrintInvoice(order.id)} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+							<Printer className="w-4 h-4" /> Print Invoice
+						</Button>
+
+						<div className={`px-6 py-2.5 rounded-full text-sm font-medium border flex items-center gap-2 ${statusClass}`}>
+							<div className={`w-3 h-3 rounded-full ${iconColor.replace('text-', 'bg-')}`} />
+							{statusText}
+						</div>
 					</div>
 				</div>
 			</motion.div>

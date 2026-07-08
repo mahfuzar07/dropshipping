@@ -1,12 +1,14 @@
 'use client';
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import {
-	BarChart3,
 	TrendingUp,
 	Users,
 	Truck,
@@ -27,48 +29,67 @@ import {
 	CartesianGrid
 } from 'recharts';
 
-const reportsData = {
-	sales: [
-		{ date: '2026-06-18', revenue: 45000, margin: 15400, orders: 32 },
-		{ date: '2026-06-19', revenue: 52000, margin: 18200, orders: 38 },
-		{ date: '2026-06-20', revenue: 61000, margin: 21300, orders: 45 },
-		{ date: '2026-06-21', revenue: 48000, margin: 16800, orders: 35 },
-		{ date: '2026-06-22', revenue: 75000, margin: 26200, orders: 52 },
-		{ date: '2026-06-23', revenue: 89000, margin: 31100, orders: 61 },
-		{ date: '2026-06-24', revenue: 95000, margin: 33200, orders: 68 }
-	],
-	customers: [
-		{ date: '2026-06-18', newUsers: 14, activeUsers: 450 },
-		{ date: '2026-06-19', newUsers: 22, activeUsers: 512 },
-		{ date: '2026-06-20', newUsers: 19, activeUsers: 490 },
-		{ date: '2026-06-21', newUsers: 31, activeUsers: 642 },
-		{ date: '2026-06-22', newUsers: 42, activeUsers: 780 },
-		{ date: '2026-06-23', newUsers: 50, activeUsers: 890 },
-		{ date: '2026-06-24', newUsers: 58, activeUsers: 950 }
-	],
-	shipping: [
-		{ carrier: 'SkyShip BD', delivered: 142, delayed: 3, cost: 8520 },
-		{ carrier: 'Pathao Courier', delivered: 280, delayed: 14, cost: 16800 },
-		{ carrier: 'RedX Delivery', delivered: 195, delayed: 11, cost: 11700 }
-	],
-	refunds: [
-		{ category: 'Defective Product', count: 12, amount: 14400 },
-		{ category: 'Sizing Mistake', count: 8, amount: 6400 },
-		{ category: 'Delayed Sourcing', count: 5, amount: 4500 }
-	]
-};
-
 export default function AnalyticsPage() {
 	const [reportType, setReportType] = useState<'sales' | 'customers' | 'shipping' | 'refunds'>('sales');
 	const [timeRange, setTimeRange] = useState('7d');
 
+	// Fetch dynamic aggregated statistics from backend
+	const { data: analyticsResponse, isLoading, isError } = useAppData<any, 'single'>({
+		key: [QueriesKey.ADMIN_ANALYTICS, timeRange],
+		api: apiEndpoint.orders.ANALYTICS(),
+		auth: true,
+		responseType: 'single',
+		onError: () => {
+			toast.error('Failed to load real-time analytics data');
+		}
+	});
+
+	const reportsData = useMemo(() => {
+		return {
+			sales: analyticsResponse?.sales || [],
+			customers: analyticsResponse?.customers || [],
+			shipping: analyticsResponse?.shipping || [],
+			refunds: analyticsResponse?.refunds || []
+		};
+	}, [analyticsResponse]);
+
 	const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
 		toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
 			loading: `Formatting and compiling ${reportType} report...`,
-			success: `${reportType.toUpperCase()}_Report_June2026.${format} successfully downloaded!`,
+			success: `${reportType.toUpperCase()}_Report_${new Date().getFullYear()}.${format} successfully downloaded!`,
 			error: 'Export failed'
 		});
 	};
+
+	const formattedDate = useMemo(() => {
+		return new Date().toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+	}, []);
+
+	if (isLoading) {
+		return (
+			<div className="min-h-[60vh] flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full mx-auto mb-4" />
+					<p className="text-muted-foreground">Aggregating database statistics...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="min-h-[60vh] flex items-center justify-center text-center">
+				<div>
+					<p className="text-rose-500 font-semibold mb-2">Error compiling data</p>
+					<p className="text-xs text-muted-foreground">Please check server status or authorization parameters.</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-6 font-play max-w-5xl mx-auto">
@@ -84,10 +105,8 @@ export default function AnalyticsPage() {
 							<SelectValue placeholder="Select Range" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="24h">Today</SelectItem>
 							<SelectItem value="7d">Last 7 Days</SelectItem>
 							<SelectItem value="30d">Last 30 Days</SelectItem>
-							<SelectItem value="ytd">Year to date</SelectItem>
 						</SelectContent>
 					</Select>
 
@@ -133,7 +152,7 @@ export default function AnalyticsPage() {
 									<CartesianGrid strokeDasharray="3 3" vertical={false} />
 									<XAxis dataKey="date" stroke="#94A3B8" fontSize={10} />
 									<YAxis stroke="#94A3B8" fontSize={10} />
-									<Tooltip formatter={(value) => `৳${value}`} />
+									<Tooltip formatter={(value) => `৳${Number(value).toLocaleString()}`} />
 									<Area type="monotone" dataKey="revenue" stroke="#F16A38" fill="rgba(241, 106, 56, 0.1)" strokeWidth={2.5} />
 									<Area type="monotone" dataKey="margin" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.05)" strokeWidth={2} />
 								</AreaChart>
@@ -201,30 +220,19 @@ export default function AnalyticsPage() {
 			{reportType === 'shipping' && (
 				<Card className="shadow-sm">
 					<CardHeader>
-						<CardTitle className="text-base font-bold text-slate-800">3PL Courier Service Performance</CardTitle>
-						<CardDescription>On-time performance and total freight invoice rates</CardDescription>
+						<CardTitle className="text-base font-bold text-slate-800">Carrier Volume Comparison</CardTitle>
 					</CardHeader>
-					<CardContent className="p-0">
-						<table className="w-full text-left text-sm">
-							<thead>
-								<tr className="border-b bg-slate-50 text-slate-400 font-bold text-xs uppercase">
-									<th className="py-3 px-4">Courier Name</th>
-									<th className="py-3 px-4">Delivered Parcles</th>
-									<th className="py-3 px-4">Delayed Deliveries</th>
-									<th className="py-3 px-4">Total Freight Invoice</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y text-slate-700">
-								{reportsData.shipping.map((shp) => (
-									<tr key={shp.carrier} className="hover:bg-slate-50/50">
-										<td className="py-4 px-4 font-bold text-slate-850">{shp.carrier}</td>
-										<td className="py-4 px-4 font-semibold">{shp.delivered} parcels</td>
-										<td className="py-4 px-4 font-semibold text-rose-500">{shp.delayed} delays</td>
-										<td className="py-4 px-4 font-extrabold text-indigo-600">৳{shp.cost.toLocaleString()}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+					<CardContent className="h-80">
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart data={reportsData.shipping} margin={{ top: 15, right: 15, left: -15, bottom: 0 }}>
+								<CartesianGrid strokeDasharray="3 3" vertical={false} />
+								<XAxis dataKey="carrier" stroke="#94A3B8" fontSize={10} />
+								<YAxis stroke="#94A3B8" fontSize={10} />
+								<Tooltip formatter={(value, name) => [name === 'cost' ? `৳${Number(value).toLocaleString()}` : value, name]} />
+								<Bar dataKey="delivered" name="Delivered Parcles" fill="#10B981" radius={[4, 4, 0, 0]} />
+								<Bar dataKey="delayed" name="Delayed Parcles" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+							</BarChart>
+						</ResponsiveContainer>
 					</CardContent>
 				</Card>
 			)}
@@ -232,28 +240,19 @@ export default function AnalyticsPage() {
 			{reportType === 'refunds' && (
 				<Card className="shadow-sm">
 					<CardHeader>
-						<CardTitle className="text-base font-bold text-slate-800">Returns & RMA Disputes Causes</CardTitle>
-						<CardDescription>Major categorizations for refund claims</CardDescription>
+						<CardTitle className="text-base font-bold text-slate-800">Cancellations & Return Losses</CardTitle>
 					</CardHeader>
-					<CardContent className="p-0">
-						<table className="w-full text-left text-sm">
-							<thead>
-								<tr className="border-b bg-slate-50 text-slate-400 font-bold text-xs uppercase">
-									<th className="py-3 px-4">Claim Category</th>
-									<th className="py-3 px-4">Claims Count</th>
-									<th className="py-3 px-4">Refund Amount Paid</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y text-slate-700">
-								{reportsData.refunds.map((ref) => (
-									<tr key={ref.category} className="hover:bg-slate-50/50">
-										<td className="py-4 px-4 font-bold text-slate-800">{ref.category}</td>
-										<td className="py-4 px-4 font-semibold">{ref.count} claims</td>
-										<td className="py-4 px-4 font-extrabold text-rose-600">৳{ref.amount.toLocaleString()}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+					<CardContent className="h-80">
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart data={reportsData.refunds} margin={{ top: 15, right: 15, left: -15, bottom: 0 }}>
+								<CartesianGrid strokeDasharray="3 3" vertical={false} />
+								<XAxis dataKey="category" stroke="#94A3B8" fontSize={10} />
+								<YAxis stroke="#94A3B8" fontSize={10} />
+								<Tooltip formatter={(value, name) => [name === 'amount' ? `৳${Number(value).toLocaleString()}` : value, name]} />
+								<Bar dataKey="count" name="Case Count" fill="#EF4444" radius={[4, 4, 0, 0]} />
+								<Bar dataKey="amount" name="Financial Impact" fill="#F43F5E" radius={[4, 4, 0, 0]} />
+							</BarChart>
+						</ResponsiveContainer>
 					</CardContent>
 				</Card>
 			)}

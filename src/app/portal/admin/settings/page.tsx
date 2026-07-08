@@ -1,25 +1,29 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import {
 	Store,
 	Coins,
 	CreditCard,
 	Mail,
-	MessageSquare,
 	ShieldCheck,
 	Download,
 	Upload,
 	Check,
-	Lock
 } from 'lucide-react';
 
 export default function AdminSettingsPage() {
+	const queryClient = useQueryClient();
 	const [activeSection, setActiveSection] = useState<'store' | 'currency' | 'gateways' | 'comms' | 'backup'>('store');
 
 	// Store info states
@@ -36,14 +40,73 @@ export default function AdminSettingsPage() {
 	const [bkashSecret, setBkashSecret] = useState('••••••••••••••••••••••••••••••••');
 	const [nagadMerchantId, setNagadMerchantId] = useState('nagad_m_90192');
 
+	// Fetch Exchange Rates from backend
+	const { data: ratesDataResponse } = useAppData<any, 'single'>({
+		key: [QueriesKey.ADMIN_EXCHANGE_RATES],
+		api: apiEndpoint.settings.EXCHANGE_RATES(),
+		auth: true,
+		responseType: 'single',
+	});
+
+	const rates = useMemo(() => {
+		return ratesDataResponse?.results || ratesDataResponse?.data || [];
+	}, [ratesDataResponse]);
+
+	const cnyRecord = useMemo(() => rates.find((r: any) => r.code === 'CNY'), [rates]);
+	const usdRecord = useMemo(() => rates.find((r: any) => r.code === 'USD'), [rates]);
+
+	useEffect(() => {
+		if (cnyRecord) {
+			setCnyRate(Number(cnyRecord.rate).toFixed(2));
+		}
+		if (usdRecord) {
+			setUsdRate(Number(usdRecord.rate).toFixed(2));
+		}
+	}, [cnyRecord, usdRecord]);
+
 	const handleSaveStore = (e: React.FormEvent) => {
 		e.preventDefault();
 		toast.success('Store profile and tax rules updated successfully!');
 	};
 
-	const handleSaveCurrency = (e: React.FormEvent) => {
+	const handleSaveCurrency = async (e: React.FormEvent) => {
 		e.preventDefault();
-		toast.success('RMB/USD local exchange tariffs synced successfully!');
+		try {
+			// Save CNY
+			if (cnyRecord) {
+				await axios.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(cnyRecord.id), {
+					rate: parseFloat(cnyRate)
+				});
+			} else {
+				await axios.post(apiEndpoint.settings.EXCHANGE_RATES(), {
+					code: 'CNY',
+					name: 'Chinese Yuan',
+					symbol: '¥',
+					rate: parseFloat(cnyRate),
+					is_active: true
+				});
+			}
+
+			// Save USD
+			if (usdRecord) {
+				await axios.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(usdRecord.id), {
+					rate: parseFloat(usdRate)
+				});
+			} else {
+				await axios.post(apiEndpoint.settings.EXCHANGE_RATES(), {
+					code: 'USD',
+					name: 'US Dollar',
+					symbol: '$',
+					rate: parseFloat(usdRate),
+					is_active: true
+				});
+			}
+
+			toast.success('RMB/USD local exchange tariffs synced successfully!');
+			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_EXCHANGE_RATES] });
+		} catch (err) {
+			toast.error('Failed to update exchange rates');
+		}
 	};
 
 	const handleSaveGateways = (e: React.FormEvent) => {
@@ -54,7 +117,7 @@ export default function AdminSettingsPage() {
 	const handleBackup = () => {
 		toast.promise(new Promise((resolve) => setTimeout(resolve, 2000)), {
 			loading: 'Compiling database snapshots & media resources...',
-			success: 'Backup dropshipping_backup_20260624.sql created and downloaded!',
+			success: 'Backup dropshipping_backup_20260707.sql created and downloaded!',
 			error: 'Backup failed'
 		});
 	};

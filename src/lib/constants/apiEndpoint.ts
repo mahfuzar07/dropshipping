@@ -15,6 +15,8 @@ export const apiEndpoint = {
 	},
 	settings: {
 		siteSettings: '/settings/site-settings',
+		EXCHANGE_RATES: () => `/api/products/exchange-rates/`,
+		EXCHANGE_RATES_DETAIL: (id: string | number) => `/api/products/exchange-rates/${id}/`,
 	},
 	users: {
 		SIGN_UP: () => `/api/user/signup/`,
@@ -46,6 +48,7 @@ export const apiEndpoint = {
 		ORDERS_DETAILS: (id: string | number) => `/api/order/orders/${id}/`,
 		SHIPMENT_METHODS: () => `/api/order/shipment-method/`,
 		SHIPMENT_TRACKING: () => `/api/order/shipments/track/`,
+		ANALYTICS: () => `/api/order/orders/analytics/`,
 	},
 	categories: {
 		category: '/api/products/categories',

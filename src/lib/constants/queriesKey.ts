@@ -25,4 +25,6 @@ export const QueriesKey = {
 	ADMIN_COUPONS: 'admin-coupons',
 	ADMIN_CUSTOMERS: 'admin-customers',
 	ADMIN_CATEGORIES: 'admin-categories',
+	ADMIN_EXCHANGE_RATES: 'admin-exchange-rates',
+	ADMIN_ANALYTICS: 'admin-analytics',
 };
