@@ -16,8 +16,8 @@ import WordlWideStore from './WordlWideStore';
 export default function LandingPage() {
 	return (
 		<div className="min-h-screen">
-			<HeroSection />
 			<FeatureHighlights />
+			<HeroSection />
 			<ShopByCategory/>
 			{/* <TopSelling />
 			<GiftIdeas />

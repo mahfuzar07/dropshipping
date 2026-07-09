@@ -51,60 +51,29 @@ export default function ShopByCategory() {
 	};
 
 	return (
-		<section className="md:py-10 py-5 bg-white">
-			<div className="container mx-auto md:px-3 px-3">
-				<div className="flex items-center justify-between mb-2 md:mb-5">
-					<TypoTitle title="Shop By Category" className=" uppercase" align="left" />
-					<div className="flex items-center gap-2 text-primary shrink-0">
-						<Link href="" className="flex items-center gap-1 text-sm md:text-base font-medium">
-							View All <span className="hidden md:block">Categories</span>
-						</Link>
-						<ArrowRight size={18} />
-					</div>
-				</div>
-				<div className="py-2">
-					<Swiper
-						modules={[Autoplay, Navigation]}
-						spaceBetween={0}
-						slidesPerView={3}
-						loop={true}
-						// centeredSlidesBounds={true}
-						breakpoints={{
-							640: { slidesPerView: 3 },
-							768: { slidesPerView: 3 },
-							1024: { slidesPerView: 8 },
-						}}
-						autoplay={{
-							delay: 3000,
-							disableOnInteraction: false,
-						}}
-					>
-						{parentCategories.map((category) => (
-							<SwiperSlide key={category.id}>
-								<Link href={`/product-list?search=${category.name}`} onClick={() => handleClick(category)}>
-									<div className="group cursor-pointer rounded-lg py-5 text-center transition-all duration-300">
-										<div className="flex flex-col items-center space-y-5">
-											<div className="md:w-30 w-22 aspect-square rounded-full flex items-center justify-center bg-store-secondary-muted">
-												{isImageUrl(category.icon) ? (
-													<div className="relative md:h-22 md:w-22 h-14 w-14">
-														<Image src={category.icon} fill alt={category.name} className="object-contain" />
-													</div>
-												) : (
-													<div className="flex h-full w-full items-center justify-center text-[42px] md:text-[64px] leading-none">
-														{category.icon}
-													</div>
-												)}
-											</div>
-
-											<h3 className="md:text-base text-sm font-medium text-foreground line-clamp-1 group-hover:text-twinkle-accent">
-												{category.name}
-											</h3>
-										</div>
+		<section className="md:py-10 py-3 bg-white">
+			<div className="container mx-auto px-2">
+				<div className="grid md:grid-cols-7 grid-cols-4 gap-1">
+					{parentCategories.map((category) => (
+						<Link
+							key={category.id}
+							href={`/product-list?search=${category.name}`}
+							onClick={() => handleClick(category)}
+							className="group cursor-pointer md:rounded-md rounded-sm  text-center transition-all duration-300 flex flex-col items-center md:p-3 p-1 gap-2 border border-primary/10"
+						>
+							<div className="md:w-20 w-16 aspect-square flex items-center justify-center">
+								{isImageUrl(category.icon) ? (
+									<div className="relative md:h-22 md:w-22 h-12 w-12">
+										<Image src={category.icon} fill alt={category.name} className="object-contain" />
 									</div>
-								</Link>
-							</SwiperSlide>
-						))}
-					</Swiper>
+								) : (
+									<div className="flex h-full w-full items-center justify-center text-[28px] md:text-[64px] leading-none">{category.icon}</div>
+								)}
+							</div>
+
+							<h3 className="md:text-base text-[10px] font-medium text-foreground line-clamp-1 group-hover:text-twinkle-accent">{category.name}</h3>
+						</Link>
+					))}
 				</div>
 			</div>
 		</section>

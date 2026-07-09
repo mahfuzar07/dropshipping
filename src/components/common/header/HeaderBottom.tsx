@@ -156,7 +156,7 @@ export default function HeaderBottom() {
 					<div className="relative group hidden min-w-[240px]  hover:bg-twinkle-teal md:flex items-center justify-center h-full gap-1 cursor-pointer">
 						<div className="flex items-center gap-1 text-sm font-quicksand font-medium">
 							<Phone size={16} strokeWidth={2} className="fill-twinkle-teal" /> Help Line
-							<span className="group-hover:underline group-hover:text-twinkle-gold">+880-1866175745</span>
+							<span className="group-hover:underline group-hover:text-twinkle-gold">+880-1234567890</span>
 						</div>
 						{/* <div className="flex items-center border-l pl-2">
 							<Price amount={120} className="font-fredoka font-semibold text-white/90" />

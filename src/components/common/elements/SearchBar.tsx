@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WORDS = ['Products', 'Paste Product Link', 'Home & Garden', 'Health & Medical', 'Gifts'];
+const WORDS = ['products', 'product link', 'product image'];
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
@@ -206,21 +206,17 @@ export default function SearchBar() {
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/10 rounded-full flex items-center pl-3 pr-1 py-1 gap-1 border border-primary">
-				<div className="">
-					<HoverPopover
-						width="min-w-[160px]"
-						align="left"
-						trigger={
-							<div className="relative py-2.5 min-w-[160px] hidden  md:flex items-center justify-center h-full !font-normal text-md gap-5 cursor-pointer border-r border-primary/20 mr-2">
-								All Categories
-								<ChevronDown strokeWidth={2} size={18} />
-							</div>
-						}
-					>
-						<CategoryMenu categories={normalizedCategories} columnClassName="min-w-[200px]" />
-					</HoverPopover>
-				</div>
+			<div className="bg-white/80 rounded-lg flex items-center pl-3 pr-1 py-1 gap-1 border border-primary">
+				<motion.button
+					type="submit"
+					onClick={() => fileInputRef.current?.click()}
+					whileTap={{ scale: 1 }}
+					whileHover={{ scale: 0.95 }}
+					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
+					className="flex items-center justify-center text-white  md:w-10 md:h-7.5 rounded-md hover:bg-primary/10 cursor-pointer mr-1"
+				>
+					{imageSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CameraIcon className="w-7 h-7 md:w-9 md:h-9 fill-primary" />}
+				</motion.button>
 
 				<input
 					type="text"
@@ -230,7 +226,7 @@ export default function SearchBar() {
 					onKeyDown={handleKeyDown}
 					autoComplete="off"
 					placeholder="Search for"
-					className="flex-1 outline-none text-sm md:text-base text-foreground bg-transparent placeholder:text-muted-foreground font-normal"
+					className="flex-1 outline-none text-sm md:text-base text-foreground bg-transparent placeholder:text-muted-foreground md:placeholder:text-sm placeholder:text-xs font-normal"
 				/>
 
 				{/* Animated placeholder cycling */}
@@ -238,32 +234,18 @@ export default function SearchBar() {
 					{!query && (
 						<motion.div
 							key={wordIdx}
-							initial={{ y: 20, opacity: 0 }}
+							initial={{ y: 10, opacity: 0 }}
 							animate={{ y: 0, opacity: 1 }}
 							exit={{ y: -10, opacity: 0 }}
 							transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-							className={cn(
-								'absolute inset-0 flex items-center pointer-events-none z-0 transition-all duration-300',
-								isSearchDrawerOpen ? 'left-23' : 'left-66',
-							)}
+							className={cn('absolute inset-0 flex items-center pointer-events-none z-0 transition-all duration-300 md:left-35 left-27')}
 						>
-							<span className="text-primary text-sm md:text-base font-normal">{WORDS[wordIdx]}</span>
+							<span className="text-primary md:text-sm text-xs font-normal">{WORDS[wordIdx]}</span>
 						</motion.div>
 					)}
 				</AnimatePresence>
 
 				<input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSearch} />
-
-				<motion.button
-					type="submit"
-					onClick={() => fileInputRef.current?.click()}
-					whileTap={{ scale: 1 }}
-					whileHover={{ scale: 0.95 }}
-					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
-					className="flex items-center justify-center text-primary w-10 h-10 rounded-md hover:bg-primary/10 cursor-pointer"
-				>
-					{imageSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CameraIcon className="w-6 h-6 md:w-7 md:h-7" />}
-				</motion.button>
 
 				{/* Search button */}
 				<motion.button
@@ -271,9 +253,9 @@ export default function SearchBar() {
 					whileTap={{ scale: 1 }}
 					whileHover={{ scale: 0.95 }}
 					transition={{ type: 'spring', stiffness: 200, damping: 5 }}
-					className="flex shadow items-center justify-center bg-primary text-white w-10 h-10 md:w-18 md:h-11 rounded-full hover:bg-primary/80 cursor-pointer"
+					className="flex items-center justify-center bg-transparent text-primary w-8 h-7.5 md:w-12 md:h-10  cursor-pointer"
 				>
-					<Search className="w-4 h-4 md:w-5 md:h-5" />
+					<Search className="w-6 h-6 md:w-6 md:h-6" strokeWidth={2.2} />
 				</motion.button>
 			</div>
 
