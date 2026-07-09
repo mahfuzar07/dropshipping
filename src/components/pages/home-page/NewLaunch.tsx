@@ -91,7 +91,7 @@ export default function NewLaunch() {
 
 	return (
 		<div className="py-8">
-			<div className="container mx-auto px-4">
+			<div className="container mx-auto px-2">
 				{/* Title */}
 				<h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-tight">NEW LAUNCHES</h2>
 
@@ -105,7 +105,7 @@ export default function NewLaunch() {
 				) : (
 					<>
 						{/* Product Grid */}
-						<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+						<div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
 							{products.map((product) => (
 								<ProductCard product={product} key={product.num_iid} />
 							))}

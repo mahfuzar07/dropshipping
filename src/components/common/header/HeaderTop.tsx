@@ -99,7 +99,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-sm md:block hidden text-white">Wishlist</p>
+								<p className="text-sm md:block hidden text-white font-semibold">Wishlist</p>
 								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									0
 								</div>
@@ -112,7 +112,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-sm md:block hidden text-white">Cart</p>
+								<p className="text-sm md:block hidden text-white font-semibold">Cart</p>
 								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									{cartCount}
 								</div>
@@ -130,7 +130,7 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 									<div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center">
 										<User size={24} strokeWidth={1.5} className="" />
 									</div>
-									<div className="md:flex hidden flex-col leading-tight font-fredoka">
+									<div className="md:flex hidden font-semibold flex-col leading-tight font-fredoka">
 										<p className="text-xs">{isAuthenticated ? 'Welcome' : 'Sign In'}</p>
 										<p className="leading-tight text-sm">{!isAuthenticated ? 'My Account' : (user?.phone ?? 'Account')}</p>
 									</div>

@@ -9,12 +9,12 @@ const features = [
 
 export default function FeatureHighlights() {
 	return (
-		<section className="w-full bg-white md:hidden block">
+		<section className="w-full md:hidden block">
 			<div className="container mx-auto p-2 shadow">
 				<div className="grid grid-cols-4 gap-1">
 					{features.map((f, index) => {
 						return (
-							<div key={index} className="flex rounded shadow py-1 items-center justify-center gap-1">
+							<div key={index} className="flex rounded shadow py-2 items-center justify-center gap-1 bg-white">
 								<div
 									className="w-4 h-4 bg-primary shrink-0"
 									style={{

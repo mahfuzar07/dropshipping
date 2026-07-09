@@ -206,7 +206,7 @@ export default function SearchBar() {
 	return (
 		<div ref={wrapperRef} className="relative w-full z-10">
 			{/* ── Input bar ── */}
-			<div className="bg-white/80 rounded-lg flex items-center pl-3 pr-1 py-1 gap-1 border border-primary">
+			<div className="bg-white/90 rounded-lg flex items-center pl-3 pr-1 py-1 gap-1 border border-primary">
 				<motion.button
 					type="submit"
 					onClick={() => fileInputRef.current?.click()}

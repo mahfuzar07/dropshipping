@@ -51,7 +51,7 @@ export default function ShopByCategory() {
 	};
 
 	return (
-		<section className="md:py-10 py-3 bg-white">
+		<section className="md:py-10 py-3">
 			<div className="container mx-auto px-2">
 				<div className="grid md:grid-cols-7 grid-cols-4 gap-1">
 					{parentCategories.map((category) => (
@@ -59,7 +59,7 @@ export default function ShopByCategory() {
 							key={category.id}
 							href={`/product-list?search=${category.name}`}
 							onClick={() => handleClick(category)}
-							className="group cursor-pointer md:rounded-md rounded-sm  text-center transition-all duration-300 flex flex-col items-center md:p-3 p-1 gap-2 border border-primary/10"
+							className="group cursor-pointer md:rounded-md rounded-sm  text-center transition-all duration-300 flex flex-col items-center md:p-3 p-1 md:gap-2 border border-primary/10 bg-white"
 						>
 							<div className="md:w-20 w-16 aspect-square flex items-center justify-center">
 								{isImageUrl(category.icon) ? (
