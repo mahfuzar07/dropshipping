@@ -73,7 +73,7 @@ export default function ProductFilterSidebar() {
 								<Input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
 								<Input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
 							</div>
-							<Button onClick={handleApplyPriceFilter} className="w-full bg-orange-300 text-white hover:bg-orange-500">
+							<Button onClick={handleApplyPriceFilter} className="w-full bg-primary text-white hover:bg-primary/80">
 								Apply
 							</Button>
 

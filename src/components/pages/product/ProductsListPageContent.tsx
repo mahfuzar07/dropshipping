@@ -248,10 +248,16 @@ export default function ProductsListPageContent() {
 				{/* Products */}
 				<div className="col-span-9">
 					{/* Toolbar */}
-					<div className="flex md:flex-row flex-col-reverse gap-2   md:items-center justify-between mb-6">
-						<span className="text-sm text-gray-600">
-							<strong>{pagination.count ?? filteredProducts.length}</strong> Products Found
-						</span>
+					<div className="flex md:flex-row flex-col gap-2   md:items-center justify-between mb-6">
+						<div>
+							<p className="text-xs md:text-base font-semibold">
+								SHOWING RESULTS FOR <span className="uppercase text-primary ml-1"> {searchText}</span>
+							</p>
+
+							<span className="text-xs text-gray-600">
+								<strong>{pagination.count ?? filteredProducts.length}</strong> Results Found
+							</span>
+						</div>
 
 						<div className="flex justify-between gap-3">
 							<ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
@@ -285,7 +291,7 @@ export default function ProductsListPageContent() {
 						</div>
 					) : filteredProducts.length > 0 ? (
 						<>
-							<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
+							<div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3' : 'space-y-3'}>
 								{filteredProducts.map((product, i) => (
 									<motion.div
 										key={product.num_iid || i}
