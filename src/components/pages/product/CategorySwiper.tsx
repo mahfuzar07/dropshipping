@@ -67,20 +67,25 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 			{/* Breadcrumb */}
 			{categoryPath.length > 0 && (
 				<div className="flex items-center gap-1 text-xs text-gray-500 mb-2 flex-wrap">
-					<button className="hover:text-primary hover:underline" onClick={() => selectCategoryAtLevel(null, 0)}>
-						All
-					</button>
-					{categoryPath.map((c, i) => (
-						<span key={c.id} className="flex items-center gap-1">
-							<span>/</span>
-							<button
-								className={cn('hover:text-primary hover:underline', i === categoryPath.length - 1 && 'text-primary font-medium')}
-								onClick={() => selectCategoryAtLevel(c as MenuCategoryLite, i)}
-							>
-								{c.name}
-							</button>
-						</span>
-					))}
+					{categoryPath.length > 0 && (
+						<div className="flex items-center gap-1 text-xs text-gray-500 mb-2 flex-wrap">
+							<button className="hover:text-primary hover:underline">Category</button>
+							{categoryPath.map((c, i) => {
+								const catKey = c.id ?? c.name;
+								return (
+									<span key={catKey} className="flex items-center gap-1">
+										<span>/</span>
+										<button
+											className={cn('hover:text-primary hover:underline', i === categoryPath.length - 1 && 'text-primary font-medium')}
+											onClick={() => selectCategoryAtLevel(c as MenuCategoryLite, i)}
+										>
+											{c.name}
+										</button>
+									</span>
+								);
+							})}
+						</div>
+					)}
 				</div>
 			)}
 
@@ -106,10 +111,11 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 						onClickCapture={onClickCapture}
 					>
 						{itemsAtLevel.map((cat) => {
-							const isSelected = categoryPath[level]?.id === cat.id;
+							const catKey = cat.id ?? cat.name;
+							const isSelected = (categoryPath[level]?.id ?? categoryPath[level]?.name) === catKey;
 							return (
 								<button
-									key={cat.id}
+									key={catKey}
 									onClick={() => selectCategoryAtLevel(cat, level)}
 									className={cn(
 										'shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm transition-colors',

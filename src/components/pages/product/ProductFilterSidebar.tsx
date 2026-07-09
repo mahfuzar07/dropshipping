@@ -148,9 +148,10 @@ export default function ProductFilterSidebar() {
 							)}
 
 							{itemsAtLevel.map((cat: any) => {
-								const isSelected = categoryPath[level]?.id === cat.id;
+								const catKey = cat.id ?? cat.name;
+								const isSelected = (categoryPath[level]?.id ?? categoryPath[level]?.name) === catKey;
 								return (
-									<div key={cat.id} className="flex justify-between items-center">
+									<div key={catKey} className="flex justify-between items-center">
 										<div className="flex items-center gap-2">
 											<Checkbox checked={isSelected} onCheckedChange={() => selectCategoryAtLevel(cat, level)} />
 											<span className={isSelected ? 'text-primary font-medium' : ''}>{cat.name}</span>

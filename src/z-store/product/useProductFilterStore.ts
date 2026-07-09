@@ -75,9 +75,11 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 	selectCategoryAtLevel: (category, level) =>
 		set((state) => {
 			const current = state.categoryPath[level];
+			const getKey = (c?: MenuCategoryLite | null) => c?.id ?? c?.name;
+
 			let nextPath: MenuCategoryLite[];
 
-			if (!category || current?.id === category.id) {
+			if (!category || getKey(current) === getKey(category)) {
 				// deselect: drop this level and everything below it
 				nextPath = state.categoryPath.slice(0, level);
 			} else {
