@@ -22,7 +22,7 @@ interface CategoryMenuProps {
 
 export default function CategoryMenu({ categories, columnClassName }: CategoryMenuProps) {
 	const [activePath, setActivePath] = useState<MenuCategory[]>([]);
-	const setCategory = useProductFilterStore((state) => state.setCategory);
+	const setCategory = useProductFilterStore((state) => state.selectCategoryAtLevel);
 
 	const handleHover = (level: number, item: MenuCategory) => {
 		const newPath = activePath.slice(0, level);
@@ -34,8 +34,8 @@ export default function CategoryMenu({ categories, columnClassName }: CategoryMe
 	// (so the destination page renders with it already applied, no
 	// waiting on the URL-sync effect there) — the <Link> below still
 	// handles the actual redirect.
-	const handleClick = (item: MenuCategory) => {
-		setCategory(item.name);
+	const handleClick = (level: number, item: MenuCategory) => {
+		setCategory(item, level);
 	};
 
 	// build columns dynamically
@@ -67,7 +67,7 @@ export default function CategoryMenu({ categories, columnClassName }: CategoryMe
 									href={`/product-list?search=${encodeURIComponent(item.name)}`}
 									key={item.id}
 									onMouseEnter={() => handleHover(level, item)}
-									onClick={() => handleClick(item)}
+									onClick={() => handleClick(level, item)}
 									className={`flex w-full group justify-between items-center border-b border-slate-100 px-4 py-2.5 cursor-pointer transition
 									${isActive ? 'bg-primary text-white font-medium' : 'hover:bg-gray-100'}
 								`}

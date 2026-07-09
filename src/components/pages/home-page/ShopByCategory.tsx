@@ -12,7 +12,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import TypoTitle from '@/components/common/elements/TypoTitle';
 import { ArrowRight } from 'lucide-react';
-import { normalizeCategories } from '@/components/common/header/HeaderBottom';
+import { MenuCategory, normalizeCategories } from '@/components/common/header/HeaderBottom';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
@@ -32,7 +32,7 @@ export interface CategoriesResponse {
 }
 
 export default function ShopByCategory() {
-	const setCategory = useProductFilterStore((state) => state.setCategory);
+	const setCategory = useProductFilterStore((state) => state.selectCategoryAtLevel);
 	const { data, isLoading } = useAppData<CategoriesResponse, 'single'>({
 		key: [QueriesKey.CATEGORIES],
 		api: apiEndpoint.products.CATEGORIES(),
@@ -46,19 +46,18 @@ export default function ShopByCategory() {
 		return icon.startsWith('/') || icon.startsWith('http://') || icon.startsWith('https://');
 	};
 
-	const handleClick = (item: Category) => {
-		setCategory(item.name);
+	const handleClick = (level: number, item: MenuCategory) => {
+		setCategory(item, level);
 	};
-
 	return (
 		<section className="md:py-10 py-3">
 			<div className="container mx-auto px-2">
 				<div className="grid md:grid-cols-7 grid-cols-4 gap-1">
-					{parentCategories.map((category) => (
+					{parentCategories.map((category, level) => (
 						<Link
 							key={category.id}
 							href={`/product-list?search=${category.name}`}
-							onClick={() => handleClick(category)}
+							onClick={() => handleClick(level, category)}
 							className="group cursor-pointer md:rounded-md rounded-sm  text-center transition-all duration-300 flex flex-col items-center md:p-3 p-1 md:gap-2 border border-primary/10 bg-white"
 						>
 							<div className="md:w-20 w-16 aspect-square flex items-center justify-center">
