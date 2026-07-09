@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProductFilterStore, type MenuCategoryLite } from '@/z-store/product/useProductFilterStore';
 import { cn } from '@/lib/utils/utils';
@@ -13,7 +13,47 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 	const { categoryPath, selectCategoryAtLevel } = useProductFilterStore();
 	const scrollRef = useRef<HTMLDivElement>(null);
 
+	// drag-to-scroll state
+	const isDragging = useRef(false);
+	const dragMoved = useRef(false); // to distinguish click vs drag
+	const startX = useRef(0);
+	const startScrollLeft = useRef(0);
+
 	const scrollBy = (dir: number) => scrollRef.current?.scrollBy({ left: dir * 220, behavior: 'smooth' });
+
+	// --- Mouse drag handlers (desktop) ---
+	const onMouseDown = useCallback((e: React.MouseEvent) => {
+		const el = scrollRef.current;
+		if (!el) return;
+		isDragging.current = true;
+		dragMoved.current = false;
+		startX.current = e.pageX - el.offsetLeft;
+		startScrollLeft.current = el.scrollLeft;
+	}, []);
+
+	const onMouseMove = useCallback((e: React.MouseEvent) => {
+		if (!isDragging.current) return;
+		const el = scrollRef.current;
+		if (!el) return;
+		e.preventDefault();
+		const x = e.pageX - el.offsetLeft;
+		const walk = x - startX.current;
+		if (Math.abs(walk) > 5) dragMoved.current = true; // treat as drag only past a small threshold
+		el.scrollLeft = startScrollLeft.current - walk;
+	}, []);
+
+	const endDrag = useCallback(() => {
+		isDragging.current = false;
+	}, []);
+
+	// prevent the click-through on a category button right after a drag
+	const onClickCapture = useCallback((e: React.MouseEvent) => {
+		if (dragMoved.current) {
+			e.preventDefault();
+			e.stopPropagation();
+			dragMoved.current = false;
+		}
+	}, []);
 
 	if (!categories?.length) return null;
 
@@ -55,7 +95,16 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 						<ChevronLeft className="w-4 h-4" />
 					</button>
 
-					<div ref={scrollRef} className="flex gap-2 overflow-x-auto scroll-smooth py-1" style={{ scrollbarWidth: 'none' }}>
+					<div
+						ref={scrollRef}
+						className="flex gap-2 overflow-x-auto scroll-smooth py-1 select-none cursor-grab active:cursor-grabbing"
+						style={{ scrollbarWidth: 'none' }}
+						onMouseDown={onMouseDown}
+						onMouseMove={onMouseMove}
+						onMouseUp={endDrag}
+						onMouseLeave={endDrag}
+						onClickCapture={onClickCapture}
+					>
 						{itemsAtLevel.map((cat) => {
 							const isSelected = categoryPath[level]?.id === cat.id;
 							return (
