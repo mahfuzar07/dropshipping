@@ -5,19 +5,44 @@ import type React from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, Search } from 'lucide-react';
-import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
+import { ChevronDown, ChevronLeft, Search } from 'lucide-react';
+import { useProductFilterStore, type MenuCategoryLite } from '@/z-store/product/useProductFilterStore';
+import { toast } from 'sonner';
+import { useAppData } from '@/hooks/use-appdata';
+import { QueriesKey } from '@/lib/constants/queriesKey';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 
-const categories = [
-	{ id: 1, name: 'Electronics', product_count: 120 },
-	{ id: 2, name: 'Fashion', product_count: 80 },
-	{ id: 3, name: 'Shoes', product_count: 45 },
-	{ id: 4, name: 'Watches', product_count: 60 },
-];
+export interface CategoryItem {
+	[key: string]: any;
+}
+
+export interface Category {
+	id: number;
+	name: string;
+	slug: string;
+	icon: string;
+	subcategories: Category[];
+}
+
+export interface CategoriesResponse {
+	categories: Category[];
+}
 
 export default function ProductFilterSidebar() {
-	const { selectedCategory, discountOnly, priceRange, searchText, setCategory, toggleDiscount, setPriceRange, setSearchText, clearAllFilters } =
+	const { categoryPath, discountOnly, priceRange, searchText, selectCategoryAtLevel, toggleDiscount, setPriceRange, setSearchText, clearAllFilters } =
 		useProductFilterStore();
+
+	const { data, isLoading } = useAppData<CategoriesResponse, 'single'>({
+		key: [QueriesKey.CATEGORIES],
+		api: apiEndpoint.products.CATEGORIES(),
+		auth: true,
+		responseType: 'single',
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || 'Failed to add address');
+		},
+	});
+
+	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
 
 	const [minPrice, setMinPrice] = useState(priceRange[0].toString());
 	const [maxPrice, setMaxPrice] = useState(priceRange[1].toString());
@@ -41,6 +66,24 @@ export default function ProductFilterSidebar() {
 
 		if (min <= max) {
 			setPriceRange([min, max]);
+		}
+	};
+
+	// ---- Flat, single-level category navigation (no nested tree) ----
+	const level = categoryPath.length;
+	const deepest = categoryPath[level - 1] as any;
+	// items to show: children of the deepest selected category, or top-level list if nothing selected
+	const itemsAtLevel: Category[] = level === 0 ? categories : (deepest?.subcategories ?? []);
+
+	const handleGoBack = () => {
+		if (level === 0) return;
+		// go back one level: reselect the parent at (level - 1) as "current",
+		// i.e. drop only the deepest item, keep everything above it
+		if (level === 1) {
+			selectCategoryAtLevel(null, 0);
+		} else {
+			const parent = categoryPath[level - 2] as MenuCategoryLite;
+			selectCategoryAtLevel(parent, level - 2);
 		}
 	};
 
@@ -84,7 +127,7 @@ export default function ProductFilterSidebar() {
 					)}
 				</div>
 
-				{/* Categories - single select by name */}
+				{/* Categories - single-level, replace-on-select */}
 				<div className="mb-3 border-b border-border/50 pb-3">
 					<h4
 						onClick={() => toggleSection('categories')}
@@ -96,15 +139,28 @@ export default function ProductFilterSidebar() {
 
 					{!collapsedSections.categories && (
 						<div className="mt-3 space-y-2">
-							{categories.map((cat) => (
-								<div key={cat.id} className="flex justify-between">
-									<div className="flex items-center gap-2">
-										<Checkbox checked={selectedCategory === cat.name} onCheckedChange={() => setCategory(cat.name)} />
-										<span>{cat.name}</span>
+							{/* Back button + breadcrumb, only when drilled into a category */}
+							{level > 0 && (
+								<button type="button" onClick={handleGoBack} className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary mb-2">
+									<ChevronLeft className="w-3.5 h-3.5" />
+									<span className="truncate">{deepest?.name}</span>
+								</button>
+							)}
+
+							{itemsAtLevel.map((cat: any) => {
+								const isSelected = categoryPath[level]?.id === cat.id;
+								return (
+									<div key={cat.id} className="flex justify-between items-center">
+										<div className="flex items-center gap-2">
+											<Checkbox checked={isSelected} onCheckedChange={() => selectCategoryAtLevel(cat, level)} />
+											<span className={isSelected ? 'text-primary font-medium' : ''}>{cat.name}</span>
+										</div>
+										{cat.product_count !== undefined && <span className="text-xs text-gray-400">({cat.product_count})</span>}
 									</div>
-									<span className="text-xs text-gray-400">({cat.product_count})</span>
-								</div>
-							))}
+								);
+							})}
+
+							{itemsAtLevel.length === 0 && <p className="text-xs text-gray-400">No subcategories</p>}
 						</div>
 					)}
 				</div>

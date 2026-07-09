@@ -1,8 +1,16 @@
 import { create } from 'zustand';
 
+export interface MenuCategoryLite {
+	id: number | string;
+	name: string;
+	slug?: string;
+	subcategories?: any[];
+	[key: string]: any;
+}
+
 interface FilterState {
 	searchText: string;
-	selectedCategory: string; // single category name, only used for sidebar highlight — '' মানে কোনো ক্যাটাগরি সিলেক্টেড না
+	categoryPath: MenuCategoryLite[]; // breadcrumb chain: [Electronics, Phones, Smartphones]
 	discountOnly: boolean;
 	priceRange: [number, number];
 	selectedRatings: number[];
@@ -17,7 +25,7 @@ interface FilterState {
 		hasMore?: boolean;
 	};
 	setSearchText: (searchText: string) => void;
-	setCategory: (categoryName: string | null) => void;
+	selectCategoryAtLevel: (category: MenuCategoryLite | null, level: number) => void;
 	toggleDiscount: () => void;
 	setPriceRange: (priceRange: [number, number]) => void;
 	toggleRating: (rating: number) => void;
@@ -33,7 +41,7 @@ interface FilterState {
 
 export const useProductFilterStore = create<FilterState>((set, get) => ({
 	searchText: '',
-	selectedCategory: '',
+	categoryPath: [],
 	discountOnly: false,
 	priceRange: [0, 1000000000],
 	selectedRatings: [],
@@ -49,18 +57,39 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 	},
 
 	setSearchText: (searchText) =>
-		set((state) => ({
-			searchText,
-			// user typed something that doesn't match the selected category anymore → clear the highlight
-			selectedCategory: state.selectedCategory && state.selectedCategory !== searchText ? '' : state.selectedCategory,
-		})),
-
-	// there's no separate "category search" backend param — selecting a
-	// category IS just searching by that name. Same click again clears both.
-	setCategory: (categoryName) =>
 		set((state) => {
-			const next = categoryName === null || state.selectedCategory === categoryName ? '' : categoryName;
-			return { selectedCategory: next, searchText: next };
+			// user typed something that no longer matches the deepest selected category → clear the path
+			const deepest = state.categoryPath[state.categoryPath.length - 1];
+			const stillMatches = deepest && deepest.name === searchText;
+			return {
+				searchText,
+				categoryPath: stillMatches ? state.categoryPath : [],
+			};
+		}),
+
+	// Selecting a category at a given depth:
+	// - replaces the chain from that depth downward with the newly picked category
+	// - clicking the already-selected item again deselects it (and everything below it)
+	// - there's no separate "category" backend param — selecting a category
+	//   IS just searching by that category's name (same as before).
+	selectCategoryAtLevel: (category, level) =>
+		set((state) => {
+			const current = state.categoryPath[level];
+			let nextPath: MenuCategoryLite[];
+
+			if (!category || current?.id === category.id) {
+				// deselect: drop this level and everything below it
+				nextPath = state.categoryPath.slice(0, level);
+			} else {
+				// select: keep everything above this level, replace this level onward
+				nextPath = [...state.categoryPath.slice(0, level), category];
+			}
+
+			const deepest = nextPath[nextPath.length - 1];
+			return {
+				categoryPath: nextPath,
+				searchText: deepest ? deepest.name : '',
+			};
 		}),
 
 	toggleDiscount: () => set((state) => ({ discountOnly: !state.discountOnly })),
@@ -118,7 +147,7 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 	clearAllFilters: () =>
 		set({
 			searchText: '',
-			selectedCategory: '',
+			categoryPath: [],
 			discountOnly: false,
 			priceRange: [0, 1_000_000_000],
 			selectedRatings: [],

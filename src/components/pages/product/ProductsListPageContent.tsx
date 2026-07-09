@@ -7,7 +7,7 @@ import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
-import ProductFilterSidebar from './ProductFilterSidebar';
+import ProductFilterSidebar, { CategoriesResponse } from './ProductFilterSidebar';
 import { useProductFilterStore } from '@/z-store/product/useProductFilterStore';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import ProductCardSkeleton from '@/components/common/loader/ProductCardSkeleton';
@@ -18,6 +18,7 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import { Product, ProductResponse } from '../home-page/NewLaunch';
 import ProductPagination from '@/components/common/elements/Productpagination';
+import CategorySwiper from './CategorySwiper';
 
 export default function ProductsListPageContent() {
 	const router = useRouter();
@@ -169,6 +170,14 @@ export default function ProductsListPageContent() {
 		},
 	});
 
+	const { data: categoriesData } = useAppData<CategoriesResponse, 'single'>({
+		key: [QueriesKey.CATEGORIES],
+		api: apiEndpoint.products.CATEGORIES(),
+		auth: true,
+		responseType: 'single',
+	});
+	const categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories ?? []);
+
 	/* ================================================================
 	   7. SYNC PAGINATION META FROM RESPONSE (current page only, no accumulation)
 	   ================================================================ */
@@ -281,6 +290,7 @@ export default function ProductsListPageContent() {
 							</Select>
 						</div>
 					</div>
+					<CategorySwiper categories={categories} />
 
 					{/* Skeleton while loading */}
 					{isLoading ? (
