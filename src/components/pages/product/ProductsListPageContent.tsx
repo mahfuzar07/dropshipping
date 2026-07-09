@@ -257,7 +257,7 @@ export default function ProductsListPageContent() {
 				{/* Products */}
 				<div className="col-span-9">
 					{/* Toolbar */}
-					<div className="flex md:flex-row flex-col gap-2   md:items-center justify-between mb-6">
+					<div className="flex md:flex-row flex-col gap-2   md:items-center justify-between mb-3">
 						<div>
 							<p className="text-xs md:text-base font-semibold">
 								SHOWING RESULTS FOR <span className="uppercase text-primary ml-1"> {searchText}</span>
