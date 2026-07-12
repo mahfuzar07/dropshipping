@@ -7,6 +7,8 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 
 export type ProductResponse = {
 	items: {
@@ -34,7 +36,7 @@ export type Product = {
 export default function NewLaunch() {
 	const [filter, setFilter] = useState({
 		page: 1,
-		limit: 20,
+		limit: 10,
 		search: '',
 		category: '',
 		brand: '',
@@ -92,8 +94,19 @@ export default function NewLaunch() {
 	return (
 		<div className="py-8">
 			<div className="container mx-auto px-2">
-				{/* Title */}
-				<h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-tight">NEW LAUNCHES</h2>
+				{/* Title and See More */}
+				<div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+					<h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight font-hanken">
+						NEW LAUNCHES
+					</h2>
+					<Link
+						href="/product-list"
+						className="group flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+					>
+						See More
+						<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+					</Link>
+				</div>
 
 				{/* Skeleton while loading */}
 				{isLoading ? (

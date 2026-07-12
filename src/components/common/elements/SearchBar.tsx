@@ -3,7 +3,7 @@
 import { Search, Clock, X, Loader2, ChevronDown, Menu, ImageIcon, CameraIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/axiosInstance';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import CategoryMenu from '../header/CategoryMenu';
@@ -72,6 +72,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export default function SearchBar() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { drawerType, closeDrawer } = useLayoutStore();
 	const isSearchDrawerOpen = drawerType === 'search';
 	const [query, setQuery] = useState('');
@@ -83,6 +84,12 @@ export default function SearchBar() {
 
 	const [debouncedQuery, setDebouncedQuery] = useState('');
 	const wrapperRef = useRef<HTMLDivElement>(null);
+
+	// Sync query with URL search parameter
+	useEffect(() => {
+		const searchQ = searchParams?.get('search') || '';
+		setQuery(searchQ);
+	}, [searchParams]);
 
 	// ── Animated placeholder ──────────────────────────────────────────────────
 	useEffect(() => {

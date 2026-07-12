@@ -44,19 +44,27 @@ export default function ProductsListPageContent() {
 	} = useProductFilterStore();
 
 	/* ================================================================
-	   1. INIT PRICE/DISCOUNT/SORT FROM URL — once on mount only
+	   1. INIT FROM URL — once on mount only
 	   ================================================================ */
 	const didInitFromURL = useRef(false);
+
+	const qFromURLInitial = searchParams.get('search') || '';
+	const [debouncedSearch, setDebouncedSearch] = useState(qFromURLInitial);
 
 	useEffect(() => {
 		if (didInitFromURL.current) return;
 		didInitFromURL.current = true;
 
+		const q = searchParams.get('search') || '';
 		const minP = searchParams.get('min_price');
 		const maxP = searchParams.get('max_price');
 		const disc = searchParams.get('discount');
 		const sort = searchParams.get('sort');
 
+		if (q) {
+			setSearchText(q);
+			setDebouncedSearch(q);
+		}
 		if (minP || maxP) setPriceRange([Number(minP ?? 0), Number(maxP ?? 1_000_000_000)]);
 		if (disc === 'true') toggleDiscount();
 		if (sort) setSortBy(sort);
@@ -66,15 +74,13 @@ export default function ProductsListPageContent() {
 		const qFromURL = searchParams.get('search') || '';
 		if (qFromURL !== searchText) {
 			setSearchText(qFromURL);
+			setDebouncedSearch(qFromURL);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [searchParams]);
+	}, [searchParams, searchText, setSearchText]);
 
 	/* ================================================================
 	   2. DEBOUNCE searchText (400 ms)
 	   ================================================================ */
-	const [debouncedSearch, setDebouncedSearch] = useState(searchText);
-
 	useEffect(() => {
 		const t = setTimeout(() => setDebouncedSearch(searchText), 400);
 		return () => clearTimeout(t);
