@@ -49,10 +49,10 @@ export default function CategorySection({ title, searchTag, icon, bgClass = 'bg-
 				{/* Section Header */}
 				<div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
 					<div className="flex items-center gap-3">
-						<span className="text-2xl md:text-3xl select-none" role="img" aria-label={title}>
+						<div className="w-10 h-8 select-none flex items-center justify-center" role="img" aria-label={title}>
 							{icon}
-						</span>
-						<h2 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight font-hanken uppercase">
+						</div>
+						<h2 className="text-sm md:text-lg font-bold text-gray-900 tracking-tight font-hanken uppercase">
 							{title}
 						</h2>
 					</div>

@@ -125,7 +125,7 @@ export default function NewLaunch() {
 						</div>
 
 						{/* Pagination */}
-						<ProductPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+						{/* <ProductPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} /> */}
 					</>
 				)}
 			</div>
