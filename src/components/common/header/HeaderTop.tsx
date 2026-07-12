@@ -64,6 +64,9 @@ export default function HeaderTop({ isScrolled }: HeaderTopProps) {
 								transition-all duration-300 ease-in-out h-20 w-65
 
 							`}
+							onClick={() => {
+								window.location.href = '/';
+							}}
 						>
 							<Image
 								src="/assets/brand.png"

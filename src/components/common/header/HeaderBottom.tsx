@@ -65,7 +65,7 @@ const navItems = [
 	},
 	{
 		label: 'Products',
-		href: '/products',
+		href: '/product-list',
 	},
 	{
 		label: 'Flash Sale',

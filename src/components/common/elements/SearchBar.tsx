@@ -15,6 +15,17 @@ import { Product } from '@/components/pages/home-page/NewLaunch';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { cn } from '@/lib/utils/utils';
 
+const formatPrice = (price: any) => {
+	if (price === undefined || price === null) return '';
+	const priceStr = String(price).trim();
+	if (priceStr.startsWith('৳')) return priceStr;
+	const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+	if (!isNaN(num)) {
+		return `৳${num.toFixed(2)}`;
+	}
+	return `৳${priceStr}`;
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const WORDS = ['products', 'product link', 'product image'];
@@ -105,18 +116,16 @@ export default function SearchBar() {
 
 	const filterParams = useMemo(
 		() => ({
-			page: 1,
-			limit: 8,
 			...(debouncedQuery && {
-				search: debouncedQuery,
+				q: debouncedQuery,
 			}),
 		}),
 		[debouncedQuery],
 	);
 
-	const { data: searchData, isLoading: searching } = useAppData<any, 'single'>({
-		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
-		api: apiEndpoint.products.publicProducts,
+	const { data: suggestionsData, isLoading: searching } = useAppData<any, 'single'>({
+		key: [QueriesKey.SEARCH_SUGGESTIONS, filterParams],
+		api: apiEndpoint.products.searchSuggestions,
 		queryParams: filterParams,
 		auth: false,
 		responseType: 'single',
@@ -126,7 +135,7 @@ export default function SearchBar() {
 		clientOnly: true,
 	});
 
-	const results: Product[] = searchData?.items.item || [];
+	const results = suggestionsData || [];
 
 	// ── Navigate ──────────────────────────────────────────────────────────────
 	const handleSearch = useCallback(
@@ -277,47 +286,36 @@ export default function SearchBar() {
 										{searching ? (
 											<>
 												<Loader2 className="w-3 h-3 animate-spin" />
-												Searching...
+												Searching suggestions...
 											</>
 										) : (
 											<>
-												{results.length} result{results.length !== 1 ? 's' : ''}
+												Suggestions
 											</>
 										)}
 									</p>
 
 									{!searching && results.length > 0 ? (
-										results.map((product, i) => (
+										results.map((item: any, i: number) => (
 											<motion.button
-												key={product.num_iid}
+												key={item.id || i}
 												initial={{ opacity: 0, x: -10 }}
 												animate={{ opacity: 1, x: 0 }}
 												transition={{ delay: i * 0.04, duration: 0.22 }}
-												onMouseDown={() => handleSearch(product.title)}
+												onMouseDown={() => handleSearch(item.keyword)}
 												className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 transition-colors text-left"
 											>
-												{/* product image */}
-												<span className="w-9 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-													{product.pic_url ? (
-														<img src={product.pic_url} alt={product.title} className="w-full h-full object-cover" />
-													) : (
-														<span className="w-full h-full flex items-center justify-center text-lg">🛍️</span>
-													)}
-												</span>
+												<Search size={16} className="text-muted-foreground flex-shrink-0" />
 												<span className="flex-1 min-w-0">
 													<span className="block text-sm font-medium text-foreground truncate">
-														<Highlight text={product.title} query={query} />
-													</span>
-													<span className="block font-play text-xs text-muted-foreground mt-0.5">
-														{product.price}
-														{/* {product.rating ? ` · ⭐ ${product.rating}` : ''} */}
+														<Highlight text={item.keyword} query={query} />
 													</span>
 												</span>
 											</motion.button>
 										))
 									) : !searching ? (
 										<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 py-5 text-center text-sm text-muted-foreground">
-											No results for &ldquo;<strong className="text-foreground">{query}</strong>&rdquo;
+											No suggestions found for &ldquo;<strong className="text-foreground">{query}</strong>&rdquo;
 										</motion.p>
 									) : (
 										// searching skeleton

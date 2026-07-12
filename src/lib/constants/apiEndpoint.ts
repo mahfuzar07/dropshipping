@@ -58,8 +58,9 @@ export const apiEndpoint = {
 	},
 	products: {
 		publicProducts: '/api/products/product-from-1688',
+		searchSuggestions: '/api/products/search-suggestions',
 		imageSearch: '/api/products/item-search-img',
-		productsDetails: '/api/products/product-from-1688/{id}',
+		productsDetails: '/api/products/product-from-1688/{id}/?lang=en',
 		TOP_PRODUCTS: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		// PRODUCTS_FILTER: (QUERY: any) => `/api/products/product-from-1688/?${QUERY}`,
 		LATEST_PRODUCTS: () => `/api/products/product-from-1688/?page=1&limit=12`,

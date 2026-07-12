@@ -72,7 +72,7 @@ const navItems = [
 	},
 	{
 		label: 'Products',
-		href: '/products',
+		href: '/product-list',
 		icon: Package,
 	},
 	{

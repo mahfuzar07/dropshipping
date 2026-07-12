@@ -21,6 +21,7 @@ export const QueriesKey = {
 	PRODUCT_DETAIL: 'product-detail',
 	SEARCH_PRODUCTS: 'search-products',
 	SEARCH_IMAGE_PRODUCTS: 'item-search-img',
+	SEARCH_SUGGESTIONS: 'search-suggestions',
 	SHIPMENT_TRACKING: 'shipment-tracking',
 	ADMIN_COUPONS: 'admin-coupons',
 	ADMIN_CUSTOMERS: 'admin-customers',

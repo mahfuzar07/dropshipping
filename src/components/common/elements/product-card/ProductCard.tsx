@@ -6,6 +6,17 @@ import { Star, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+const formatPrice = (price: any) => {
+	if (price === undefined || price === null) return '';
+	const priceStr = String(price).trim();
+	if (priceStr.startsWith('৳')) return priceStr;
+	const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+	if (!isNaN(num)) {
+		return `৳${num.toFixed(2)}`;
+	}
+	return `৳${priceStr}`;
+};
+
 export default function ProductCard({ product }: { product: Product }) {
 	if (!product) return null;
 
@@ -39,9 +50,7 @@ export default function ProductCard({ product }: { product: Product }) {
 					{/* Price */}
 					<div className="mt-auto mb-1">
 						<h3 className="text-sm md:text-xl font-bold text-primary flex items-center font-hanken">
-							{/* <span className="mr-0.5">{getCurrencySymbol()}</span> */}
-							<span className="mr-0.5">{product.price}</span>
-							{product.sales}
+							<span className="mr-0.5">{formatPrice(product.price)}</span>
 						</h3>
 					</div>
 					{/* Title */}
@@ -49,12 +58,9 @@ export default function ProductCard({ product }: { product: Product }) {
 
 					{/* Rating & Sold */}
 					<div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-						{/* <div className="flex items-center gap-1">
-							<Star size={15} className="fill-yellow-500 text-yellow-400" />
-							<span>{product?. || 'N/A'}</span>
-						</div> */}
-						<p className='font-medium text-xs'>4K Sold</p>
-						{/* <p>{product?.sold}</p> */}
+						{product.sales !== undefined && product.sales !== null && (
+							<p className='font-medium text-xs'>{product.sales} sold</p>
+						)}
 					</div>
 
 					{/* Delivery Info */}
