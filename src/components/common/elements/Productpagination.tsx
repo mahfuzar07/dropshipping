@@ -9,20 +9,11 @@ interface ProductPaginationProps {
 	onPageChange: (page: number) => void;
 }
 
-const MAX_VISIBLE = 5; // কতগুলো নাম্বার বাটন ঠিক পাশাপাশি দেখাবে (ellipsis ছাড়া)
-const SKIP_COUNT = 5; // ellipsis-এ hover করে ক্লিক করলে কত পেজ skip হবে
+const MAX_VISIBLE = 5;
+const SKIP_COUNT = 5;
 
 type PageEntry = number | 'ellipsis-left' | 'ellipsis-right';
 
-/**
- * Builds a compact page list, e.g.
- * 1 2 3 4 5 ... 100
- * 1 ... 8 9 10 11 12 ... 100
- * 1 ... 96 97 98 99 100
- *
- * "ellipsis-left" = window-এর আগে (পেছনের দিকে skip করবে)
- * "ellipsis-right" = window-এর পরে (সামনের দিকে skip করবে)
- */
 function getPageNumbers(current: number, total: number): PageEntry[] {
 	if (total <= MAX_VISIBLE + 2) {
 		return Array.from({ length: total }, (_, i) => i + 1);
@@ -54,10 +45,7 @@ function getPageNumbers(current: number, total: number): PageEntry[] {
 	return pages;
 }
 
-/**
- * Ellipsis বাটন — ডিফল্টে "..." দেখায়, hover করলে skip-arrow (>> বা <<) দেখায়।
- * ক্লিক করলে SKIP_COUNT পেজ এগিয়ে/পিছিয়ে যায়।
- */
+
 function EllipsisButton({ direction, onSkip }: { direction: 'left' | 'right'; onSkip: () => void }) {
 	const Icon = direction === 'left' ? ChevronsLeft : ChevronsRight;
 
@@ -84,16 +72,16 @@ export default function ProductPagination({ currentPage, totalPages, onPageChang
 	const skipForward = () => onPageChange(Math.min(totalPages, currentPage + SKIP_COUNT));
 
 	return (
-		<div className="flex items-center justify-center gap-1.5 md:mt-16 mt-10 mb-4 flex-wrap">
+		<div className="flex items-center justify-center gap-1 md:gap-1.5 md:mt-16 mt-10 mb-4 flex-wrap">
 			<Button
 				variant="ghost"
 				size="icon"
-				className="h-9 w-9 border-none shadow-none rounded-full"
+				className="md:h-9 md:w-9 w-5 h-5 border-none shadow-none rounded-full"
 				disabled={currentPage === 1}
 				onClick={() => onPageChange(currentPage - 1)}
 				aria-label="Previous page"
 			>
-				<ChevronLeft className="h-4 w-4" />
+				<ChevronLeft className="md:h-3 md:w-3 w-2 h-2" />
 			</Button>
 
 			{pages.map((p, i) => {
@@ -107,7 +95,7 @@ export default function ProductPagination({ currentPage, totalPages, onPageChang
 						key={p}
 						variant={isActive ? 'default' : 'ghost'}
 						size="icon"
-						className={`h-9 w-9 hover:bg-white/50 rounded-full ${isActive ? 'border hover:bg-primary shadow-sm' : 'border-none shadow-none'}`}
+						className={`md:h-9 md:w-9 w-6 h-6 text-[11px] md:text-sm hover:bg-white/50 rounded-full ${isActive ? 'border hover:bg-primary shadow-sm' : 'border-none shadow-none'}`}
 						onClick={() => onPageChange(p)}
 						aria-current={isActive ? 'page' : undefined}
 					>
@@ -119,12 +107,12 @@ export default function ProductPagination({ currentPage, totalPages, onPageChang
 			<Button
 				variant="ghost"
 				size="icon"
-				className="h-9 w-9 border-none shadow-none rounded-full"
+				className="md:h-9 md:w-9 w-5 h-5 border-none shadow-none rounded-full"
 				disabled={currentPage === totalPages}
 				onClick={() => onPageChange(currentPage + 1)}
 				aria-label="Next page"
 			>
-				<ChevronRight className="h-4 w-4" />
+				<ChevronRight className="md:h-3 md:w-3 w-2 h-2" />
 			</Button>
 		</div>
 	);
