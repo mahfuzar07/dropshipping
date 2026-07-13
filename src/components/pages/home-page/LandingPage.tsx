@@ -53,11 +53,12 @@ export default function LandingPage() {
 			<FeatureHighlights />
 			<HeroSection />
 			<ShopByCategory />
-			<NewLaunch />
+
 			{/* Dynamic Category Sections */}
 			{HOME_SECTIONS.map((sec) => (
 				<CategorySection key={sec.searchTag} title={sec.title} searchTag={sec.searchTag} icon={sec.icon} bgClass={sec.bgClass} />
 			))}
+			<NewLaunch />
 		</div>
 	);
 }
