@@ -1,30 +1,17 @@
 'use client';
 
-import { Search, Clock, X, Loader2, ChevronDown, Menu, ImageIcon, CameraIcon } from 'lucide-react';
+import { Search, Clock, X, Loader2, CameraIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { authApi } from '@/lib/axiosInstance';
+
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
-import CategoryMenu from '../header/CategoryMenu';
-import HoverPopover from '@/components/ui/custom/HoverPopover';
+
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
-import { normalizeCategories } from '../header/HeaderBottom';
-import { Product } from '@/components/pages/home-page/NewLaunch';
+
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { cn } from '@/lib/utils/utils';
-
-const formatPrice = (price: any) => {
-	if (price === undefined || price === null) return '';
-	const priceStr = String(price).trim();
-	if (priceStr.startsWith('৳')) return priceStr;
-	const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
-	if (!isNaN(num)) {
-		return `৳${num.toFixed(2)}`;
-	}
-	return `৳${priceStr}`;
-};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -74,7 +61,6 @@ export default function SearchBar() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { drawerType, closeDrawer } = useLayoutStore();
-	const isSearchDrawerOpen = drawerType === 'search';
 	const [query, setQuery] = useState('');
 	const [open, setOpen] = useState(false);
 	const [wordIdx, setWordIdx] = useState(0);
@@ -144,6 +130,14 @@ export default function SearchBar() {
 
 	const results = suggestionsData || [];
 
+	const filteredResults = useMemo(() => {
+		if (!debouncedQuery) return results;
+
+		const q = debouncedQuery.toLowerCase();
+
+		return results.filter((item: any) => (item.keyword || '').toLowerCase().startsWith(q));
+	}, [results, debouncedQuery]);
+
 	// ── Navigate ──────────────────────────────────────────────────────────────
 	const handleSearch = useCallback(
 		(term: string) => {
@@ -173,20 +167,6 @@ export default function SearchBar() {
 	const hasQuery = query.trim().length > 0;
 	const showHistory = !hasQuery && history.length > 0;
 	const showPopular = !hasQuery && history.length === 0;
-
-	const { data, isLoading } = useAppData<any, 'single'>({
-		key: [QueriesKey.CATEGORIES],
-		api: apiEndpoint.products.CATEGORIES(),
-		auth: true,
-		responseType: 'single',
-		enabled: true,
-		refetchOnMount: true,
-		staleTime: 2 * 60 * 1000,
-	});
-
-	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
-
-	const normalizedCategories = normalizeCategories(categories ?? []);
 
 	const { create, isMutating: imageSearching } = useAppData<any, 'single'>({
 		key: [QueriesKey.SEARCH_IMAGE_PRODUCTS],
@@ -254,7 +234,7 @@ export default function SearchBar() {
 							animate={{ y: 0, opacity: 1 }}
 							exit={{ y: -10, opacity: 0 }}
 							transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-							className={cn('absolute inset-0 flex items-center pointer-events-none z-0 transition-all duration-300 md:left-35 left-27')}
+							className={cn('absolute inset-0 flex items-center pointer-events-none z-0 transition-all duration-300 md:left-32.5 left-27')}
 						>
 							<span className="text-primary md:text-sm text-xs font-normal">{WORDS[wordIdx]}</span>
 						</motion.div>
@@ -296,14 +276,12 @@ export default function SearchBar() {
 												Searching suggestions...
 											</>
 										) : (
-											<>
-												Suggestions
-											</>
+											<>Suggestions</>
 										)}
 									</p>
 
-									{!searching && results.length > 0 ? (
-										results.map((item: any, i: number) => (
+									{!searching && filteredResults.length > 0 ? (
+										filteredResults.map((item: any, i: number) => (
 											<motion.button
 												key={item.id || i}
 												initial={{ opacity: 0, x: -10 }}
