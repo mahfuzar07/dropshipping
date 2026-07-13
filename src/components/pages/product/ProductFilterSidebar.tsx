@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { getCategoryChildren, getCategoryKey } from '@/lib/utils/category-helpers';
 
 export interface CategoryItem {
 	[key: string]: any;
@@ -69,11 +70,10 @@ export default function ProductFilterSidebar() {
 		}
 	};
 
-	// ---- Flat, single-level category navigation (no nested tree) ----
+	// ---- Category navigation (supports `subcategories` OR `items` shaped children) ----
 	const level = categoryPath.length;
 	const deepest = categoryPath[level - 1] as any;
-	// items to show: children of the deepest selected category, or top-level list if nothing selected
-	const itemsAtLevel: Category[] = level === 0 ? categories : (deepest?.subcategories ?? []);
+	const itemsAtLevel: any[] = level === 0 ? categories : getCategoryChildren(deepest);
 
 	const handleGoBack = () => {
 		if (level === 0) return;
@@ -127,7 +127,7 @@ export default function ProductFilterSidebar() {
 					)}
 				</div>
 
-				{/* Categories - single-level, replace-on-select */}
+				{/* Categories */}
 				<div className="mb-3 border-b border-border/50 pb-3">
 					<h4
 						onClick={() => toggleSection('categories')}
@@ -148,13 +148,13 @@ export default function ProductFilterSidebar() {
 							)}
 
 							{itemsAtLevel.map((cat: any) => {
-								const catKey = cat.id ?? cat.name;
-								const isSelected = (categoryPath[level]?.id ?? categoryPath[level]?.name) === catKey;
+								const catKey = getCategoryKey(cat);
+								const isSelected = getCategoryKey(categoryPath[level]) === catKey;
 								return (
 									<div key={catKey} className="flex justify-between items-center">
-										<div className="flex items-center gap-2">
-											<Checkbox checked={isSelected} onCheckedChange={() => selectCategoryAtLevel(cat, level)} />
-											<span className={isSelected ? 'text-primary font-medium' : ''}>{cat.name}</span>
+										<div onClick={() => selectCategoryAtLevel(cat, level)} className="flex items-center gap-2 cursor-pointer">
+											<Checkbox checked={isSelected} />
+											<span>{cat.name}</span>
 										</div>
 										{cat.product_count !== undefined && <span className="text-xs text-gray-400">({cat.product_count})</span>}
 									</div>

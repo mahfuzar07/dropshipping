@@ -26,6 +26,7 @@ interface FilterState {
 	};
 	setSearchText: (searchText: string) => void;
 	selectCategoryAtLevel: (category: MenuCategoryLite | null, level: number) => void;
+	navigateToBreadcrumbLevel: (level: number) => void;
 	toggleDiscount: () => void;
 	setPriceRange: (priceRange: [number, number]) => void;
 	toggleRating: (rating: number) => void;
@@ -43,7 +44,7 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 	searchText: '',
 	categoryPath: [],
 	discountOnly: false,
-	priceRange: [0, 1000000000],
+	priceRange: [0, 10000],
 	selectedRatings: [],
 	sortBy: 'newest',
 	viewMode: 'grid',
@@ -67,11 +68,6 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 			};
 		}),
 
-	// Selecting a category at a given depth:
-	// - replaces the chain from that depth downward with the newly picked category
-	// - clicking the already-selected item again deselects it (and everything below it)
-	// - there's no separate "category" backend param — selecting a category
-	//   IS just searching by that category's name (same as before).
 	selectCategoryAtLevel: (category, level) =>
 		set((state) => {
 			const current = state.categoryPath[level];
@@ -87,6 +83,17 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 				nextPath = [...state.categoryPath.slice(0, level), category];
 			}
 
+			const deepest = nextPath[nextPath.length - 1];
+			return {
+				categoryPath: nextPath,
+				searchText: deepest ? deepest.name : '',
+			};
+		}),
+
+	navigateToBreadcrumbLevel: (level) =>
+		set((state) => {
+			// level < 0 (the root "Category" crumb) clears everything
+			const nextPath = level < 0 ? [] : state.categoryPath.slice(0, level + 1);
 			const deepest = nextPath[nextPath.length - 1];
 			return {
 				categoryPath: nextPath,
@@ -151,7 +158,7 @@ export const useProductFilterStore = create<FilterState>((set, get) => ({
 			searchText: '',
 			categoryPath: [],
 			discountOnly: false,
-			priceRange: [0, 1_000_000_000],
+			priceRange: [0, 10000],
 			selectedRatings: [],
 			pagination: {
 				...get().pagination,

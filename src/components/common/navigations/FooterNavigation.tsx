@@ -57,15 +57,15 @@ export default function FooterNavigation() {
 					{/* Empty Space */}
 					<div />
 
-					{/* Shop */}
+					{/* Products */}
 					<Link
-						href="/shop"
+						href="/product-list"
 						className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-							isActive('/shop') ? 'text-primary' : 'text-muted-foreground/80'
+							isActive('/product-list') ? 'text-primary' : 'text-muted-foreground/80'
 						}`}
 					>
 						<Package size={22} strokeWidth={1.8} />
-						<span className="text-xs font-medium">Shop</span>
+						<span className="text-xs font-medium">Products</span>
 					</Link>
 
 					{/* Account */}

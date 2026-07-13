@@ -41,6 +41,7 @@ export default function ProductsListPageContent() {
 		resetPagination,
 		clearAllFilters,
 		setPaginationData,
+		setPage,
 	} = useProductFilterStore();
 
 	/* ================================================================
@@ -60,6 +61,8 @@ export default function ProductsListPageContent() {
 		const maxP = searchParams.get('max_price');
 		const disc = searchParams.get('discount');
 		const sort = searchParams.get('sort');
+		const page = searchParams.get('page');
+		const pageSize = searchParams.get('page_size');
 
 		if (q) {
 			setSearchText(q);
@@ -68,15 +71,26 @@ export default function ProductsListPageContent() {
 		if (minP || maxP) setPriceRange([Number(minP ?? 0), Number(maxP ?? 1_000_000_000)]);
 		if (disc === 'true') toggleDiscount();
 		if (sort) setSortBy(sort);
+
+		if (page || pageSize) {
+			setPaginationData({
+				count: 0,
+				page_number: page ? Number(page) : 1,
+				page_size: pageSize ? Number(pageSize) : 20,
+				total_pages: 1,
+				hasMore: true,
+			});
+		}
 	}, []);
 
 	useEffect(() => {
 		const qFromURL = searchParams.get('search') || '';
+
 		if (qFromURL !== searchText) {
 			setSearchText(qFromURL);
 			setDebouncedSearch(qFromURL);
 		}
-	}, [searchParams, searchText, setSearchText]);
+	}, [searchParams]);
 
 	/* ================================================================
 	   2. DEBOUNCE searchText (400 ms)
@@ -86,8 +100,18 @@ export default function ProductsListPageContent() {
 		return () => clearTimeout(t);
 	}, [searchText]);
 
+	const filterSignature = JSON.stringify({
+		debouncedSearch,
+		discountOnly,
+		priceRange,
+		selectedRatings,
+		sortBy,
+	});
+	const prevFilterSignatureRef = useRef(filterSignature);
+	const filtersJustChanged = prevFilterSignatureRef.current !== filterSignature;
+
 	/* ================================================================
-	   3. SYNC FILTERS → URL
+	   4. SYNC FILTERS + PAGINATION → URL
 	   ================================================================ */
 	const updateURL = useCallback(
 		(params: URLSearchParams) => {
@@ -106,48 +130,28 @@ export default function ProductsListPageContent() {
 		if (priceRange[1] < 1_000_000_000) params.set('max_price', String(priceRange[1]));
 		if (sortBy && sortBy !== 'newest') params.set('sort', sortBy);
 
-		updateURL(params);
-	}, [debouncedSearch, discountOnly, priceRange, sortBy, updateURL]);
+		// don't write page=2 to the URL while a filter change is about to reset it to 1
+		const effectivePage = filtersJustChanged ? 1 : (pagination.page_number ?? 1);
+		if (effectivePage > 1) params.set('page', String(effectivePage));
+		if (pagination.page_size && pagination.page_size !== 20) params.set('page_size', String(pagination.page_size));
 
-	/* ================================================================
-	   4. FILTER CHANGE → RESET TO PAGE 1
-	   ================================================================ */
-	const prevFiltersRef = useRef({
-		debouncedSearch,
-		discountOnly,
-		priceRange,
-		selectedRatings,
-		sortBy,
-	});
+		updateURL(params);
+	}, [debouncedSearch, discountOnly, priceRange, sortBy, pagination.page_number, pagination.page_size, filtersJustChanged, updateURL]);
+
 
 	useEffect(() => {
-		const prev = prevFiltersRef.current;
-
-		const changed =
-			prev.debouncedSearch !== debouncedSearch ||
-			prev.discountOnly !== discountOnly ||
-			prev.sortBy !== sortBy ||
-			JSON.stringify(prev.priceRange) !== JSON.stringify(priceRange) ||
-			JSON.stringify(prev.selectedRatings) !== JSON.stringify(selectedRatings);
-
-		if (changed) {
+		if (filtersJustChanged) {
+			prevFilterSignatureRef.current = filterSignature;
 			resetPagination();
-			prevFiltersRef.current = {
-				debouncedSearch,
-				discountOnly,
-				priceRange,
-				selectedRatings,
-				sortBy,
-			};
 		}
-	}, [debouncedSearch, discountOnly, priceRange, selectedRatings, sortBy]);
+	}, [filtersJustChanged, filterSignature, resetPagination]);
 
 	/* ================================================================
-	   5. API PARAMS
+	   6. API PARAMS
 	   ================================================================ */
 	const filterParams = useMemo(
 		() => ({
-			page: pagination.page_number ?? 1,
+			page: filtersJustChanged ? 1 : (pagination.page_number ?? 1),
 			limit: pagination.page_size ?? 20,
 			...(debouncedSearch.trim() && { search: debouncedSearch.trim() }),
 			...(discountOnly && { discount: true }),
@@ -155,11 +159,11 @@ export default function ProductsListPageContent() {
 			...(priceRange[1] < 1_000_000_000 && { maxPrice: priceRange[1] }),
 			...(sortBy && sortBy !== 'newest' && { sortBy }),
 		}),
-		[pagination.page_number, pagination.page_size, debouncedSearch, discountOnly, priceRange, sortBy],
+		[filtersJustChanged, pagination.page_number, pagination.page_size, debouncedSearch, discountOnly, priceRange, sortBy],
 	);
 
 	/* ================================================================
-	   6. FETCH
+	   7. FETCH
 	   ================================================================ */
 	const { data, isLoading } = useAppData<ProductResponse, 'single'>({
 		key: [QueriesKey.NEW_LAUNCH_PRODUCTS, filterParams],
@@ -185,7 +189,7 @@ export default function ProductsListPageContent() {
 	const categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories ?? []);
 
 	/* ================================================================
-	   7. SYNC PAGINATION META FROM RESPONSE (current page only, no accumulation)
+	   8. SYNC PAGINATION META FROM RESPONSE (current page only, no accumulation)
 	   ================================================================ */
 	useEffect(() => {
 		const currentPage = filterParams.page;
@@ -203,7 +207,7 @@ export default function ProductsListPageContent() {
 	}, [data]);
 
 	/* ================================================================
-	   8. CLIENT-SIDE RATING FILTER + SORT (applied on the current page only)
+	   9. CLIENT-SIDE RATING FILTER + SORT (applied on the current page only)
 	   ================================================================ */
 	const products: Product[] = data?.items?.item ?? [];
 
@@ -222,19 +226,13 @@ export default function ProductsListPageContent() {
 	}, [data, selectedRatings, sortBy]);
 
 	/* ================================================================
-	   9. PAGE CHANGE HANDLER
+	   10. PAGE CHANGE HANDLER
 	   ================================================================ */
 	const handlePageChange = (page: number) => {
 		const totalPages = pagination.total_pages ?? 1;
 		if (page < 1 || page > totalPages || page === pagination.page_number) return;
 
-		setPaginationData({
-			count: pagination.count ?? 0,
-			page_number: page,
-			page_size: pagination.page_size ?? 20,
-			total_pages: totalPages,
-			hasMore: page < totalPages,
-		});
+		setPage(page);
 
 		if (typeof window !== 'undefined') {
 			window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -242,7 +240,7 @@ export default function ProductsListPageContent() {
 	};
 
 	/* ================================================================
-	   10. CLEAR ALL
+	   11. CLEAR ALL
 	   ================================================================ */
 	const handleClearAll = () => {
 		clearAllFilters();
@@ -263,7 +261,7 @@ export default function ProductsListPageContent() {
 				{/* Products */}
 				<div className="col-span-9">
 					{/* Toolbar */}
-					<div className="flex md:flex-row flex-col gap-2   md:items-center justify-between mb-3">
+					<div className="flex md:flex-row flex-col gap-2 md:items-center justify-between mb-3">
 						<div>
 							<p className="text-xs md:text-base font-semibold">
 								SHOWING RESULTS FOR <span className="uppercase text-primary ml-1"> {searchText}</span>

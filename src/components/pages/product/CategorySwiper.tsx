@@ -1,16 +1,17 @@
 'use client';
 
 import { useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { useProductFilterStore, type MenuCategoryLite } from '@/z-store/product/useProductFilterStore';
 import { cn } from '@/lib/utils/utils';
+import { getCategoryChildren, getCategoryKey } from '@/lib/utils/category-helpers';
 
 interface CategorySwiperProps {
 	categories: any[]; // top-level category tree, each with .subcategories
 }
 
 export default function CategorySwiper({ categories }: CategorySwiperProps) {
-	const { categoryPath, selectCategoryAtLevel } = useProductFilterStore();
+	const { categoryPath, selectCategoryAtLevel, navigateToBreadcrumbLevel } = useProductFilterStore();
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	// drag-to-scroll state
@@ -60,32 +61,31 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 	const level = categoryPath.length;
 	const deepest = categoryPath[level - 1];
 	// items to show: children of the deepest selected category, or top-level list if nothing selected
-	const itemsAtLevel: any[] = level === 0 ? categories : (deepest?.subcategories ?? []);
+	const itemsAtLevel: any[] = level === 0 ? categories : getCategoryChildren(deepest);
 
 	return (
 		<div className="mb-4">
 			{/* Breadcrumb */}
 			{categoryPath.length > 0 && (
 				<div className="flex items-center gap-1 text-xs text-gray-500 mb-2 flex-wrap">
-					{categoryPath.length > 0 && (
-						<div className="flex items-center gap-1 text-xs text-gray-500 mb-2 flex-wrap">
-							<button className="hover:text-primary hover:underline">Category</button>
-							{categoryPath.map((c, i) => {
-								const catKey = c.id ?? c.name;
-								return (
-									<span key={catKey} className="flex items-center gap-1">
-										<span>/</span>
-										<button
-											className={cn('hover:text-primary hover:underline', i === categoryPath.length - 1 && 'text-primary font-medium')}
-											onClick={() => selectCategoryAtLevel(c as MenuCategoryLite, i)}
-										>
-											{c.name}
-										</button>
-									</span>
-								);
-							})}
-						</div>
-					)}
+					{/* Root crumb: clears the whole path, goes back to top-level categories */}
+					<button className="hover:text-primary hover:underline cursor-pointer" onClick={() => navigateToBreadcrumbLevel(-1)}>
+						<LayoutDashboard size={14} strokeWidth={1.8} />
+					</button>
+					{categoryPath.map((c, i) => {
+						const catKey = getCategoryKey(c);
+						return (
+							<span key={catKey} className="flex items-center gap-1">
+								<span>/</span>
+								<button
+									className={cn('hover:text-primary hover:underline  cursor-pointer', i === categoryPath.length - 1 && 'text-primary font-medium')}
+									onClick={() => navigateToBreadcrumbLevel(i)}
+								>
+									{c.name}
+								</button>
+							</span>
+						);
+					})}
 				</div>
 			)}
 
@@ -111,14 +111,14 @@ export default function CategorySwiper({ categories }: CategorySwiperProps) {
 						onClickCapture={onClickCapture}
 					>
 						{itemsAtLevel.map((cat) => {
-							const catKey = cat.id ?? cat.name;
-							const isSelected = (categoryPath[level]?.id ?? categoryPath[level]?.name) === catKey;
+							const catKey = getCategoryKey(cat);
+							const isSelected = getCategoryKey(categoryPath[level]) === catKey;
 							return (
 								<button
 									key={catKey}
 									onClick={() => selectCategoryAtLevel(cat, level)}
 									className={cn(
-										'shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm transition-colors',
+										'shrink-0 whitespace-nowrap  cursor-pointer rounded-full border px-4 py-1.5 text-sm transition-colors',
 										isSelected ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-200 hover:border-primary',
 									)}
 								>
