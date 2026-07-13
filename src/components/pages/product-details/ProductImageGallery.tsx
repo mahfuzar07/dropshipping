@@ -130,7 +130,7 @@ export default function ProductImageGallery({ images, productName, selectedImage
 						<SwiperSlide key={index}>
 							<div
 								onClick={() => selectImage(index)}
-								className={`aspect-square relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+								className={`aspect-square relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 shrink-0 ${
 									selectedImage === index ? 'border-primary ring-2 ring-primary/30 shadow-md' : 'border-border hover:border-primary/50'
 								}`}
 							>

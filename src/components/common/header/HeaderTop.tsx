@@ -12,11 +12,9 @@ import HoverPopover from '@/components/ui/custom/HoverPopover';
 import ProfileContent from './dropdown-content/ProfileContent';
 import SearchBar from '../elements/SearchBar';
 
-interface HeaderTopProps {
-	isScrolled: boolean;
-}
 
-export default function HeaderTop({ isScrolled }: HeaderTopProps) {
+
+export default function HeaderTop() {
 	const { openDrawer, openModal } = useLayoutStore();
 
 	const { logout, isAuthenticated, user } = useAuthStore();

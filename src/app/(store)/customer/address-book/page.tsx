@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 	title: 'My Address Book',
 };
 
+
 export default function AddressBookPage() {
 	return (
 		<div className="">

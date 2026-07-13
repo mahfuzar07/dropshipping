@@ -1,4 +1,3 @@
-// app/layout.tsx
 import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Play, Hanken_Grotesk, Emilys_Candy } from 'next/font/google';
@@ -14,9 +13,12 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import { scripts } from '@/lib/script/Script';
 import ClientAuthHydrator from '@/providers/ClientAuthHydrator';
 import NextAuthProvider from '@/providers/NextAuthProvider';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 // import { loadSiteConfigs } from '@/config/config';
 import getFullImageUrl from '@/lib/utils/getFullImageUrl';
+import { loadSiteConfigs } from '@/config/config';
 
 /* -------------------------------------------------------------------------- */
 /*                                   FONTS                                    */
@@ -55,33 +57,31 @@ const emily = Emilys_Candy({
 /*                              DYNAMIC METADATA                              */
 /* -------------------------------------------------------------------------- */
 
-// export async function generateMetadata(): Promise<Metadata> {
-// 	try {
-// 		const { metaConfig, storeConfig } = await loadSiteConfigs();
+export async function generateMetadata(): Promise<Metadata> {
+	try {
+		const { metaConfig, storeConfig } = await loadSiteConfigs();
 
-// 		return {
-// 			title: {
-// 				default: `${metaConfig.metaTitle || 'Twinkle Bud'} | ${metaConfig.metaTagline || 'Screen-Safe Learning & Creative Fun for Kids'}`,
-// 				template: `%s | ${metaConfig.metaTitle || 'Twinkle Bud'}`,
-// 			},
-// 			description: metaConfig.metaDescription || '',
-// 			keywords: metaConfig.metaKeywords || [],
-// 			alternates: {
-// 				canonical: metaConfig.canonicalUrl || undefined,
-// 			},
-// 			icons: storeConfig.storeIcon
-// 				? { icon: [{ url: getFullImageUrl(storeConfig.storeIcon) }] }
-// 				: undefined,
-// 		};
-// 	} catch (err) {
-// 		console.error('[Metadata] loadSiteConfigs failed:', err);
+		return {
+			title: {
+				default: `${metaConfig.metaTitle} | ${metaConfig.metaTagline}`,
+				template: `%s | ${metaConfig.metaTitle}`,
+			},
+			description: metaConfig.metaDescription || '',
+			keywords: metaConfig.metaKeywords || [],
+			alternates: {
+				canonical: metaConfig.canonicalUrl || undefined,
+			},
+			icons: storeConfig.storeIcon ? { icon: [{ url: getFullImageUrl(storeConfig.storeIcon) }] } : undefined,
+		};
+	} catch (err) {
+		console.error('[Metadata] loadSiteConfigs failed:', err);
 
-// 		return {
-// 			title: 'Twinkle Bud',
-// 			description: '',
-// 		};
-// 	}
-// }
+		return {
+			title: '',
+			description: '',
+		};
+	}
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                 ROOT LAYOUT                                */

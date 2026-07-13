@@ -3,14 +3,18 @@ import ProductDetailsPageContent from '@/components/pages/product-details/Produc
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 
+export async function generateMetadata({ params }: { params: Promise<{ productId: number }> }): Promise<Metadata> {
+	const { productId } = await params;
 
-// export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
-// 	const { productId } = await params;
-
-// 	return {
-// 		title: slugToTitle(productId),
-// 	};
-// }
+	return {
+		title: `Product: ${productId}`,
+		description: `View details for Product #${productId}.`,
+		robots: {
+			index: false,
+			follow: false,
+		},
+	};
+}
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ productId: number }> }) {
 	const { productId } = await params;

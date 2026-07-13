@@ -10,9 +10,9 @@ export default function Header() {
 	return (
 		<>
 			<header
-				className={`sticky w-full md:min-h-[120px] top-0 left-0 right-0 z-50 transition-transform duration-300 bg-white  shadow ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
+				className={`sticky w-full md:min-h-[120px] top-0 left-0 right-0 z-50 transition-transform duration-300 bg-white  shadow ${isVisible ? 'translate-y-0' : ''}`}
 			>
-				<HeaderTop isScrolled={isVisible} />
+				<HeaderTop />
 
 				<HeaderBottom />
 			</header>

@@ -51,7 +51,7 @@ export default function TypoTitle({
 					}}
 				/>
 
-				<h2 className={cn('relative z-10 text-lg md:text-2xl font-bold tracking-tight', titleClassName)}>{title}</h2>
+				<h2 className={cn('relative z-10 text-sm md:text-lg font-bold tracking-tight', titleClassName)}>{title}</h2>
 			</div>
 
 			{/* Subtitle */}

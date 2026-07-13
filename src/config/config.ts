@@ -84,55 +84,78 @@ export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 /*                           PUBLIC LOADER FUNCTION                            */
 /* -------------------------------------------------------------------------- */
 
-// export async function loadSiteConfigs() {
-// 	const data = await getSiteSettings();
-// 	const settingsData = data?.payload ?? {};
+export async function loadSiteConfigs() {
+	// const data = await getSiteSettings();
+	// const settingsData = data?.payload ?? {};
 
-// 	const storeConfig: StoreConfig = {
-// 		storeName: settingsData?.storeName ?? '',
-// 		storeLogo: settingsData?.storeLogo ?? '',
-// 		storeIcon: settingsData?.storeIcon ?? '',
-// 		contactPhone: settingsData?.contactPhone ?? '',
-// 		contactEmail: settingsData?.contactEmail ?? '',
-// 		address: settingsData?.address ?? '',
-// 	};
+	const storeConfig: StoreConfig = {
+		storeName: '',
+		storeLogo: '',
+		storeIcon: '',
+		contactPhone: '',
+		contactEmail: '',
+		address: '',
+	};
 
-// 	const metaConfig: MetaConfig = {
-// 		metaTitle: settingsData?.metaTitle ?? '',
-// 		metaTagline: settingsData?.metaTagline ?? '',
-// 		canonicalUrl: settingsData?.canonicalUrl ?? '',
-// 		metaKeywords: Array.isArray(settingsData?.metaKeywords) ? settingsData.metaKeywords : [],
-// 		metaDescription: settingsData?.metaDescription ?? '',
-// 	};
+	const metaConfig: MetaConfig = {
+		metaTitle: 'Xianmart',
+		metaTagline: 'Buy Products from China with Fast Delivery in Bangladesh',
+		canonicalUrl: 'https://xianmart.com',
+		metaKeywords: [
+			'Xianmart',
+			'China to Bangladesh',
+			'China shopping',
+			'Dropshipping Bangladesh',
+			'Chinese products',
+			'Import from China',
+			'Online shopping Bangladesh',
+			'Affordable products',
+			'Fashion',
+			'Electronics',
+			'Home appliances',
+			'Kitchen accessories',
+			'Beauty products',
+			'Mobile accessories',
+			'Wholesale China',
+			'Retail Bangladesh',
+			'Ecommerce Bangladesh',
+			'Chinese gadgets',
+			'Fast delivery',
+			'Secure online shopping',
+			'Bangladesh online store',
+		],
+		metaDescription:
+			'xianmart is a trusted China to Bangladesh online shopping and dropshipping platform. Shop quality products directly sourced from China with affordable prices, secure payments, and fast nationwide delivery.',
+	};
 
-// 	const googleMetaConfig: GoogleMetaConfig = {
-// 		googleAnalyticsId: settingsData?.googleAnalyticsId ?? '',
-// 		googleAdsConversionId: settingsData?.googleAdsConversionId ?? '',
-// 		facebookPixelId: settingsData?.facebookPixelId ?? '',
-// 		metaPixelToken: settingsData?.metaPixelToken ?? '',
-// 	};
+	const googleMetaConfig: GoogleMetaConfig = {
+		googleAnalyticsId: '',
+		googleAdsConversionId: '',
+		facebookPixelId: '',
+		metaPixelToken: '',
+	};
 
-// 	const localizationConfig: LocalizationConfig = {
-// 		country: settingsData?.country ?? '',
-// 		language: settingsData?.language ?? '',
-// 		currency: settingsData?.currency ?? '',
-// 		theme: settingsData?.theme ?? '',
-// 	};
+	const localizationConfig: LocalizationConfig = {
+		country: '',
+		language: '',
+		currency: '',
+		theme: '',
+	};
 
-// 	const socialLinkConfig: SocialLinkConfig = {
-// 		facebookUrl: settingsData?.facebookUrl ?? '',
-// 		instagramUrl: settingsData?.instagramUrl ?? '',
-// 		youtubeUrl: settingsData?.youtubeUrl ?? '',
-// 		xUrl: settingsData?.xUrl ?? '',
-// 		whatsappNumber: settingsData?.whatsappNumber ?? '',
-// 	};
+	const socialLinkConfig: SocialLinkConfig = {
+		facebookUrl: '',
+		instagramUrl: '',
+		youtubeUrl: '',
+		xUrl: '',
+		whatsappNumber: '',
+	};
 
-// 	return {
-// 		storeConfig,
-// 		metaConfig,
-// 		googleMetaConfig,
-// 		localizationConfig,
-// 		socialLinkConfig,
-// 		raw: settingsData,
-// 	};
-// }
+	return {
+		storeConfig,
+		metaConfig,
+		googleMetaConfig,
+		localizationConfig,
+		socialLinkConfig,
+		// raw: settingsData,
+	};
+}

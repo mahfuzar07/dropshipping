@@ -102,21 +102,21 @@ const mapProductData = (response: ProductDetails) => {
 		});
 	}
 
-const variants: Variant[] = Array.isArray(product.skus?.sku)
-	? product.skus.sku.map((sku) => ({
-			color_name: sku.properties_name,
-			image,
-			active: true,
-			skuId: sku.sku_id,
-			sizes: [
-				{
-					size_name: 'Default',
-					price: String(sku.price),
-					stock: String(sku.quantity),
-				},
-			],
-		}))
-	: [];
+	const variants: Variant[] = Array.isArray(product.skus?.sku)
+		? product.skus.sku.map((sku) => ({
+				color_name: sku.properties_name,
+				image,
+				active: true,
+				skuId: sku.sku_id,
+				sizes: [
+					{
+						size_name: 'Default',
+						price: String(sku.price),
+						stock: String(sku.quantity),
+					},
+				],
+			}))
+		: [];
 
 	return {
 		id: String(product.num_iid),
@@ -208,62 +208,44 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 	const mainImage = selectedVariant?.image || product.image;
 
 	return (
-		<div className="py-3">
-			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
-				{/* LEFT */}
-				<div className="md:col-span-9 col-span-1 grid grid-cols-1 md:grid-cols-12 gap-6">
-					{/* IMAGE */}
-					<div className="md:col-span-5 col-span-12">
-						<ProductImageGallery
-							images={product.galleryImages}
-							productName={product.name}
-							selectedImageIndex={selectedColorIndex + 1}
-							onSelectImage={(index) => {
-								if (index > 0) {
-									setSelectedColorIndex(index - 1);
-								}
-							}}
-						/>
-					</div>
-
-					{/* INFO */}
-					<div className="md:col-span-7 col-span-12">
-						<ProductInfo
-							product={{
-								id: product.id,
-								name: product.name,
-								price: product.price,
-								currency: product.currency,
-								solded: product.sold,
-								description: product.description,
-								colors: product.colors,
-								image: mainImage,
-								variants: product.variants,
-								rating: product.rating,
-								reviewCount: product.reviewCount,
-							}}
-							selectedColorQty={selectedColorQty}
-							updateColorQty={updateColorQty}
-						/>
-					</div>
-					<div className="md:hidden col-span-12">
-						<CartSection
-							product={{
-								...product,
-								selectedColorQty,
-							}}
-						/>
-					</div>
-
-					{/* TABS */}
-					<div className="col-span-12 bg-white rounded-lg p-5">
-						<SellerInfo seller={product.seller} />
-						<ProductTabs description={product.description} specifications={product.specifications} reviews={[]} />
-					</div>
+		<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
+			{/* LEFT */}
+			<div className="md:col-span-9 col-span-1 grid grid-cols-1 md:grid-cols-12 gap-6">
+				{/* IMAGE */}
+				<div className="md:col-span-5 col-span-12">
+					<ProductImageGallery
+						images={product.galleryImages}
+						productName={product.name}
+						selectedImageIndex={selectedColorIndex + 1}
+						onSelectImage={(index) => {
+							if (index > 0) {
+								setSelectedColorIndex(index - 1);
+							}
+						}}
+					/>
 				</div>
 
-				{/* RIGHT */}
-				<div className="md:col-span-3 col-span-1 sticky top-5 self-start hidden md:block">
+				{/* INFO */}
+				<div className="md:col-span-7 col-span-12">
+					<ProductInfo
+						product={{
+							id: product.id,
+							name: product.name,
+							price: product.price,
+							currency: product.currency,
+							solded: product.sold,
+							description: product.description,
+							colors: product.colors,
+							image: mainImage,
+							variants: product.variants,
+							rating: product.rating,
+							reviewCount: product.reviewCount,
+						}}
+						selectedColorQty={selectedColorQty}
+						updateColorQty={updateColorQty}
+					/>
+				</div>
+				<div className="md:hidden col-span-12">
 					<CartSection
 						product={{
 							...product,
@@ -271,6 +253,22 @@ export default function ProductDetailsPageContent({ productId }: { productId: nu
 						}}
 					/>
 				</div>
+
+				{/* TABS */}
+				<div className="col-span-12 bg-white rounded-lg p-5">
+					<SellerInfo seller={product.seller} />
+					<ProductTabs description={product.description} specifications={product.specifications} reviews={[]} />
+				</div>
+			</div>
+
+			{/* RIGHT */}
+			<div className="md:col-span-3 col-span-1 sticky top-18 self-start hidden md:block">
+				<CartSection
+					product={{
+						...product,
+						selectedColorQty,
+					}}
+				/>
 			</div>
 		</div>
 	);

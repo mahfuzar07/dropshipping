@@ -1,7 +1,7 @@
 import LoadingSkeleton from '@/components/common/loader/LoadingSkeleton';
 import CartPageContent from '@/components/pages/cart/CartPageContent';
-import { Metadata } from 'next';
 import { Suspense } from 'react';
+import { Metadata } from 'next';
 // Meta Data
 export const metadata: Metadata = {
 	title: 'Cart',

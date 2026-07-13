@@ -85,7 +85,7 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 
 			{/* Price */}
 			<div className="flex items-center gap-3">
-				<div className="text-4xl font-bold font-hanken">
+				<div className="text-4xl font-bold font-hanken text-orange-600">
 					{getCurrencySymbol()}
 					{product.price.toLocaleString()}
 				</div>
@@ -108,8 +108,8 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 							<button
 								key={`${color.name}-${index}`}
 								onClick={() => setExpandedColor(expandedColor === index ? -1 : index)}
-								className={`relative w-10 h-10 rounded-full border-2 transition-all ${
-									expandedColor === index ? 'border-black scale-110' : hasQty ? 'border-orange-400' : 'border-gray-300'
+								className={`relative w-10 h-10 rounded-full border-2 transition-all cursor-pointer ${
+									expandedColor === index ? 'border-primary' : hasQty ? 'border-primary' : 'border-gray-300'
 								}`}
 								style={{
 									backgroundImage: `url(${color.image})`,

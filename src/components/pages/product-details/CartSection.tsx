@@ -183,12 +183,12 @@ export default function CartSection({ product }: { product: any }) {
 				<div
 					onClick={() => setSelectedShipping('air')}
 					className={`min-h-[100px] flex-1 flex items-center justify-center rounded-2xl p-2 cursor-pointer transition-all border-2
-						${selectedShipping === 'air' ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+						${selectedShipping === 'air' ? 'bg-primary/10 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}
 				>
 					<div className="flex items-center gap-3">
 						<div
 							className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center
-							${selectedShipping === 'air' ? 'bg-orange-300 text-white' : 'bg-gray-100 text-gray-500'}`}
+							${selectedShipping === 'air' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}
 						>
 							<Plane className="w-6 h-6" />
 						</div>
@@ -202,12 +202,12 @@ export default function CartSection({ product }: { product: any }) {
 				<div
 					onClick={() => setSelectedShipping('sea')}
 					className={`min-h-[100px] flex-1 flex items-center justify-center rounded-2xl p-2 cursor-pointer transition-all border-2
-						${selectedShipping === 'sea' ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+						${selectedShipping === 'sea' ? 'bg-primary/10 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}
 				>
 					<div className="flex items-center gap-3">
 						<div
 							className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center
-							${selectedShipping === 'sea' ? 'bg-orange-300 text-white' : 'bg-gray-100 text-gray-500'}`}
+							${selectedShipping === 'sea' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}
 						>
 							<Ship className="w-6 h-6" />
 						</div>
@@ -256,7 +256,7 @@ export default function CartSection({ product }: { product: any }) {
 
 				{/* Shipping info box */}
 				<div className="py-2">
-					<div className="flex items-center justify-between border border-dashed border-orange-300 bg-gray-50 rounded-xl p-4 mb-3">
+					<div className="flex items-center justify-between border border-dashed border-primary/50 bg-gray-50 rounded-xl p-4 mb-3">
 						<div>
 							<div className="font-medium">Weight: {weightKg > 0 ? `${weightKg}kg per unit` : 'Calculating...'}</div>
 							<div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -266,7 +266,7 @@ export default function CartSection({ product }: { product: any }) {
 						</div>
 						<div className="flex items-center gap-2">
 							<span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full">Slot</span>
-							<button className="text-orange-300 hover:text-orange-400 transition-colors font-semibold rounded-full flex items-center text-sm cursor-pointer">
+							<button className="text-primary hover:text-primary/50 transition-colors font-semibold rounded-full flex items-center text-sm cursor-pointer">
 								<ScanEye />
 							</button>
 						</div>
@@ -281,7 +281,7 @@ export default function CartSection({ product }: { product: any }) {
 					<Button
 						onClick={() => requireAuth(handleBuyNow)}
 						size="lg"
-						className="w-full bg-orange-300 hover:bg-orange-500 text-white font-semibold py-3.5 rounded-xl transition"
+						className="w-full bg-primary hover:bg-primary/80 text-white font-semibold py-3.5 rounded-xl transition"
 					>
 						Buy Now
 					</Button>
@@ -290,7 +290,7 @@ export default function CartSection({ product }: { product: any }) {
 						disabled={isSubmitting}
 						variant="outline"
 						size="lg"
-						className="w-full border border-orange-300 text-orange-300 hover:bg-orange-500 hover:text-white font-medium py-3.5 rounded-xl transition"
+						className="w-full border border-primary/50 text-primary hover:bg-primary hover:text-white font-medium py-3.5 rounded-xl transition"
 					>
 						{isSubmitting ? 'Adding...' : 'Add to Cart'}
 					</Button>
@@ -298,7 +298,7 @@ export default function CartSection({ product }: { product: any }) {
 			</div>
 
 			{/* Dropship Banner */}
-			<div className="mx-3 mb-5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl px-3 py-5 text-white overflow-hidden relative">
+			<div className="mx-3 mb-5 bg-gradient-to-r from-primary to-primary/60 rounded-2xl px-3 py-5 text-white overflow-hidden relative">
 				<div className="max-w-[65%]">
 					<h3 className="text-2xl font-bold leading-tight mb-2">
 						Dropship this product with
@@ -310,7 +310,7 @@ export default function CartSection({ product }: { product: any }) {
 						<br />
 						Just sell and grow your business.
 					</p>
-					<button className="bg-white text-orange-600 font-semibold px-6 py-2.5 rounded-full text-sm hover:bg-orange-50 transition">
+					<button className="bg-white text-primary font-semibold px-6 py-2.5 rounded-full text-sm hover:bg-orange-50 transition">
 						Start Dropshipping
 					</button>
 				</div>
@@ -323,23 +323,23 @@ export default function CartSection({ product }: { product: any }) {
 				<h4 className="font-semibold text-lg mb-4">Brand Assurance</h4>
 				<div className="space-y-3 text-sm">
 					<div className="flex items-center gap-3">
-						<ShieldCheck className="w-5 h-5 text-green-600" />
+						<ShieldCheck className="w-5 h-5 text-primary" />
 						<span>100% money back guarantee</span>
 					</div>
 					<div className="flex items-center gap-3">
-						<Clock className="w-5 h-5 text-green-600" />
+						<Clock className="w-5 h-5 text-primary" />
 						<span>On time guarantee</span>
 					</div>
 					<div className="flex items-center gap-3">
-						<Search className="w-5 h-5 text-green-600" />
+						<Search className="w-5 h-5 text-primary" />
 						<span>Detailed inspection</span>
 					</div>
 					<div className="flex items-center gap-3">
-						<TrendingDown className="w-5 h-5 text-green-600" />
+						<TrendingDown className="w-5 h-5 text-primary" />
 						<span>Lower exchange loss</span>
 					</div>
 					<div className="flex items-center gap-3">
-						<Lock className="w-5 h-5 text-green-600" />
+						<Lock className="w-5 h-5 text-primary" />
 						<span>Security & Privacy</span>
 					</div>
 				</div>

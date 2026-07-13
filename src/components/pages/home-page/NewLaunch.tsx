@@ -92,43 +92,39 @@ export default function NewLaunch() {
 	};
 
 	return (
-		<div className="py-8">
-			<div className="container mx-auto px-2">
-				{/* Title and See More */}
-				<div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
-					<h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight font-hanken">
-						NEW LAUNCHES
-					</h2>
-					<Link
-						href="/product-list"
-						className="group flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-					>
-						See More
-						<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-					</Link>
-				</div>
+		<div className="container mx-auto px-2 md:py-12 py-5">
+			{/* Title and See More */}
+			<div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+				<h2 className="text-sm md:text-lg font-bold text-gray-800 uppercase tracking-tight font-hanken">NEW LAUNCHES</h2>
+				<Link
+					href="/product-list"
+					className="group flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+				>
+					See More
+					<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+				</Link>
+			</div>
 
-				{/* Skeleton while loading */}
-				{isLoading ? (
-					<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-						{Array.from({ length: 10 }).map((_, i) => (
-							<ProductCardSkeleton key={i} />
+			{/* Skeleton while loading */}
+			{isLoading ? (
+				<div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+					{Array.from({ length: 10 }).map((_, i) => (
+						<ProductCardSkeleton key={i} />
+					))}
+				</div>
+			) : (
+				<>
+					{/* Product Grid */}
+					<div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+						{products.map((product) => (
+							<ProductCard product={product} key={product.num_iid} />
 						))}
 					</div>
-				) : (
-					<>
-						{/* Product Grid */}
-						<div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
-							{products.map((product) => (
-								<ProductCard product={product} key={product.num_iid} />
-							))}
-						</div>
 
-						{/* Pagination */}
-						{/* <ProductPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} /> */}
-					</>
-				)}
-			</div>
+					{/* Pagination */}
+					{/* <ProductPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} /> */}
+				</>
+			)}
 		</div>
 	);
 }
