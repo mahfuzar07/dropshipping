@@ -28,4 +28,5 @@ export const QueriesKey = {
 	ADMIN_CATEGORIES: 'admin-categories',
 	ADMIN_EXCHANGE_RATES: 'admin-exchange-rates',
 	ADMIN_ANALYTICS: 'admin-analytics',
+	ADMIN_NOTIFICATIONS: 'admin-notifications',
 };

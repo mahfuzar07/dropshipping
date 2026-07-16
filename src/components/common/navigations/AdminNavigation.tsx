@@ -1,18 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-	Users,
-	Settings,
-	BarChart3,
-	LayoutDashboard,
-	ChevronDown,
-	ChevronUp,
-	ClipboardList,
-	ShoppingCart,
-	TicketPercent,
-} from 'lucide-react';
+import { Users, Settings, BarChart3, LayoutDashboard, ChevronDown, ChevronUp, ClipboardList, ShoppingCart, TicketPercent } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface MenuItem {
 	icon?: React.ComponentType<{ className?: string }>;
@@ -70,28 +61,27 @@ export default function AdminNavigation({ currentPath, closeDrawer }: { currentP
 	const MenuItemComponent = ({ item, isChild = false }: { item: MenuItem; isChild?: boolean }) => {
 		const hasSubItems = !!item.subItems?.length;
 		const isExpanded = expandedItems.includes(item.label);
-		// const isActive = item.href === currentPath || item.subItems?.some((sub) => sub.href === currentPath);
 		const isActive = (item.href && currentPath.startsWith(item.href)) || item.subItems?.some((sub) => sub.href && currentPath.startsWith(sub.href));
 
 		return (
 			<div className="font-play">
 				<div
 					onClick={() => handleItemClick(item)}
-					className={`relative flex items-center w-full cursor-pointer px-6.5 py-2 ${isChild ? 'pl-10' : ''} ${
-						isActive ? 'text-white' : 'text-slate-300/65 hover:text-white duration-300'
+					className={`relative flex items-center w-full cursor-pointer px-6.5 py-2.5 ${isChild ? 'pl-10' : ''} ${
+						isActive ? 'text-[#F16A38] bg-orange-50/50 font-semibold' : 'text-slate-600 hover:text-slate-900 duration-300'
 					}`}
 				>
-					{!isChild && item.icon && <item.icon className={`mr-3.5 h-5 w-5 ${isActive ? 'text-[#F16A38]' : ''}`} />}
+					{!isChild && item.icon && <item.icon className={`mr-3.5 h-5 w-5 ${isActive ? 'text-[#F16A38]' : 'text-slate-400'}`} />}
 
-					{isActive && !isChild && <div className="absolute left-0 top-0 h-full w-0.5 bg-[#F16A38]" />}
+					{isActive && !isChild && <div className="absolute left-0 top-0 h-full w-1 bg-[#F16A38]" />}
 
 					<span className={`flex-1 ${isChild ? 'ml-5 text-sm font-medium hover:translate-x-1 duration-300' : 'text-[15px]'}`}>{item.label}</span>
 
 					{hasSubItems &&
 						(isExpanded ? (
-							<ChevronUp className="h-4 w-4 transition-transform duration-300" />
+							<ChevronUp className="h-4 w-4 transition-transform duration-300 text-slate-400" />
 						) : (
-							<ChevronDown className="h-4 w-4 transition-transform duration-300" />
+							<ChevronDown className="h-4 w-4 transition-transform duration-300 text-slate-400" />
 						))}
 				</div>
 
@@ -105,12 +95,12 @@ export default function AdminNavigation({ currentPath, closeDrawer }: { currentP
 
 	return (
 		<>
-			<div className="flex flex-col h-full w-full bg-dashboard-sidebar-background text-white">
-				<div className="py-5 text-center mb-3">
-					<h1 className="text-3xl font-bold text-[#F16A38]">Drop Shipping</h1>
-				</div>
+			<div className="flex flex-col h-full w-full bg-white border-r border-slate-200/60 text-slate-800">
+				<Link href="/admin/dashboard" className="w-full h-18 md:h-20 flex items-center justify-center bg-[#FF5A1F] border-b border-orange-600/25 p-2.5 cursor-pointer shrink-0">
+					<img src="/assets/brand.png" alt="Logo" className="w-full h-full object-contain filter brightness-0 invert" />
+				</Link>
 
-				<nav className="w-full space-y-4 py-5 pb-10 h-full overflow-y-auto scrollbar-hide">
+				<nav className="w-full space-y-2 py-5 pb-10 h-full overflow-y-auto scrollbar-hide">
 					{sidebarItems.map((item) => (
 						<MenuItemComponent key={item.label} item={item} />
 					))}

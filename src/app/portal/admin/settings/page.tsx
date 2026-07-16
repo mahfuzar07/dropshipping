@@ -20,6 +20,7 @@ import {
 	Download,
 	Upload,
 	Check,
+	Loader2,
 } from 'lucide-react';
 
 export default function AdminSettingsPage() {
@@ -39,6 +40,10 @@ export default function AdminSettingsPage() {
 	const [bkashAppKey, setBkashAppKey] = useState('bksh_app_key_82910391');
 	const [bkashSecret, setBkashSecret] = useState('••••••••••••••••••••••••••••••••');
 	const [nagadMerchantId, setNagadMerchantId] = useState('nagad_m_90192');
+
+	const [isSavingStore, setIsSavingStore] = useState(false);
+	const [isSavingCurrency, setIsSavingCurrency] = useState(false);
+	const [isSavingGateways, setIsSavingGateways] = useState(false);
 
 	// Fetch Exchange Rates from backend
 	const { data: ratesDataResponse } = useAppData<any, 'single'>({
@@ -64,13 +69,17 @@ export default function AdminSettingsPage() {
 		}
 	}, [cnyRecord, usdRecord]);
 
-	const handleSaveStore = (e: React.FormEvent) => {
+	const handleSaveStore = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setIsSavingStore(true);
+		await new Promise((resolve) => setTimeout(resolve, 800));
+		setIsSavingStore(false);
 		toast.success('Store profile and tax rules updated successfully!');
 	};
 
 	const handleSaveCurrency = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setIsSavingCurrency(true);
 		try {
 			// Save CNY
 			if (cnyRecord) {
@@ -106,11 +115,16 @@ export default function AdminSettingsPage() {
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_EXCHANGE_RATES] });
 		} catch (err) {
 			toast.error('Failed to update exchange rates');
+		} finally {
+			setIsSavingCurrency(false);
 		}
 	};
 
-	const handleSaveGateways = (e: React.FormEvent) => {
+	const handleSaveGateways = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setIsSavingGateways(true);
+		await new Promise((resolve) => setTimeout(resolve, 800));
+		setIsSavingGateways(false);
 		toast.success('Payment gateway merchant credentials stored securely!');
 	};
 
@@ -187,9 +201,47 @@ export default function AdminSettingsPage() {
 											<Input type="number" value={vatPercent} onChange={e => setVatPercent(e.target.value)} />
 										</div>
 									</div>
+
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-4">
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-2 uppercase">Website Logo</label>
+											<div className="flex items-center gap-3.5 p-3 border border-dashed rounded-lg bg-slate-50 hover:bg-slate-100/50 transition-colors">
+												<div className="w-14 h-14 bg-white border rounded flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+													<img src="/assets/brand.png" alt="Website Logo" className="w-full h-full object-contain" />
+												</div>
+												<div className="space-y-1">
+													<p className="text-xs font-semibold text-slate-700">brand.png</p>
+													<p className="text-[10px] text-slate-400">PNG or SVG, Max 2MB</p>
+													<Button type="button" variant="outline" size="sm" className="h-6 text-[10px] px-2 py-0">Change Logo</Button>
+												</div>
+											</div>
+										</div>
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-2 uppercase">Website Favicon / Icon</label>
+											<div className="flex items-center gap-3.5 p-3 border border-dashed rounded-lg bg-slate-50 hover:bg-slate-100/50 transition-colors">
+												<div className="w-14 h-14 bg-white border rounded flex items-center justify-center p-3 shrink-0 shadow-sm">
+													<img src="/favicon.png" alt="Website Icon" className="w-full h-full object-contain" />
+												</div>
+												<div className="space-y-1">
+													<p className="text-xs font-semibold text-slate-700">favicon.png</p>
+													<p className="text-[10px] text-slate-400">ICO or PNG, 32x32px</p>
+													<Button type="button" variant="outline" size="sm" className="h-6 text-[10px] px-2 py-0">Change Icon</Button>
+												</div>
+											</div>
+										</div>
+									</div>
+
 									<div className="flex justify-end pt-3">
-										<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1">
-											<Check size={14} /> Save Preferences
+										<Button type="submit" disabled={isSavingStore} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+											{isSavingStore ? (
+												<>
+													<Loader2 size={14} className="animate-spin" /> Saving...
+												</>
+											) : (
+												<>
+													<Check size={14} /> Save Preferences
+												</>
+											)}
 										</Button>
 									</div>
 								</form>
@@ -217,8 +269,16 @@ export default function AdminSettingsPage() {
 										</div>
 									</div>
 									<div className="flex justify-end pt-3">
-										<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1">
-											<Check size={14} /> Update Rates
+										<Button type="submit" disabled={isSavingCurrency} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+											{isSavingCurrency ? (
+												<>
+													<Loader2 size={14} className="animate-spin" /> Updating...
+												</>
+											) : (
+												<>
+													<Check size={14} /> Update Rates
+												</>
+											)}
 										</Button>
 									</div>
 								</form>
@@ -261,8 +321,16 @@ export default function AdminSettingsPage() {
 									</div>
 
 									<div className="flex justify-end pt-3">
-										<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1">
-											<Check size={14} /> Connect Gateways
+										<Button type="submit" disabled={isSavingGateways} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+											{isSavingGateways ? (
+												<>
+													<Loader2 size={14} className="animate-spin" /> Saving...
+												</>
+											) : (
+												<>
+													<Check size={14} /> Connect Gateways
+												</>
+											)}
 										</Button>
 									</div>
 								</form>

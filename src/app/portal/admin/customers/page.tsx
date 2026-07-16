@@ -12,8 +12,8 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { User, UserCheck, Plus, Edit, Trash2, Calendar, ShieldCheck, Mail, ShieldAlert } from 'lucide-react';
+import { authApi } from '@/lib/axiosInstance';
+import { User, UserCheck, Plus, Edit, Trash2, Calendar, ShieldCheck, Mail, ShieldAlert, Loader2 } from 'lucide-react';
 import DataTable, { DataTableColumnConfig } from '@/components/ui/custom/DataTable';
 import { SortingState } from '@tanstack/react-table';
 
@@ -49,6 +49,9 @@ export default function AdminCustomerManagementPage() {
 	const [username, setUsername] = useState('');
 	const [userType, setUserType] = useState('Customer');
 	const [password, setPassword] = useState('');
+	const [isActive, setIsActive] = useState(true);
+	const [isVerified, setIsVerified] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Build URL Query Params for Server-Side Filtering/Pagination
 	const queryParams = useMemo(() => {
@@ -204,6 +207,8 @@ export default function AdminCustomerManagementPage() {
 		setUsername('');
 		setUserType('Customer');
 		setPassword('');
+		setIsActive(true);
+		setIsVerified(false);
 		setIsOpen(true);
 	};
 
@@ -215,6 +220,8 @@ export default function AdminCustomerManagementPage() {
 		setUsername(customer.username);
 		setUserType(customer.user_type || 'Customer');
 		setPassword('');
+		setIsActive(customer.is_active);
+		setIsVerified(customer.is_verified);
 		setIsEdit(true);
 		setIsOpen(true);
 	};
@@ -222,7 +229,7 @@ export default function AdminCustomerManagementPage() {
 	const handleSaveCustomer = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!email || !username) return;
-
+		setIsSaving(true);
 		try {
 			const payload: Record<string, any> = {
 				email,
@@ -230,7 +237,8 @@ export default function AdminCustomerManagementPage() {
 				first_name: firstName,
 				last_name: lastName,
 				user_type: userType,
-				is_active: true,
+				is_active: isActive,
+				is_verified: isVerified,
 			};
 
 			if (password) {
@@ -238,10 +246,10 @@ export default function AdminCustomerManagementPage() {
 			}
 
 			if (isEdit && selectedCustomer) {
-				await axios.patch(`/api/user/users/${selectedCustomer.id}/`, payload);
+				await authApi.patch(`/api/user/users/${selectedCustomer.id}/`, payload);
 				toast.success('Customer profile updated successfully');
 			} else {
-				await axios.post('/api/user/signup/', payload);
+				await authApi.post('/api/user/signup/', payload);
 				toast.success('Customer registered successfully');
 			}
 
@@ -249,13 +257,15 @@ export default function AdminCustomerManagementPage() {
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
 			toast.error('Failed to save customer account');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
 	const handleDeleteCustomer = async (customer: CustomerUser) => {
 		if (!confirm(`Are you sure you want to delete customer @${customer.username}?`)) return;
 		try {
-			await axios.delete(`/api/user/users/${customer.id}/`);
+			await authApi.delete(`/api/user/users/${customer.id}/`);
 			toast.success('Customer account deleted');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
@@ -265,7 +275,7 @@ export default function AdminCustomerManagementPage() {
 
 	const handleToggleActive = async (customer: CustomerUser) => {
 		try {
-			await axios.patch(`/api/user/users/${customer.id}/`, { is_active: !customer.is_active });
+			await authApi.patch(`/api/user/users/${customer.id}/`, { is_active: !customer.is_active });
 			toast.success(customer.is_active ? 'Customer suspended / blacklisted' : 'Customer account re-activated');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
@@ -275,7 +285,7 @@ export default function AdminCustomerManagementPage() {
 
 	const handleToggleVerification = async (customer: CustomerUser) => {
 		try {
-			await axios.patch(`/api/user/users/${customer.id}/`, { is_verified: !customer.is_verified });
+			await authApi.patch(`/api/user/users/${customer.id}/`, { is_verified: !customer.is_verified });
 			toast.success(customer.is_verified ? 'Account verification revoked' : 'Account verified successfully');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
@@ -286,7 +296,7 @@ export default function AdminCustomerManagementPage() {
 	const handleBulkDelete = async (selected: CustomerUser[]) => {
 		if (!confirm(`Delete ${selected.length} customer accounts?`)) return;
 		try {
-			await Promise.all(selected.map((c) => axios.delete(`/api/user/users/${c.id}/`)));
+			await Promise.all(selected.map((c) => authApi.delete(`/api/user/users/${c.id}/`)));
 			toast.success('Bulk accounts deletion completed');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_CUSTOMERS] });
 		} catch (e) {
@@ -364,37 +374,44 @@ export default function AdminCustomerManagementPage() {
 							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Email Address</label>
 							<Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. jamil@domain.com" />
 						</div>
+
 						<div className="grid grid-cols-2 gap-3">
 							<div>
-								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">User Role</label>
-								<Select value={userType} onValueChange={setUserType}>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="Customer">Customer</SelectItem>
-										<SelectItem value="Seller">Seller</SelectItem>
-										<SelectItem value="Admin">Admin</SelectItem>
-									</SelectContent>
-								</Select>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Account Status</label>
+								<select
+									value={isActive ? 'true' : 'false'}
+									onChange={(e) => setIsActive(e.target.value === 'true')}
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#F16A38] text-slate-800"
+								>
+									<option value="true">Active</option>
+									<option value="false">Suspended</option>
+								</select>
 							</div>
 							<div>
-								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Password</label>
-								<Input
-									type="password"
-									value={password}
-									onChange={(e) => setPassword(e.target.value)}
-									placeholder={isEdit ? 'Leave blank to keep same' : 'Required'}
-									required={!isEdit}
-								/>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Verification Status</label>
+								<select
+									value={isVerified ? 'true' : 'false'}
+									onChange={(e) => setIsVerified(e.target.value === 'true')}
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#F16A38] text-slate-800"
+								>
+									<option value="true">Verified</option>
+									<option value="false">Pending</option>
+								</select>
 							</div>
 						</div>
+
 						<DialogFooter className="pt-4">
 							<Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
 								Cancel
 							</Button>
-							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">
-								Save Account
+							<Button type="submit" disabled={isSaving} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+								{isSaving ? (
+									<>
+										<Loader2 size={14} className="animate-spin" /> Saving...
+									</>
+								) : (
+									'Save Account'
+								)}
 							</Button>
 						</DialogFooter>
 					</form>
