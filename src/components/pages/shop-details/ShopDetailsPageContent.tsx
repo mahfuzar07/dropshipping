@@ -69,7 +69,7 @@ export default function ShopDetailsPageContent() {
     <div className="bg-gray-50 min-h-screen">
       {/* Hero */}
 
-      <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+      <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-2xl">
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
