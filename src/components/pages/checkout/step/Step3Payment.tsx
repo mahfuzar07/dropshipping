@@ -56,12 +56,13 @@ type OrderPayload = {
 	shipping_charge: number;
 	address_id: number;
 	payment_method?: string;
+	coupon_code?: string;
 };
 
 /* ================= COMPONENT ================= */
 
 export default function Step3Payment() {
-	const { payment, setPayment, nextStep, prevStep, address, shipping } = useCheckoutStore();
+	const { payment, setPayment, nextStep, prevStep, address, shipping, appliedCoupon, setAppliedCoupon, setDiscount } = useCheckoutStore();
 	const router = useRouter();
 	const [errors, setErrors] = useState<ErrorState>({});
 	const [payType, setPayType] = useState<PayType>('card');
@@ -115,12 +116,11 @@ export default function Step3Payment() {
 		}
 
 		try {
-			// fake API simulation
 			const payload: OrderPayload = {
 				shipping_charge: shipping?.price ?? 0,
-
 				address_id: (typeof address === 'number' ? address : (address as any)?.id) ?? 0,
 				payment_method: payType,
+				coupon_code: appliedCoupon?.code || '',
 			};
 
 			console.log('Order payload:', payload);
@@ -131,6 +131,10 @@ export default function Step3Payment() {
 				router.push('/order/failed');
 				return;
 			}
+
+			// Clear coupon state on success
+			setAppliedCoupon(null);
+			setDiscount(0);
 
 			nextStep();
 			router.push('/order/success');

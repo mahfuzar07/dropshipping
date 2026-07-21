@@ -12,8 +12,8 @@ import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { Ticket, Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { authApi } from '@/lib/axiosInstance';
+import { Ticket, Plus, Edit, Trash2, Calendar, Loader2 } from 'lucide-react';
 import DataTable, { DataTableColumnConfig } from '@/components/ui/custom/DataTable';
 import { SortingState } from '@tanstack/react-table';
 
@@ -42,13 +42,17 @@ export default function CouponsPage() {
 	const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	const [isEdit, setIsEdit] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Form values
 	const [code, setCode] = useState('');
 	const [discountType, setDiscountType] = useState<'flat' | 'percent'>('percent');
 	const [discountValue, setDiscountValue] = useState('');
 	const [minOrder, setMinOrder] = useState('');
+	const [maxUses, setMaxUses] = useState('');
+	const [validFrom, setValidFrom] = useState('');
 	const [validUntil, setValidUntil] = useState('');
+	const [isActive, setIsActive] = useState(true);
 
 	// Build URL Query Params for Server-Side Filtering/Pagination
 	const queryParams = useMemo(() => {
@@ -174,7 +178,10 @@ export default function CouponsPage() {
 		setDiscountType('percent');
 		setDiscountValue('');
 		setMinOrder('');
-		setValidUntil(new Date(Date.now() + 30 * 24 * 65 * 60 * 1000).toISOString().split('T')[0]); // 30 days default
+		setMaxUses('');
+		setValidFrom(new Date().toISOString().split('T')[0]); // Default start date to today
+		setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 30 days default
+		setIsActive(true);
 		setIsOpen(true);
 	};
 
@@ -184,7 +191,10 @@ export default function CouponsPage() {
 		setDiscountType(coupon.discount_type);
 		setDiscountValue(coupon.discount_value.toString());
 		setMinOrder(coupon.min_order_amount?.toString() || '');
+		setMaxUses(coupon.max_uses?.toString() || '');
+		setValidFrom(coupon.valid_from);
 		setValidUntil(coupon.valid_until);
+		setIsActive(coupon.is_active);
 		setIsEdit(true);
 		setIsOpen(true);
 	};
@@ -192,6 +202,7 @@ export default function CouponsPage() {
 	const handleSaveCoupon = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!code || !discountValue) return;
+		setIsSaving(true);
 
 		try {
 			const payload = {
@@ -199,16 +210,17 @@ export default function CouponsPage() {
 				discount_type: discountType,
 				discount_value: discountValue,
 				min_order_amount: minOrder || '0',
-				valid_from: new Date().toISOString().split('T')[0],
+				max_uses: maxUses ? parseInt(maxUses) : null,
+				valid_from: validFrom,
 				valid_until: validUntil,
-				is_active: true
+				is_active: isActive
 			};
 
 			if (isEdit && selectedCoupon) {
-				await axios.patch(`/api/order/coupons/${selectedCoupon.id}/`, payload);
+				await authApi.patch(`/api/order/coupons/${selectedCoupon.id}/`, payload);
 				toast.success('Coupon updated successfully');
 			} else {
-				await axios.post('/api/order/coupons/', payload);
+				await authApi.post('/api/order/coupons/', payload);
 				toast.success('Coupon registered successfully');
 			}
 
@@ -216,23 +228,28 @@ export default function CouponsPage() {
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_COUPONS] });
 		} catch (e) {
 			toast.error('Failed to save coupon settings');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
 	const handleDeleteCoupon = async (coupon: Coupon) => {
 		if (!confirm(`Are you sure you want to delete coupon "${coupon.code}"?`)) return;
+		setIsSaving(true);
 		try {
-			await axios.delete(`/api/order/coupons/${coupon.id}/`);
+			await authApi.delete(`/api/order/coupons/${coupon.id}/`);
 			toast.success('Coupon deleted');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_COUPONS] });
 		} catch (e) {
 			toast.error('Failed to delete coupon');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
 	const handleToggleActive = async (coupon: Coupon) => {
 		try {
-			await axios.patch(`/api/order/coupons/${coupon.id}/`, { is_active: !coupon.is_active });
+			await authApi.patch(`/api/order/coupons/${coupon.id}/`, { is_active: !coupon.is_active });
 			toast.success(coupon.is_active ? 'Coupon deactivated' : 'Coupon activated');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_COUPONS] });
 		} catch (e) {
@@ -242,14 +259,17 @@ export default function CouponsPage() {
 
 	const handleBulkDelete = async (selected: Coupon[]) => {
 		if (!confirm(`Delete ${selected.length} coupons?`)) return;
+		setIsSaving(true);
 		try {
 			await Promise.all(
-				selected.map((c) => axios.delete(`/api/order/coupons/${c.id}/`))
+				selected.map((c) => authApi.delete(`/api/order/coupons/${c.id}/`))
 			);
 			toast.success('Bulk coupon delete completed');
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.ADMIN_COUPONS] });
 		} catch (e) {
 			toast.error('Bulk deletion failed');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -333,13 +353,40 @@ export default function CouponsPage() {
 							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Minimum Purchase (৳)</label>
 							<Input type="number" value={minOrder} onChange={e => setMinOrder(e.target.value)} placeholder="500" />
 						</div>
-						<div>
-							<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Valid Until</label>
-							<Input required type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Max Uses</label>
+								<Input type="number" value={maxUses} onChange={e => setMaxUses(e.target.value)} placeholder="Unlimited" />
+							</div>
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Status</label>
+								<Select value={isActive ? 'true' : 'false'} onValueChange={(val) => setIsActive(val === 'true')}>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="true">Active</SelectItem>
+										<SelectItem value="false">Inactive</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Valid From</label>
+								<Input required type="date" value={validFrom} onChange={e => setValidFrom(e.target.value)} />
+							</div>
+							<div>
+								<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Valid Until</label>
+								<Input required type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+							</div>
 						</div>
 						<DialogFooter className="pt-4">
-							<Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-							<Button type="submit" className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">Save Coupon</Button>
+							<Button type="button" variant="outline" disabled={isSaving} onClick={() => setIsOpen(false)}>Cancel</Button>
+							<Button type="submit" disabled={isSaving} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold flex items-center gap-2">
+								{isSaving && <Loader2 size={16} className="animate-spin" />}
+								{isSaving ? 'Saving...' : 'Save Coupon'}
+							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>

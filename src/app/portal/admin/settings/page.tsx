@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
-import axios from 'axios';
+import { authApi } from '@/lib/axiosInstance';
 import { useQueryClient } from '@tanstack/react-query';
 import {
 	Store,
@@ -41,9 +41,38 @@ export default function AdminSettingsPage() {
 	const [bkashSecret, setBkashSecret] = useState('••••••••••••••••••••••••••••••••');
 	const [nagadMerchantId, setNagadMerchantId] = useState('nagad_m_90192');
 
+	// Comms states
+	const [smtpDomain, setSmtpDomain] = useState('mail.updatetech.com');
+	const [smsToken, setSmsToken] = useState('sms_auth_tok_•••••••');
+	const [whatsappNotifications, setWhatsappNotifications] = useState(true);
+
 	const [isSavingStore, setIsSavingStore] = useState(false);
 	const [isSavingCurrency, setIsSavingCurrency] = useState(false);
 	const [isSavingGateways, setIsSavingGateways] = useState(false);
+	const [isSavingComms, setIsSavingComms] = useState(false);
+
+	// Fetch site settings
+	const { data: siteSettingsResponse, refetch: refetchSettings } = useAppData<any, 'single'>({
+		key: ['site-settings'],
+		api: apiEndpoint.settings.siteSettings,
+		auth: true,
+		responseType: 'single',
+	});
+	const siteSettings = siteSettingsResponse?.data;
+
+	useEffect(() => {
+		if (siteSettings) {
+			setStoreName(siteSettings.store_name || '');
+			setContactEmail(siteSettings.contact_email || '');
+			setVatPercent(siteSettings.vat_percent?.toString() || '');
+			setBkashAppKey(siteSettings.bkash_app_key || '');
+			setBkashSecret(siteSettings.bkash_app_secret || '');
+			setNagadMerchantId(siteSettings.nagad_merchant_id || '');
+			setSmtpDomain(siteSettings.smtp_domain || '');
+			setSmsToken(siteSettings.sms_api_token || '');
+			setWhatsappNotifications(siteSettings.whatsapp_notifications ?? true);
+		}
+	}, [siteSettings]);
 
 	// Fetch Exchange Rates from backend
 	const { data: ratesDataResponse } = useAppData<any, 'single'>({
@@ -72,9 +101,19 @@ export default function AdminSettingsPage() {
 	const handleSaveStore = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSavingStore(true);
-		await new Promise((resolve) => setTimeout(resolve, 800));
-		setIsSavingStore(false);
-		toast.success('Store profile and tax rules updated successfully!');
+		try {
+			await authApi.patch(apiEndpoint.settings.siteSettings, {
+				store_name: storeName,
+				contact_email: contactEmail,
+				vat_percent: parseFloat(vatPercent) || 0,
+			});
+			toast.success('Store profile and tax rules updated successfully!');
+			refetchSettings();
+		} catch (err) {
+			toast.error('Failed to update store settings');
+		} finally {
+			setIsSavingStore(false);
+		}
 	};
 
 	const handleSaveCurrency = async (e: React.FormEvent) => {
@@ -83,11 +122,11 @@ export default function AdminSettingsPage() {
 		try {
 			// Save CNY
 			if (cnyRecord) {
-				await axios.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(cnyRecord.id), {
+				await authApi.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(cnyRecord.id), {
 					rate: parseFloat(cnyRate)
 				});
 			} else {
-				await axios.post(apiEndpoint.settings.EXCHANGE_RATES(), {
+				await authApi.post(apiEndpoint.settings.EXCHANGE_RATES(), {
 					code: 'CNY',
 					name: 'Chinese Yuan',
 					symbol: '¥',
@@ -98,11 +137,11 @@ export default function AdminSettingsPage() {
 
 			// Save USD
 			if (usdRecord) {
-				await axios.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(usdRecord.id), {
+				await authApi.patch(apiEndpoint.settings.EXCHANGE_RATES_DETAIL(usdRecord.id), {
 					rate: parseFloat(usdRate)
 				});
 			} else {
-				await axios.post(apiEndpoint.settings.EXCHANGE_RATES(), {
+				await authApi.post(apiEndpoint.settings.EXCHANGE_RATES(), {
 					code: 'USD',
 					name: 'US Dollar',
 					symbol: '$',
@@ -123,9 +162,37 @@ export default function AdminSettingsPage() {
 	const handleSaveGateways = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSavingGateways(true);
-		await new Promise((resolve) => setTimeout(resolve, 800));
-		setIsSavingGateways(false);
-		toast.success('Payment gateway merchant credentials stored securely!');
+		try {
+			await authApi.patch(apiEndpoint.settings.siteSettings, {
+				bkash_app_key: bkashAppKey,
+				bkash_app_secret: bkashSecret,
+				nagad_merchant_id: nagadMerchantId,
+			});
+			toast.success('Payment gateway merchant credentials stored securely!');
+			refetchSettings();
+		} catch (err) {
+			toast.error('Failed to save gateway credentials');
+		} finally {
+			setIsSavingGateways(false);
+		}
+	};
+
+	const handleSaveComms = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSavingComms(true);
+		try {
+			await authApi.patch(apiEndpoint.settings.siteSettings, {
+				smtp_domain: smtpDomain,
+				sms_api_token: smsToken,
+				whatsapp_notifications: whatsappNotifications,
+			});
+			toast.success('Comms channels settings saved successfully!');
+			refetchSettings();
+		} catch (err) {
+			toast.error('Failed to save comms settings');
+		} finally {
+			setIsSavingComms(false);
+		}
 	};
 
 	const handleBackup = () => {
@@ -344,29 +411,44 @@ export default function AdminSettingsPage() {
 								<CardTitle className="text-base font-bold text-slate-800">Email & SMS Gateways</CardTitle>
 								<CardDescription>Setup notification triggers for transactional messages</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="grid grid-cols-2 gap-4">
-									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">SMTP Senders Domain</label>
-										<Input placeholder="mail.updatetech.com" />
+							<CardContent>
+								<form onSubmit={handleSaveComms} className="space-y-4">
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">SMTP Senders Domain</label>
+											<Input value={smtpDomain} onChange={e => setSmtpDomain(e.target.value)} placeholder="mail.updatetech.com" />
+										</div>
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">SMS API Auth Token (BulkSMS)</label>
+											<Input value={smsToken} onChange={e => setSmsToken(e.target.value)} placeholder="sms_auth_tok_•••••••" />
+										</div>
 									</div>
-									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">SMS API Auth Token (BulkSMS)</label>
-										<Input placeholder="sms_auth_tok_•••••••" />
+									<div className="flex items-center justify-between p-3.5 bg-slate-50 border rounded-lg">
+										<div>
+											<h4 className="font-semibold text-sm text-slate-800">WhatsApp Dispatch notifications</h4>
+											<p className="text-xs text-slate-400">Trigger WhatsApp notifications automatically on order dispatch.</p>
+										</div>
+										<input 
+											type="checkbox" 
+											checked={whatsappNotifications} 
+											onChange={e => setWhatsappNotifications(e.target.checked)}
+											className="rounded border-slate-300 text-indigo-600 h-4 w-4" 
+										/>
 									</div>
-								</div>
-								<div className="flex items-center justify-between p-3.5 bg-slate-50 border rounded-lg">
-									<div>
-										<h4 className="font-semibold text-sm text-slate-800">WhatsApp Dispatch notifications</h4>
-										<p className="text-xs text-slate-400">Trigger WhatsApp notifications automatically on order dispatch.</p>
+									<div className="flex justify-end pt-2">
+										<Button type="submit" disabled={isSavingComms} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold gap-1.5">
+											{isSavingComms ? (
+												<>
+													<Loader2 size={14} className="animate-spin" /> Saving...
+												</>
+											) : (
+												<>
+													<Check size={14} /> Save Settings
+												</>
+											)}
+										</Button>
 									</div>
-									<input type="checkbox" defaultChecked className="rounded border-slate-300 text-indigo-600 h-4 w-4" />
-								</div>
-								<div className="flex justify-end pt-2">
-									<Button onClick={() => toast.success('Comms channels settings saved')} className="bg-[#F16A38] text-white hover:bg-orange-600 font-semibold">
-										Save Settings
-									</Button>
-								</div>
+								</form>
 							</CardContent>
 						</Card>
 					)}

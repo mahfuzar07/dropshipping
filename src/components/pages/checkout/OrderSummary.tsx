@@ -177,12 +177,15 @@
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Package, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Package, ChevronDown, Ticket, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
+import { authApi } from '@/lib/axiosInstance';
 import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
@@ -259,10 +262,12 @@ const getVariantLabel = (variants: VariantEntry[]): string =>
 /* ================= COMPONENT ================= */
 
 export default function OrderSummary() {
-	const { orderSummary, shipping } = useCheckoutStore();
+	const { orderSummary, shipping, appliedCoupon, setAppliedCoupon, setDiscount } = useCheckoutStore();
 
 	const [collapsed, setCollapsed] = useState(true);
 	const [isMobile, setIsMobile] = useState(false);
+	const [couponInput, setCouponInput] = useState('');
+	const [isValidating, setIsValidating] = useState(false);
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -290,6 +295,65 @@ export default function OrderSummary() {
 	const discount = orderSummary?.discount ?? 0;
 	const total = subtotal - discount + shipPrice;
 	const itemCount = cartItems.length;
+
+	const handleApplyCoupon = async () => {
+		const code = couponInput.trim().toUpperCase();
+		if (!code) return;
+		setIsValidating(true);
+		try {
+			const response = await authApi.get(`/api/order/coupons/?search=${code}`);
+			const coupons = response.data?.data || response.data?.results || [];
+			const coupon = coupons.find((c: any) => c.code.toUpperCase() === code);
+
+			if (!coupon) {
+				toast.error('Invalid coupon code');
+				return;
+			}
+
+			if (!coupon.is_active) {
+				toast.error('This coupon is inactive');
+				return;
+			}
+
+			const expiryDate = new Date(coupon.valid_until);
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			if (expiryDate < today) {
+				toast.error('This coupon has expired');
+				return;
+			}
+
+			const minAmount = Number(coupon.min_order_amount || 0);
+			if (subtotal < minAmount) {
+				toast.error(`Minimum order amount of ৳${minAmount.toLocaleString()} required`);
+				return;
+			}
+
+			let calculatedDiscount = 0;
+			if (coupon.discount_type === 'flat') {
+				calculatedDiscount = Number(coupon.discount_value);
+			} else if (coupon.discount_type === 'percent') {
+				calculatedDiscount = (Number(coupon.discount_value) / 100) * subtotal;
+			}
+
+			calculatedDiscount = Math.min(calculatedDiscount, subtotal);
+
+			setAppliedCoupon(coupon);
+			setDiscount(calculatedDiscount);
+			toast.success(`Coupon "${coupon.code}" applied! Save ৳${calculatedDiscount.toLocaleString()}`);
+			setCouponInput('');
+		} catch (error) {
+			toast.error('Failed to validate coupon');
+		} finally {
+			setIsValidating(false);
+		}
+	};
+
+	const handleRemoveCoupon = () => {
+		setAppliedCoupon(null);
+		setDiscount(0);
+		toast.success('Coupon removed');
+	};
 
 	return (
 		<Card className="p-0 border-orange-100 bg-white overflow-hidden font-hanken">
@@ -360,6 +424,50 @@ export default function OrderSummary() {
 						})}
 
 						{!isLoading && cartItems.length === 0 && <p className="text-sm text-muted-foreground text-center py-2">No items in cart.</p>}
+					</div>
+
+					{/* Coupon code application section */}
+					<div className="my-4">
+						{appliedCoupon ? (
+							<div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+								<div className="flex items-center gap-2 text-emerald-700">
+									<Ticket size={16} className="shrink-0 animate-bounce text-emerald-600" />
+									<div className="text-xs">
+										<p className="font-bold tracking-wider">{appliedCoupon.code}</p>
+										<p className="text-[10px] opacity-90">
+											{appliedCoupon.discount_type === 'percent' 
+												? `${Number(appliedCoupon.discount_value)}% Off` 
+												: `৳${Number(appliedCoupon.discount_value).toLocaleString()} Off`} applied
+										</p>
+									</div>
+								</div>
+								<button 
+									onClick={handleRemoveCoupon} 
+									className="text-[11px] font-bold text-red-500 hover:text-red-700 hover:underline cursor-pointer"
+								>
+									Remove
+								</button>
+							</div>
+						) : (
+							<div className="flex items-center gap-2">
+								<Input
+									placeholder="Promo / Coupon Code"
+									value={couponInput}
+									onChange={(e) => setCouponInput(e.target.value)}
+									disabled={isValidating}
+									className="text-xs uppercase placeholder:normal-case h-9 tracking-wider border-orange-200 focus-visible:ring-primary bg-white"
+								/>
+								<Button
+									type="button"
+									onClick={handleApplyCoupon}
+									disabled={isValidating || !couponInput.trim()}
+									className="h-9 px-4 bg-primary text-white hover:bg-orange-600 font-semibold text-xs shrink-0 flex items-center gap-1.5"
+								>
+									{isValidating && <Loader2 size={12} className="animate-spin" />}
+									Apply
+								</Button>
+							</div>
+						)}
 					</div>
 
 					<Separator className="mb-3 bg-orange-100" />

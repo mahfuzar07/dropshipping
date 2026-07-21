@@ -14,7 +14,7 @@ export const apiEndpoint = {
 		refreshToken: '/auth/refresh-token',
 	},
 	settings: {
-		siteSettings: '/settings/site-settings',
+		siteSettings: '/api/order/site-settings/',
 		EXCHANGE_RATES: () => `/api/products/exchange-rates/`,
 		EXCHANGE_RATES_DETAIL: (id: string | number) => `/api/products/exchange-rates/${id}/`,
 	},

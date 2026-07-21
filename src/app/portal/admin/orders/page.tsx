@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -410,7 +412,7 @@ export default function AdminOrderManagementPage() {
 			{/* Order Details Dialog */}
 			{selectedOrder && (
 				<Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-					<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white">
+					<DialogContent className="fixed top-0 left-0 w-full h-full max-w-none md:max-w-3xl md:h-auto md:max-h-[90vh] translate-x-0 translate-y-0 md:top-[50%] md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%] rounded-none md:rounded-lg overflow-y-auto bg-white p-5 md:p-6">
 						<DialogHeader>
 							<div className="flex justify-between items-center pr-6">
 								<DialogTitle className="text-xl font-bold">Order Details #{selectedOrder.order_number}</DialogTitle>
@@ -502,8 +504,10 @@ export default function AdminOrderManagementPage() {
 									selectedOrder.items.map((item, idx) => (
 										<div key={idx} className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg">
 											<div>
-												<p className="font-bold text-slate-800 text-sm">{item.product_name}</p>
-												<p className="text-xs text-slate-400">ID: {item.product_id}</p>
+												<Link href={`https://detail.1688.com/offer/${item.product_id}.html`} target="_blank" rel="noopener noreferrer">
+													<p className="font-bold text-slate-800 text-sm">{item.product_name}</p>
+													<p className="text-xs text-slate-400">ID: {item.product_id}</p>
+												</Link>
 											</div>
 											<div className="text-right">
 												<p className="text-xs font-bold text-[#F16A38]">৳{Number(item.item_total || 0).toLocaleString()}</p>
@@ -535,7 +539,10 @@ export default function AdminOrderManagementPage() {
 							<Button onClick={() => setIsSlipPrintOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold gap-2">
 								<Printer size={16} /> Print Packing Slip
 							</Button>
-							<Button onClick={() => handlePrintInvoice(selectedOrder.id)} className="bg-[#F16A38] hover:bg-orange-600 text-white font-semibold gap-2">
+							<Button
+								onClick={() => handlePrintInvoice(selectedOrder.id)}
+								className="bg-[#F16A38] hover:bg-orange-600 text-white font-semibold gap-2"
+							>
 								<Printer size={16} /> Print Invoice
 							</Button>
 							<Button onClick={() => handlePrintLabel(selectedOrder.id)} className="bg-slate-900 hover:bg-slate-800 text-white font-semibold gap-2">
@@ -548,7 +555,7 @@ export default function AdminOrderManagementPage() {
 
 			{/* Manual Order Creation Modal */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="max-w-md bg-white">
+				<DialogContent className="fixed top-0 left-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[90vh] translate-x-0 translate-y-0 md:top-[50%] md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%] rounded-none md:rounded-lg overflow-y-auto bg-white p-5 md:p-6">
 					<DialogHeader>
 						<DialogTitle className="text-lg font-bold">Manual Order Creation</DialogTitle>
 						<DialogDescription>Input client details to register a manual dropshipping delivery.</DialogDescription>
@@ -599,7 +606,7 @@ export default function AdminOrderManagementPage() {
 			{/* Order Edit Modal */}
 			{selectedOrder && (
 				<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-					<DialogContent className="max-w-md bg-white">
+					<DialogContent className="fixed top-0 left-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[90vh] translate-x-0 translate-y-0 md:top-[50%] md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%] rounded-none md:rounded-lg overflow-y-auto bg-white p-5 md:p-6">
 						<DialogHeader>
 							<DialogTitle className="text-lg font-bold">Edit Order #{selectedOrder.order_number}</DialogTitle>
 						</DialogHeader>
@@ -643,7 +650,7 @@ export default function AdminOrderManagementPage() {
 			{/* Print Slip / Label preview Modal */}
 			{selectedOrder && (
 				<Dialog open={isSlipPrintOpen} onOpenChange={setIsSlipPrintOpen}>
-					<DialogContent className="max-w-2xl bg-white max-h-[85vh] overflow-y-auto">
+					<DialogContent className="fixed top-0 left-0 w-full h-full max-w-none md:max-w-2xl md:h-auto md:max-h-[85vh] translate-x-0 translate-y-0 md:top-[50%] md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%] rounded-none md:rounded-lg overflow-y-auto bg-white p-5 md:p-6">
 						<DialogHeader className="print:hidden">
 							<DialogTitle className="text-lg font-bold">Document Print Center</DialogTitle>
 							<DialogDescription>Toggle between invoice slips and thermal courier labels.</DialogDescription>
@@ -875,7 +882,7 @@ export default function AdminOrderManagementPage() {
 		try {
 			await authApi.patch(`/api/order/orders/${orderId}/`, { status: nextStatus });
 			toast.success(`Order status updated to ${nextStatus}`);
-			setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: nextStatus } : prev);
+			setSelectedOrder((prev) => (prev && prev.id === orderId ? { ...prev, status: nextStatus } : prev));
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.USER_ORDERS] });
 		} catch (e) {
 			toast.error('Failed to update status');
