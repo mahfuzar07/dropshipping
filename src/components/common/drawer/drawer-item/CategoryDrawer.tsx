@@ -1,11 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
-import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
@@ -13,125 +12,7 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import { CategoriesResponse, normalizeCategories } from '../../header/HeaderBottom';
 import { MenuCategory } from '../../header/CategoryMenu';
-
-/* ─────────────────────────────────────────────
-   CategoryItem — recursive
-───────────────────────────────────────────── */
-interface CategoryItemProps {
-	category: MenuCategory;
-	openKeys: string[];
-	toggleOpen: (key: string) => void;
-	depth?: number;
-}
-
-function CategoryItem({ category, openKeys, toggleOpen, depth = 0 }: CategoryItemProps) {
-	const pathname = usePathname();
-	const hasChildren = !!category.subcategories?.length;
-	const itemKey = `${depth}-${category.id}`;
-	const isOpen = openKeys.includes(itemKey);
-
-	const isActive =
-		pathname === `/category/${category.slug}` || (hasChildren && category.subcategories!.some((s) => pathname === `/category/${s.slug}`));
-
-	const isSubActive = depth > 0 && pathname === `/category/${category.slug}`;
-
-	/* ── Shared row wrapper for parent (hasChildren) ── */
-	const ParentRow = (
-		<div
-			className={[
-				'relative w-full flex items-center rounded-xl transition-all duration-200 overflow-hidden',
-				depth === 0 ? '' : 'pl-2',
-				isActive ? 'bg-twinkle-gold/12 text-twinkle-gold font-semibold' : 'text-foreground hover:bg-muted/60',
-			].join(' ')}
-		>
-			{/* Left accent bar */}
-			{isActive && depth === 0 && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-twinkle-gold" />}
-
-			{/* Link part */}
-			<Link href={`/category/${category.slug}`} className="flex flex-1 items-center gap-3 pl-2 pr-1 py-2 min-w-0">
-				{/* Icon — root only */}
-				{depth === 0 && category.icon && (
-					<div
-						className={['relative w-8 h-8 rounded-lg shrink-0 flex items-center justify-center', isActive ? 'bg-twinkle-gold/20' : 'bg-muted'].join(
-							' ',
-						)}
-					>
-						<Image src={category.icon} alt={category.name} fill className="object-contain p-1.5" />
-					</div>
-				)}
-				<span className="flex-1 text-left text-sm leading-snug truncate">{category.name}</span>
-			</Link>
-
-			{/* Chevron toggle */}
-			<button
-				onClick={() => toggleOpen(itemKey)}
-				className="p-2 mr-1.5 rounded-lg shrink-0 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-				aria-label={isOpen ? 'Collapse' : 'Expand'}
-			>
-				<ChevronRight
-					size={14}
-					className={[
-						'transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
-						isOpen ? 'rotate-90' : 'rotate-0',
-						isActive ? 'text-twinkle-gold' : 'text-muted-foreground',
-					].join(' ')}
-				/>
-			</button>
-		</div>
-	);
-
-	/* ── Leaf row ── */
-	const LeafRow = (
-		<Link
-			href={`/category/${category.slug}`}
-			className={[
-				'relative w-full flex items-center gap-3 rounded-xl transition-all duration-200 overflow-hidden',
-				depth === 0 ? 'pl-2 pr-2 py-2' : 'pl-3 pr-3 py-2',
-				isActive || isSubActive ? 'bg-twinkle-gold/12 text-twinkle-gold font-semibold' : 'text-foreground hover:bg-muted/60',
-			].join(' ')}
-		>
-			{/* Left accent bar */}
-			{(isActive || isSubActive) && depth === 0 && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-twinkle-gold" />}
-
-			{/* Sub-item active dot */}
-			{isSubActive && depth > 0 && <span className="w-1.5 h-1.5 rounded-full bg-twinkle-gold shrink-0" />}
-
-			{/* Icon — root only */}
-			{depth === 0 && category.icon && (
-				<div className={['relative w-8 h-8 rounded-lg shrink-0', isActive ? 'bg-twinkle-gold/20' : 'bg-muted'].join(' ')}>
-					<Image src={category.icon} alt={category.name} fill className="object-contain p-1.5" />
-				</div>
-			)}
-
-			<span className={['flex-1 text-sm leading-snug', depth > 0 ? 'text-[13px]' : ''].join(' ')}>{category.name}</span>
-
-			{/* Active chevron for leaf at depth 0 */}
-			{isActive && depth === 0 && <ChevronRight size={13} className="text-twinkle-gold shrink-0" />}
-		</Link>
-	);
-
-	return (
-		<div>
-			{hasChildren ? ParentRow : LeafRow}
-
-			{/* ── Children collapse ── */}
-			{hasChildren && (
-				<div
-					className="overflow-hidden transition-all duration-300 ease-in-out"
-					style={{ display: 'grid', gridTemplateRows: isOpen ? '1fr' : '0fr' }}
-				>
-					<div className="min-h-0">
-						<div className="border-l-2 border-twinkle-gold/20 ml-[20px] mt-0.5 mb-1 pl-1 space-y-0.5">
-							{category.subcategories!.map((sub) => (
-								<CategoryItem key={sub.id} category={sub} openKeys={openKeys} toggleOpen={toggleOpen} depth={depth + 1} />
-							))}
-						</div>
-					</div>
-				</div>
-			)}
-		</div>
-	);
-}
+import { useProductFilterStore, type MenuCategoryLite } from '@/z-store/product/useProductFilterStore';
 
 /* ─────────────────────────────────────────────
    Drawer
@@ -143,11 +24,9 @@ export interface DrawerProps<T = unknown> {
 
 export default function CategoryDrawer({ open }: DrawerProps) {
 	const { isDrawerOpen, closeDrawer } = useLayoutStore();
-	const [openKeys, setOpenKeys] = useState<string[]>([]);
+	const router = useRouter();
 
-	const toggleOpen = (key: string) => {
-		setOpenKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-	};
+	const { categoryPath, selectCategoryAtLevel } = useProductFilterStore();
 
 	const { data, isLoading } = useAppData<CategoriesResponse, 'single'>({
 		key: [QueriesKey.CATEGORIES],
@@ -163,6 +42,28 @@ export default function CategoryDrawer({ open }: DrawerProps) {
 	const categories = Array.isArray(data) ? data : (data?.categories ?? []);
 	const normalizedCategories = normalizeCategories(categories ?? []);
 
+	// ---- level-based drill down (same pattern as ProductFilterSidebar) ----
+	const level = categoryPath.length;
+	const deepest = categoryPath[level - 1] as MenuCategory | undefined;
+	const itemsAtLevel: MenuCategory[] = level === 0 ? normalizedCategories : (deepest?.subcategories ?? []);
+
+	const handleGoBack = () => {
+		if (level === 0) return;
+		if (level === 1) {
+			selectCategoryAtLevel(null, 0);
+		} else {
+			const parent = categoryPath[level - 2] as MenuCategoryLite;
+			selectCategoryAtLevel(parent, level - 2);
+		}
+	};
+
+	// clicking a category: apply it as the search filter immediately,
+	// and if it has children, drill into them within the drawer
+	const handleItemClick = (item: MenuCategory) => {
+		selectCategoryAtLevel(item, level);
+		router.push(`/product-list?search=${encodeURIComponent(item.name)}`);
+	};
+
 	return (
 		<Drawer open={isDrawerOpen} onOpenChange={closeDrawer} direction="left">
 			<DrawerContent className="h-full md:w-[450px] !w-[320px] flex flex-col border-none rounded-tr-2xl">
@@ -177,7 +78,6 @@ export default function CategoryDrawer({ open }: DrawerProps) {
 				<div className="w-full overflow-x-hidden flex flex-col h-full rounded-tr-2xl">
 					{/* ── Header ── */}
 					<div className="relative px-3 py-5 shrink-0 border-b border-border/50 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
-						{/* Decorative circles */}
 						<div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-primary/10 pointer-events-none" />
 						<div className="absolute -bottom-4 right-10 w-14 h-14 rounded-full bg-primary/5 pointer-events-none" />
 
@@ -188,11 +88,44 @@ export default function CategoryDrawer({ open }: DrawerProps) {
 						</div>
 					</div>
 
-					{/* ── Category list ── */}
+					{/* ── Back / breadcrumb ── */}
+					{level > 0 && (
+						<button
+							type="button"
+							onClick={handleGoBack}
+							className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary px-3 pt-3 shrink-0"
+						>
+							<ChevronLeft className="w-4 h-4" />
+							<span className="truncate font-medium">{deepest?.name}</span>
+						</button>
+					)}
+
+					{/* ── Category list (single level, drill-down) ── */}
 					<div className="flex-1 overflow-y-auto px-1.5 py-3 space-y-0.5 font-fredoka">
-						{normalizedCategories.map((cat) => (
-							<CategoryItem key={cat.id} category={cat} openKeys={openKeys} toggleOpen={toggleOpen} depth={0} />
-						))}
+						{itemsAtLevel.map((category) => {
+							const hasChildren = !!category.subcategories?.length;
+
+							return (
+								<button
+									key={category.id}
+									onClick={() => handleItemClick(category)}
+									className="relative w-full flex items-center gap-3 rounded-xl transition-all duration-200 overflow-hidden text-foreground hover:bg-muted/60 px-2 py-2 text-left"
+								>
+									{/* Icon — root only */}
+									{level === 0 && category.icon && (
+										<div className="relative w-8 h-8 rounded-lg shrink-0 bg-muted flex items-center justify-center">
+											<Image src={category.icon} alt={category.name} fill className="object-contain p-1.5" />
+										</div>
+									)}
+
+									<span className="flex-1 text-sm leading-snug truncate">{category.name}</span>
+
+									{hasChildren && <ChevronRight size={14} className="text-muted-foreground shrink-0" />}
+								</button>
+							);
+						})}
+
+						{itemsAtLevel.length === 0 && <p className="text-xs text-gray-400 px-3">No subcategories</p>}
 					</div>
 				</div>
 			</DrawerContent>
