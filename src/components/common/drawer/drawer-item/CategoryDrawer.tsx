@@ -62,6 +62,7 @@ export default function CategoryDrawer({ open }: DrawerProps) {
 	const handleItemClick = (item: MenuCategory) => {
 		selectCategoryAtLevel(item, level);
 		router.push(`/product-list?search=${encodeURIComponent(item.name)}`);
+		closeDrawer();
 	};
 
 	return (
