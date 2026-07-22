@@ -23,10 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
 	return {
 		title: item.title,
 		description,
-		keywords: item.props
-			?.map((p) => p.value)
-			.filter(Boolean)
-			.join(', '),
+
 		alternates: {
 			canonical: `/products/${productId}`,
 		},
