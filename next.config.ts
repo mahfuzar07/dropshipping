@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
 				pathname: '/**',
 			},
 			{
+				protocol: 'https',
+				hostname: 'cbu01.alicdn.com',
+				pathname: '/img/**',
+			},
+			{
 				protocol: 'http',
 				hostname: '*',
 				pathname: '/**',

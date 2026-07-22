@@ -4,6 +4,7 @@ import { Star, Heart, Share2, Minus, Plus, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
+import Image from 'next/image';
 
 interface Color {
 	name: string;
@@ -99,6 +100,7 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 			{/* Color tabs */}
 			<div>
 				<h3 className="font-semibold mb-3">Options</h3>
+
 				<div className="flex gap-3 flex-wrap">
 					{product.colors.map((color, index) => {
 						const hasQty = selectedColorIndexes.includes(index);
@@ -108,17 +110,15 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 							<button
 								key={`${color.name}-${index}`}
 								onClick={() => setExpandedColor(expandedColor === index ? -1 : index)}
-								className={`relative w-10 h-10 rounded-full border-2 transition-all cursor-pointer ${
-									expandedColor === index ? 'border-primary' : hasQty ? 'border-primary' : 'border-gray-300'
+								className={`relative w-10 h-10 overflow-hidden rounded-full border-2 transition-all cursor-pointer ${
+									expandedColor === index || hasQty ? 'border-primary' : 'border-gray-300'
 								}`}
-								style={{
-									backgroundImage: `url(${color.image})`,
-									backgroundSize: 'cover',
-								}}
 								title={color.name}
 							>
+								<Image src={color.image} alt={color.name} fill className="object-cover" sizes="40px" />
+
 								{colorTotalQty > 0 && (
-									<span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+									<span className="absolute -top-1.5 -right-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-orange-400 text-[10px] font-bold text-white">
 										{colorTotalQty}
 									</span>
 								)}
@@ -126,7 +126,6 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 						);
 					})}
 				</div>
-
 				{expandedColor >= 0 && (
 					<p className="text-sm text-gray-500 mt-2">
 						Viewing: <span className="font-medium text-gray-800">{product.variants[expandedColor]?.color_name}</span>
