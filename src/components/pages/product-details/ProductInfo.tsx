@@ -1,28 +1,30 @@
 'use client';
 
 import { Star, Heart, Share2, Minus, Plus, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getCurrencySymbol } from '@/lib/utils/formatCurrency';
 import Image from 'next/image';
 
-interface Color {
-	name: string;
-	image: string;
+interface VariantOptionItem {
+	id: string;
+	value: string;
+	image?: string;
 }
 
-interface VariantSize {
-	size_name: string;
-	price: string;
-	stock: string;
+interface VariantGroup {
+	groupId: string;
+	label: string;
+	options: VariantOptionItem[];
+	hasImages: boolean;
 }
 
-interface Variant {
-	color_name: string;
-	image: string;
-	active: boolean;
+interface VariantOption {
 	skuId: number;
-	sizes: VariantSize[];
+	price: number;
+	stock: number;
+	selections: Record<string, string>;
+	label: string;
 }
 
 interface ProductInfoProps {
@@ -32,46 +34,82 @@ interface ProductInfoProps {
 		price: number;
 		currency: string;
 		solded: string;
-		description: string;
-		image: string;
-		colors: Color[];
-		variants: Variant[];
 		rating: number;
 		reviewCount: number;
+		variantGroups: VariantGroup[];
+		variantOptions: VariantOption[];
 	};
-	selectedColorQty: Record<number, Record<string, number>>;
-	updateColorQty: (colorIndex: number, size: string, type: 'inc' | 'dec', stock: number) => void;
+	selectedQty: Record<number, number>;
+	updateQty: (skuId: number, type: 'inc' | 'dec', stock: number) => void;
+	onVariantImageSelect?: (image?: string) => void;
 }
 
-export default function ProductInfo({ product, selectedColorQty, updateColorQty }: ProductInfoProps) {
+export default function ProductInfo({ product, selectedQty, updateQty, onVariantImageSelect }: ProductInfoProps) {
 	const [isFavorite, setIsFavorite] = useState(false);
-	const [expandedColor, setExpandedColor] = useState<number>(0);
 
-	const selectedColorIndexes = Object.keys(selectedColorQty)
-		.map(Number)
-		.filter((i) => Object.values(selectedColorQty[i] || {}).some((q) => q > 0));
+	const imageGroups = product.variantGroups.filter((g) => g.hasImages);
+	const tableGroups = product.variantGroups.filter((g) => !g.hasImages);
 
-	const totalQty = Object.values(selectedColorQty).reduce((sum, sizeMap) => {
-		return sum + Object.values(sizeMap).reduce((s, q) => s + q, 0);
-	}, 0);
+	// ✅ এখন ALL গ্রুপের (image + table) ডিফল্ট সিলেকশন ট্র্যাক করা হচ্ছে,
+	// শুধু image group না — যাতে একাধিক table group থাকলেও সঠিক SKU রেজলভ হয়
+	const [selections, setSelections] = useState<Record<string, string>>(() => {
+		const init: Record<string, string> = {};
+		product.variantGroups.forEach((g) => {
+			if (g.options[0]) init[g.groupId] = g.options[0].id;
+		});
+		return init;
+	});
+
+	const selectedImageOption = useMemo(() => {
+		for (const g of imageGroups) {
+			const opt = g.options.find((o) => o.id === selections[g.groupId]);
+			if (opt?.image) return opt;
+		}
+		return undefined;
+	}, [selections, imageGroups]);
+
+	const selectedLabel = imageGroups
+		.map((g) => g.options.find((o) => o.id === selections[g.groupId])?.value)
+		.filter(Boolean)
+		.join(' ');
+
+	// ✅ সব গ্রুপকে একসাথে বিবেচনা করে সঠিক SKU খোঁজা হয় (override গ্রুপ ছাড়া বাকি
+	// সব গ্রুপে বর্তমান selections মিলতে হবে, আগের মতো "true" ধরে নেওয়া হয় না)
+	const resolveVariant = (overrideGroupId?: string, overrideOptId?: string) => {
+		return product.variantOptions.find((v) =>
+			product.variantGroups.every((g) => {
+				const wanted = g.groupId === overrideGroupId ? overrideOptId : selections[g.groupId];
+				return v.selections[g.groupId] === wanted;
+			}),
+		);
+	};
+
+	const totalQty = Object.values(selectedQty).reduce((s, q) => s + q, 0);
+
+	// ✅ এখন পর্যন্ত qty > 0 থাকা সব SKU-র লিস্ট, রং/সাইজ যাই সিলেক্টেড থাকুক না কেন —
+	// এটা ইউজারকে দেখাবে যে আগের সিলেকশনগুলো হারায়নি, cart-এ ঠিকই আছে
+	const selectedSummary = Object.entries(selectedQty)
+		.filter(([, qty]) => qty > 0)
+		.map(([skuId, qty]) => {
+			const variant = product.variantOptions.find((v) => v.skuId === Number(skuId));
+			return variant ? { variant, qty } : null;
+		})
+		.filter(Boolean) as { variant: VariantOption; qty: number }[];
 
 	return (
 		<div className="space-y-5">
 			<h1 className="text-xl lg:text-2xl font-semibold font-hanken">{product.name}</h1>
 
-			{/* Rating */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-2">
-						{product.rating > 0 && (
-							<div className="flex items-center">
-								{[...Array(5)].map((_, i) => (
-									<Star key={i} className={`h-4 w-4 ${i < product.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-								))}
-							</div>
-						)}
-						{product.reviewCount > 0 && <span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>}
-					</div>
+					{product.rating > 0 && (
+						<div className="flex items-center">
+							{[...Array(5)].map((_, i) => (
+								<Star key={i} className={`h-4 w-4 ${i < product.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+							))}
+						</div>
+					)}
+					{product.reviewCount > 0 && <span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>}
 					<p className="text-muted-foreground border-l pl-2">{product.solded} sold</p>
 				</div>
 				<div className="flex gap-2">
@@ -84,7 +122,6 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 				</div>
 			</div>
 
-			{/* Price */}
 			<div className="flex items-center gap-3">
 				<div className="text-4xl font-bold font-hanken text-orange-600">
 					{getCurrencySymbol()}
@@ -97,110 +134,171 @@ export default function ProductInfo({ product, selectedColorQty, updateColorQty 
 				)}
 			</div>
 
-			{/* Color tabs */}
-			<div>
-				<h3 className="font-semibold mb-3">Options</h3>
+			{/* ===== Image-based groups (Color) ===== */}
+			{imageGroups.map((group) => {
+				// শুধু এই গ্রুপে টেবিল-গ্রুপ না থাকলে এখানেই qty control বসিয়ে দিচ্ছি (বাগ ৩ ফিক্স)
+				const showInlineQty = tableGroups.length === 0;
+				return (
+					<div key={group.groupId}>
+						<h3 className="font-semibold mb-3">
+							{group.label} : <span className="text-orange-600 font-normal">{selectedLabel}</span>
+						</h3>
+						<div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-2.5">
+							{group.options.map((opt) => {
+								const active = selections[group.groupId] === opt.id;
+								return (
+									<button
+										key={opt.id}
+										onClick={() => {
+											setSelections((prev) => ({ ...prev, [group.groupId]: opt.id }));
+											onVariantImageSelect?.(opt.image);
+										}}
+										className={`relative aspect-square rounded-md overflow-hidden border-2 transition-all ${
+											active ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'
+										}`}
+										title={opt.value}
+									>
+										{opt.image ? (
+											<Image src={opt.image} alt={opt.value} fill className="object-cover" sizes="80px" />
+										) : (
+											<span className="flex items-center justify-center h-full text-xs">{opt.value}</span>
+										)}
+										{active && (
+											<span className="absolute top-0.5 right-0.5 bg-orange-500 rounded-full p-0.5">
+												<Check size={10} className="text-white" />
+											</span>
+										)}
+									</button>
+								);
+							})}
+						</div>
 
-				<div className="flex gap-3 flex-wrap">
-					{product.colors.map((color, index) => {
-						const hasQty = selectedColorIndexes.includes(index);
-						const colorTotalQty = Object.values(selectedColorQty[index] || {}).reduce((s, q) => s + q, 0);
+						{showInlineQty &&
+							(() => {
+								const variant = resolveVariant(group.groupId, selections[group.groupId]);
+								if (!variant) return null;
+								const qty = selectedQty[variant.skuId] || 0;
+								const outOfStock = variant.stock === 0;
+								return (
+									<div className="flex items-center justify-between mt-3 border rounded-lg px-4 py-3">
+										<div className="text-sm">
+											{getCurrencySymbol()}
+											{variant.price} · stock {variant.stock}
+										</div>
+										{qty === 0 ? (
+											<button
+												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+												disabled={outOfStock}
+												className="px-3 py-1 rounded bg-orange-500 text-white text-xs font-medium disabled:opacity-40"
+											>
+												{outOfStock ? 'Sold out' : 'Add'}
+											</button>
+										) : (
+											<div className="flex items-center gap-2">
+												<button
+													onClick={() => updateQty(variant.skuId, 'dec', variant.stock)}
+													className="w-6 h-6 flex items-center justify-center border rounded"
+												>
+													<Minus size={13} />
+												</button>
+												<span className="w-5 text-center font-medium text-orange-500">{qty}</span>
+												<button
+													onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+													disabled={qty >= variant.stock}
+													className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
+												>
+													<Plus size={13} />
+												</button>
+											</div>
+										)}
+									</div>
+								);
+							})()}
+					</div>
+				);
+			})}
 
-						return (
-							<button
-								key={`${color.name}-${index}`}
-								onClick={() => setExpandedColor(expandedColor === index ? -1 : index)}
-								className={`relative w-10 h-10 overflow-hidden rounded-full border-2 transition-all cursor-pointer ${
-									expandedColor === index || hasQty ? 'border-primary' : 'border-gray-300'
-								}`}
-								title={color.name}
-							>
-								<Image src={color.image} alt={color.name} fill className="object-cover" sizes="40px" />
-
-								{colorTotalQty > 0 && (
-									<span className="absolute -top-1.5 -right-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-orange-400 text-[10px] font-bold text-white">
-										{colorTotalQty}
-									</span>
-								)}
-							</button>
-						);
-					})}
-				</div>
-				{expandedColor >= 0 && (
-					<p className="text-sm text-gray-500 mt-2">
-						Viewing: <span className="font-medium text-gray-800">{product.variants[expandedColor]?.color_name}</span>
-					</p>
-				)}
-			</div>
-
-			{/* Size table */}
-			{expandedColor >= 0 && product.variants[expandedColor] && (
-				<div className="w-full rounded-lg overflow-hidden border">
-					<div className="grid grid-cols-4 px-6 py-3 text-gray-600 font-medium border-b bg-gray-50">
-						<div>Option</div>
+			{/* ===== Table-based groups (Size / Material...) ===== */}
+			{tableGroups.map((group) => (
+				<div key={group.groupId} className="w-full rounded-lg overflow-hidden border">
+					<div className="grid grid-cols-3 px-4 py-2.5 text-gray-600 text-sm font-medium border-b bg-gray-50">
+						<div>{group.label}</div>
 						<div>Price</div>
-						<div>Stock</div>
-						<div className="text-right">Qty</div>
+						<div className="text-right">Quantity</div>
 					</div>
 
-					{product.variants[expandedColor].sizes.map((item) => {
-						const stock = Number(item.stock || 0);
-						const currentQty = selectedColorQty[expandedColor]?.[item.size_name] || 0;
+					{group.options.map((opt) => {
+						const variant = resolveVariant(group.groupId, opt.id);
+						if (!variant) return null;
+
+						const qty = selectedQty[variant.skuId] || 0;
+						const outOfStock = variant.stock === 0;
 
 						return (
 							<div
-								key={item.size_name}
-								className={`grid grid-cols-4 px-6 py-3 items-center border-b transition-colors ${currentQty > 0 ? 'bg-orange-50' : ''}`}
+								key={opt.id}
+								className={`grid grid-cols-3 px-4 py-3 items-center border-b last:border-b-0 text-sm ${qty > 0 ? 'bg-orange-50' : ''}`}
 							>
 								<div className="font-medium flex items-center gap-1.5">
-									{item.size_name}
-									{currentQty > 0 && <Check size={13} className="text-orange-400" />}
+									{opt.value}
+									{qty > 0 && <Check size={13} className="text-orange-400" />}
 								</div>
-								<div>{item.price}</div>
-								<div className={stock === 0 ? 'text-red-400' : ''}>{stock}</div>
-								<div className="flex justify-end items-center gap-3">
-									<button
-										onClick={() => updateColorQty(expandedColor, item.size_name, 'dec', stock)}
-										disabled={currentQty === 0}
-										className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
-									>
-										<Minus size={14} />
-									</button>
-									<span className={`w-6 text-center font-medium ${currentQty > 0 ? 'text-orange-500' : ''}`}>{currentQty}</span>
-									<button
-										onClick={() => updateColorQty(expandedColor, item.size_name, 'inc', stock)}
-										disabled={currentQty >= stock}
-										className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
-									>
-										<Plus size={14} />
-									</button>
+								<div>
+									{getCurrencySymbol()}
+									{variant.price}
+								</div>
+								<div className="flex justify-end">
+									{qty === 0 ? (
+										<div className="flex flex-col items-end gap-0.5">
+											<button
+												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+												disabled={outOfStock}
+												className="px-3 py-1 rounded bg-orange-500 text-white text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+											>
+												{outOfStock ? 'Sold out' : 'Add'}
+											</button>
+											{!outOfStock && <span className="text-[11px] text-gray-400">{variant.stock}</span>}
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											<button
+												onClick={() => updateQty(variant.skuId, 'dec', variant.stock)}
+												className="w-6 h-6 flex items-center justify-center border rounded"
+											>
+												<Minus size={13} />
+											</button>
+											<span className="w-5 text-center font-medium text-orange-500">{qty}</span>
+											<button
+												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+												disabled={qty >= variant.stock}
+												className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
+											>
+												<Plus size={13} />
+											</button>
+										</div>
+									)}
 								</div>
 							</div>
 						);
 					})}
 				</div>
-			)}
+			))}
 
-			{/* Summary */}
-			{selectedColorIndexes.length > 0 && (
-				<div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 space-y-1.5">
-					<p className="text-sm font-semibold text-orange-700">Selected summary</p>
-					{selectedColorIndexes.map((colorIndex) => {
-						const variant = product.variants[colorIndex];
-						const sizeMap = selectedColorQty[colorIndex];
-
-						return Object.entries(sizeMap).map(
-							([sizeName, qty]) =>
-								qty > 0 && (
-									<div key={`${colorIndex}-${sizeName}`} className="flex justify-between text-sm text-orange-600">
-										<span>
-											{variant.color_name} / {sizeName}
-										</span>
-										<span className="font-medium">× {qty}</span>
-									</div>
-								),
-						);
-					})}
+			{/* ===== ✅ নতুন: এতক্ষণে সিলেক্ট করা সব SKU-র summary, রং পাল্টালেও হারাবে না ===== */}
+			{selectedSummary.length > 0 && (
+				<div className="border rounded-lg p-3 space-y-2 bg-gray-50">
+					<h4 className="text-sm font-semibold text-gray-700">Selected items</h4>
+					{selectedSummary.map(({ variant, qty }) => (
+						<div key={variant.skuId} className="flex items-center justify-between text-sm">
+							<span>
+								{variant.label} × {qty}
+							</span>
+							<span className="text-gray-600">
+								{getCurrencySymbol()}
+								{(variant.price * qty).toLocaleString()}
+							</span>
+						</div>
+					))}
 				</div>
 			)}
 		</div>

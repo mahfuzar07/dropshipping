@@ -10,25 +10,36 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 
-export interface VariantSize {
-	size_name: string;
-	price: string;
-	stock: string;
+interface VariantOption {
+	skuId: number;
+	price: number;
+	stock: number;
+	selections: Record<string, string>;
+	label: string;
 }
 
-export interface Variant {
-	color_name: string;
-	image: string;
-	active: boolean;
-	sizes: VariantSize[];
-	weightKg: number; // new field for weight in kg
-	weightInfo: string; // e.g. "500g per piece"
+interface VariantGroup {
+	groupId: string;
+	label: string;
+	options: { id: string; value: string; image?: string }[];
+	hasImages: boolean;
 }
 
 const SHIPPING_RATES = {
 	air: { label: 'By Air', perKg: 780, priceDisplay: '৳780 / ৳1170 Per Kg' },
 	sea: { label: 'By Sea', perKg: 170, priceDisplay: '৳170 / ৳400 Per Kg' },
 } as const;
+
+// Parses strings like "500g" / "0.5kg" / "500" into kg. Adjust if the API
+// gives weight in a different unit/format.
+function parseWeightToKg(weight?: string): number {
+	if (!weight) return 0;
+	const match = weight.match(/([\d.]+)\s*(kg|g)?/i);
+	if (!match) return 0;
+	const value = parseFloat(match[1]);
+	if (isNaN(value)) return 0;
+	return match[2]?.toLowerCase() === 'g' ? value / 1000 : value;
+}
 
 export default function CartSection({ product }: { product: any }) {
 	const [selectedShipping, setSelectedShipping] = useState<'air' | 'sea'>('air');
@@ -38,37 +49,26 @@ export default function CartSection({ product }: { product: any }) {
 	const queryClient = useQueryClient();
 	const { openDrawer } = useLayoutStore();
 
-	const selectedColorQty: Record<number, Record<string, number>> = product?.selectedColorQty || {};
-	const variants: Variant[] = product?.variants || [];
+	// skuId -> qty (this is what ProductDetailsPageContent actually passes)
+	const selectedQty: Record<number, number> = product?.selectedQty || {};
+	const variantOptions: VariantOption[] = product?.variantOptions || [];
+	const variantGroups: VariantGroup[] = product?.variantGroups || [];
 
-	const totalQty = Object.values(selectedColorQty).reduce((sum, sizeMap) => {
-		return sum + Object.values(sizeMap).reduce((s, q) => s + q, 0);
+	const selectedEntries = Object.entries(selectedQty).filter(([, qty]) => qty > 0);
+
+	const totalQty = selectedEntries.reduce((sum, [, qty]) => sum + qty, 0);
+
+	const productTotal = selectedEntries.reduce((total, [skuId, qty]) => {
+		const variant = variantOptions.find((v) => v.skuId === Number(skuId));
+		return total + qty * (variant?.price || 0);
 	}, 0);
 
-	const productTotal = Object.entries(selectedColorQty).reduce((total, [colorIndex, sizeMap]) => {
-		const variant = variants[Number(colorIndex)];
-		return (
-			total +
-			Object.entries(sizeMap).reduce((sum, [sizeName, qty]) => {
-				const size = variant?.sizes?.find((s) => s.size_name === sizeName);
-				return sum + qty * Number(size?.price || 0);
-			}, 0)
-		);
-	}, 0);
+	// Per-SKU weight isn't available from the API right now (only a single
+	// `weight` string on the product). Falling back to that for every unit.
+	const weightPerUnitKg = parseWeightToKg(product?.weight);
 
-	// weight = heaviest selected variant (or average — your call)
-	const weightKg = Object.keys(selectedColorQty).reduce((max, colorIndex) => {
-		const w = variants[Number(colorIndex)]?.weightKg ?? 0;
-		return Math.max(max, w);
-	}, 0);
-
-	const qty: Record<string, number> = product?.qty || {};
-	const sizes: Array<{ size_name: string; price: string }> = product?.selectedVariant?.sizes || [];
-
-	// ── Shipping charge uses real weight now ──────────────────
 	const shippingRate = SHIPPING_RATES[selectedShipping];
-	const shippingCharge = totalQty > 0 ? Math.round(shippingRate.perKg * weightKg * totalQty) : 0; // no charge if nothing selected
-	// ─────────────────────────────────────────────────────────
+	const shippingCharge = totalQty > 0 ? Math.round(shippingRate.perKg * weightPerUnitKg * totalQty) : 0;
 
 	const grandTotal = productTotal + shippingCharge;
 	const payNow = Math.round(grandTotal * 0.7);
@@ -83,82 +83,52 @@ export default function CartSection({ product }: { product: any }) {
 		action();
 	};
 
-	const handleSubmit = async () => {
-		setIsSubmitting(true);
+	// Builds a human-readable label + selections for a SKU using variantGroups
+	const buildVariantPayload = (variant: VariantOption, qty: number) => ({
+		skuId: variant.skuId,
+		label: variant.label,
+		price: variant.price,
+		selections: variant.selections,
+		quantity: qty,
+	});
 
-		const selectedVariants = Object.entries(selectedColorQty)
-			.filter(([, sizeMap]) => Object.values(sizeMap).some((q) => q > 0))
-			.map(([colorIndex, sizeMap]) => ({
-				variant: variants[Number(colorIndex)],
-				quantity: sizeMap,
-			}));
+	const getSelectedVariantsPayload = () =>
+		selectedEntries
+			.map(([skuId, qty]) => {
+				const variant = variantOptions.find((v) => v.skuId === Number(skuId));
+				if (!variant) return null;
+				return buildVariantPayload(variant, qty);
+			})
+			.filter(Boolean);
 
-		const form = {
-			product_id: product?.offer_id,
-			product_name: product?.name,
-			product_image: product?.image,
-			variants: selectedVariants.map((v) => ({
-				variant: {
-					color_name: v.variant?.color_name,
-					image: v.variant?.image, // ← image lives here
-					weightKg: v.variant?.weightKg,
-					weightInfo: v.variant?.weightInfo,
-					sizes: v.variant?.sizes,
-				},
-				quantity: v.quantity,
-			})),
-			shipping_method: selectedShipping,
-		};
-
-		console.log('cart submit payload:', form);
-
-		try {
-			await addToCard(form as any);
-			toast.success('Product added to cart successfully!');
-			// Invalidate cart data so the badge and drawer update instantly
-			queryClient.invalidateQueries({ queryKey: [QueriesKey.CART_DATA] });
-			// Open the cart drawer for a smooth UX
-			openDrawer({ drawerType: 'cart' });
-		} catch (err) {
-			toast.error('Failed to add product to cart.');
-		} finally {
-			setIsSubmitting(false);
+	const submitCart = async (redirectToCheckout: boolean) => {
+		if (totalQty === 0) {
+			toast.error('Please select at least one item first.');
+			return;
 		}
-	};
 
-	const handleBuyNow = async () => {
 		setIsSubmitting(true);
-
-		const selectedVariants = Object.entries(selectedColorQty)
-			.filter(([, sizeMap]) => Object.values(sizeMap).some((q) => q > 0))
-			.map(([colorIndex, sizeMap]) => ({
-				variant: variants[Number(colorIndex)],
-				quantity: sizeMap,
-			}));
 
 		const form = {
 			product_id: product?.offer_id,
 			product_name: product?.name,
 			product_image: product?.image,
-			variants: selectedVariants.map((v) => ({
-				variant: {
-					color_name: v.variant?.color_name,
-					image: v.variant?.image,
-					weightKg: v.variant?.weightKg,
-					weightInfo: v.variant?.weightInfo,
-					sizes: v.variant?.sizes,
-				},
-				quantity: v.quantity,
-			})),
+			variants: getSelectedVariantsPayload(),
 			shipping_method: selectedShipping,
 		};
 
 		try {
 			await addToCard(form as any);
 			queryClient.invalidateQueries({ queryKey: [QueriesKey.CART_DATA] });
-			router.push('/checkout');
+
+			if (redirectToCheckout) {
+				router.push('/checkout');
+			} else {
+				toast.success('Product added to cart successfully!');
+				openDrawer({ drawerType: 'cart' });
+			}
 		} catch (err) {
-			toast.error('Failed to process buy now.');
+			toast.error(redirectToCheckout ? 'Failed to process buy now.' : 'Failed to add product to cart.');
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -232,7 +202,7 @@ export default function CartSection({ product }: { product: any }) {
 					</div>
 					<div className="flex justify-between text-sm font-hanken text-gray-600">
 						<span>
-							Shipping ({shippingRate.label}, {weightKg}kg × {totalQty} pcs)
+							Shipping ({shippingRate.label}, {weightPerUnitKg}kg × {totalQty} pcs)
 						</span>
 						<span className="font-medium">৳ {shippingCharge.toLocaleString()}</span>
 					</div>
@@ -258,7 +228,7 @@ export default function CartSection({ product }: { product: any }) {
 				<div className="py-2">
 					<div className="flex items-center justify-between border border-dashed border-primary/50 bg-gray-50 rounded-xl p-4 mb-3">
 						<div>
-							<div className="font-medium">Weight: {weightKg > 0 ? `${weightKg}kg per unit` : 'Calculating...'}</div>
+							<div className="font-medium">Weight: {weightPerUnitKg > 0 ? `${weightPerUnitKg}kg per unit` : 'Calculating...'}</div>
 							<div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
 								{selectedShipping === 'air' ? <Plane className="w-4 h-4" /> : <Ship className="w-4 h-4" />}
 								{shippingRate.label} - Example Company Global Shipping
@@ -279,14 +249,15 @@ export default function CartSection({ product }: { product: any }) {
 				{/* Buttons */}
 				<div className="pt-2 space-y-3">
 					<Button
-						onClick={() => requireAuth(handleBuyNow)}
+						onClick={() => requireAuth(() => submitCart(true))}
+						disabled={isSubmitting}
 						size="lg"
 						className="w-full bg-primary hover:bg-primary/80 text-white font-semibold py-3.5 rounded-xl transition"
 					>
 						Buy Now
 					</Button>
 					<Button
-						onClick={() => requireAuth(handleSubmit)}
+						onClick={() => requireAuth(() => submitCart(false))}
 						disabled={isSubmitting}
 						variant="outline"
 						size="lg"

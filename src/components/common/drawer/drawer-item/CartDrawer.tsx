@@ -17,36 +17,18 @@ import { toast } from 'sonner';
 import { CartItemSkeleton } from '../../loader/CartItemSkeleton';
 
 /* =========================
-   Types — mapped to new API
+   Types — aligned to the SKU-based payload sent by CartSection
+   { skuId, label, price, selections, quantity }
 ========================= */
 
-type WeightInfo = {
-	sku1: string;
-	skuId: number;
-	width: number;
-	height: number;
-	length: number;
-	volume: number;
-	weight: number;
-};
-
-type VariantSize = {
-	price: string;
-	stock: string;
-	size_name: string;
-};
-
-type VariantDetail = {
-	image: string;
-	color_name: string;
-	weightKg: number;
-	weightInfo: WeightInfo;
-	sizes: VariantSize[];
-};
-
 type VariantEntry = {
-	variant: VariantDetail;
-	quantity: Record<string, number>; // { Standard: 2 }
+	skuId: number;
+	label: string; 
+	price: number;
+	selections: Record<string, string>; // groupId -> optionId, for reference/debugging
+	quantity: number; // flat qty for this SKU
+	image?: string; // optional, if backend/product provides a per-variant image
+	stock?: number; // optional, used to cap the "+" button if backend returns it
 };
 
 type CartItem = {
@@ -72,18 +54,10 @@ type CartResponse = {
 ========================= */
 
 // Total qty across all variants of a cart item
-const getTotalQty = (variants: VariantEntry[]) =>
-	variants.reduce((sum, v) => {
-		return sum + Object.values(v.quantity).reduce((s, q) => s + q, 0);
-	}, 0);
+const getTotalQty = (variants: VariantEntry[]) => variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
 
 // Total price for a single variant entry
-const getVariantTotal = (entry: VariantEntry): number => {
-	return Object.entries(entry.quantity).reduce((sum, [sizeName, qty]) => {
-		const size = entry.variant.sizes.find((s) => s.size_name === sizeName);
-		return sum + qty * Number(size?.price || 0);
-	}, 0);
-};
+const getVariantTotal = (entry: VariantEntry): number => (entry.price || 0) * (entry.quantity || 0);
 
 // Grand subtotal across all cart items
 const getGrandTotal = (items: CartItem[]): number =>
@@ -99,109 +73,98 @@ type VariantRowProps = {
 	cartItem: CartItem;
 	variantEntry: VariantEntry;
 	loadingKey: string | null;
-	onQtyChange: (cartItem: CartItem, variantEntry: VariantEntry, sizeName: string, type: 'inc' | 'dec') => void;
-	onRemove: (cartItem: CartItem, variantEntry: VariantEntry, sizeName: string) => void;
+	onQtyChange: (cartItem: CartItem, variantEntry: VariantEntry, type: 'inc' | 'dec') => void;
+	onRemove: (cartItem: CartItem, variantEntry: VariantEntry) => void;
 };
 
 function VariantRow({ cartItem, variantEntry, loadingKey, onQtyChange, onRemove }: VariantRowProps) {
-	const { variant, quantity } = variantEntry;
+	const { skuId, label, price, quantity, image, stock } = variantEntry;
+
+	if (!quantity || quantity <= 0) return null;
+
+	const rowKey = `${cartItem.id}-${skuId}`;
+	const isUpdating = loadingKey === rowKey;
 
 	return (
-		<>
-			{Object.entries(quantity)
-				.filter(([, qty]) => qty > 0)
-				.map(([sizeName, qty]) => {
-					const size = variant.sizes.find((s) => s.size_name === sizeName);
-					const price = Number(size?.price || 0);
-					const rowKey = `${cartItem.id}-${variant.color_name}-${sizeName}`;
-					const isUpdating = loadingKey === rowKey;
+		<motion.div
+			key={rowKey}
+			layout
+			initial={{ opacity: 0, x: 100 }}
+			animate={{ opacity: 1, x: 0 }}
+			exit={{ opacity: 0, x: 100, transition: { duration: 0.3 } }}
+			transition={{ type: 'spring', stiffness: 600, damping: 50 }}
+		>
+			<Card className="overflow-hidden hover:bg-slate-50 transition-all duration-300 py-3 rounded border-none shadow-xs">
+				<CardContent className="py-0 px-2">
+					{isUpdating ? (
+						<CartItemSkeleton />
+					) : (
+						<div className="flex gap-3">
+							{/* Variant image */}
+							<div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
+								<Image src={image || cartItem.product_image} alt={label} fill className="object-contain p-1" />
+							</div>
 
-					return (
-						<motion.div
-							key={rowKey}
-							layout
-							initial={{ opacity: 0, x: 100 }}
-							animate={{ opacity: 1, x: 0 }}
-							exit={{ opacity: 0, x: 100, transition: { duration: 0.3 } }}
-							transition={{ type: 'spring', stiffness: 600, damping: 50 }}
-						>
-							<Card className="overflow-hidden hover:bg-slate-50 transition-all duration-300 py-3 rounded border-none shadow-xs">
-								<CardContent className="py-0 px-2">
-									{isUpdating ? (
-										<CartItemSkeleton />
-									) : (
-										<div className="flex gap-3">
-											{/* Variant image */}
-											<div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
-												<Image src={variant.image || cartItem.product_image} alt={variant.color_name} fill className="object-contain p-1" />
-											</div>
-
-											{/* Info */}
-											<div className="flex-1 min-w-0">
-												<div className="flex justify-between items-start mb-1">
-													<div className="mt-1 pr-2">
-														<h3 className="font-semibold text-sm leading-snug line-clamp-2">{cartItem.product_name}</h3>
-														{/* Color + size badge */}
-														<div className="flex items-center gap-1.5 mt-1 flex-wrap">
-															<span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{variant.color_name}</span>
-															{sizeName !== 'Standard' && (
-																<span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{sizeName}</span>
-															)}
-															<span className="text-xs bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full">
-																{cartItem.shipping_method === 'air' ? '✈ Air' : '🚢 Sea'}
-															</span>
-														</div>
-													</div>
-													<Button
-														onClick={() => onRemove(cartItem, variantEntry, sizeName)}
-														variant="ghost"
-														size="sm"
-														className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 h-auto"
-													>
-														<Trash2 className="w-3.5 h-3.5" />
-													</Button>
-												</div>
-
-												{/* Qty + Price */}
-												<div className="flex justify-between items-center mt-3">
-													<div className="flex border rounded-lg overflow-hidden">
-														<Button
-															variant="ghost"
-															size="sm"
-															disabled={qty <= 1 || isUpdating}
-															onClick={() => onQtyChange(cartItem, variantEntry, sizeName, 'dec')}
-															className="h-7 w-7 p-0 rounded-none"
-														>
-															<Minus className="w-3 h-3" />
-														</Button>
-
-														<Input value={qty} readOnly className="w-10 h-7 text-center border-0 border-x text-sm p-0 rounded-none" />
-
-														<Button
-															variant="ghost"
-															size="sm"
-															disabled={qty >= Number(size?.stock || 0) || isUpdating}
-															onClick={() => onQtyChange(cartItem, variantEntry, sizeName, 'inc')}
-															className="h-7 w-7 p-0 rounded-none"
-														>
-															<Plus className="w-3 h-3" />
-														</Button>
-													</div>
-
-													<div className="text-right">
-														<div className="font-semibold text-sm">৳{(price * qty).toFixed(2)}</div>
-														{qty > 1 && <div className="text-xs text-muted-foreground">৳{price.toFixed(2)} each</div>}
-													</div>
-												</div>
-											</div>
+							{/* Info */}
+							<div className="flex-1 min-w-0">
+								<div className="flex justify-between items-start mb-1">
+									<div className="mt-1 pr-2">
+										<h3 className="font-semibold text-sm leading-snug line-clamp-2">{cartItem.product_name}</h3>
+										{/* Variant label badge */}
+										<div className="flex items-center gap-1.5 mt-1 flex-wrap">
+											{label && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{label}</span>}
+											<span className="text-xs bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full">
+												{cartItem.shipping_method === 'air' ? '✈ Air' : '🚢 Sea'}
+											</span>
 										</div>
-									)}
-								</CardContent>
-							</Card>
-						</motion.div>
-					);
-				})}
-		</>
+									</div>
+									<Button
+										onClick={() => onRemove(cartItem, variantEntry)}
+										variant="ghost"
+										size="sm"
+										className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 h-auto"
+									>
+										<Trash2 className="w-3.5 h-3.5" />
+									</Button>
+								</div>
+
+								{/* Qty + Price */}
+								<div className="flex justify-between items-center mt-3">
+									<div className="flex border rounded-lg overflow-hidden">
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={quantity <= 1 || isUpdating}
+											onClick={() => onQtyChange(cartItem, variantEntry, 'dec')}
+											className="h-7 w-7 p-0 rounded-none"
+										>
+											<Minus className="w-3 h-3" />
+										</Button>
+
+										<Input value={quantity} readOnly className="w-10 h-7 text-center border-0 border-x text-sm p-0 rounded-none" />
+
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={(stock !== undefined && quantity >= stock) || isUpdating}
+											onClick={() => onQtyChange(cartItem, variantEntry, 'inc')}
+											className="h-7 w-7 p-0 rounded-none"
+										>
+											<Plus className="w-3 h-3" />
+										</Button>
+									</div>
+
+									<div className="text-right">
+										<div className="font-semibold text-sm">৳{(price * quantity).toFixed(2)}</div>
+										{quantity > 1 && <div className="text-xs text-muted-foreground">৳{price.toFixed(2)} each</div>}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</motion.div>
 	);
 }
 
@@ -221,8 +184,6 @@ export default function CartDrawer() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
 
-	// const cartItems: CartItem[] = data?.data ?? [];
-
 	const cartItems: CartItem[] = useMemo(() => {
 		return Array.isArray(data?.data) ? data.data : [];
 	}, [data]);
@@ -232,14 +193,7 @@ export default function CartDrawer() {
 
 		return cartItems.reduce((total, item) => {
 			if (!Array.isArray(item?.variants)) return total;
-
-			return (
-				total +
-				item.variants.reduce((sum, v) => {
-					if (!v?.quantity || typeof v.quantity !== 'object') return sum;
-					return sum + Object.values(v.quantity).filter((q) => q > 0).length;
-				}, 0)
-			);
+			return total + item.variants.filter((v) => v?.quantity > 0).length;
 		}, 0);
 	}, [cartItems]);
 
@@ -267,28 +221,25 @@ export default function CartDrawer() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to update cart'),
 	});
 
-	const handleQtyChange = async (cartItem: CartItem, variantEntry: VariantEntry, sizeName: string, type: 'inc' | 'dec') => {
-		const currentQty = variantEntry.quantity[sizeName] ?? 0;
-		const size = variantEntry.variant.sizes.find((s) => s.size_name === sizeName);
-		const stock = Number(size?.stock || 0);
-		const newQty = type === 'inc' ? Math.min(currentQty + 1, stock) : Math.max(currentQty - 1, 1);
+	const buildUpdatedPayload = (cartItem: CartItem, skuId: number, newQty: number) => ({
+		product_id: cartItem.product_id,
+		product_name: cartItem.product_name,
+		product_image: cartItem.product_image,
+		shipping_method: cartItem.shipping_method,
+		variants: cartItem.variants.map((v) => (v.skuId === skuId ? { ...v, quantity: newQty } : v)),
+	});
+
+	const handleQtyChange = async (cartItem: CartItem, variantEntry: VariantEntry, type: 'inc' | 'dec') => {
+		const currentQty = variantEntry.quantity ?? 0;
+		const stock = variantEntry.stock;
+		const newQty = type === 'inc' ? (stock !== undefined ? Math.min(currentQty + 1, stock) : currentQty + 1) : Math.max(currentQty - 1, 1);
 
 		if (newQty === currentQty) return;
 
-		const rowKey = `${cartItem.id}-${variantEntry.variant.color_name}-${sizeName}`;
+		const rowKey = `${cartItem.id}-${variantEntry.skuId}`;
 		setLoadingKey(rowKey);
 
-		const payload = {
-			product_id: cartItem.product_id,
-			product_name: cartItem.product_name,
-			product_image: cartItem.product_image,
-			shipping_method: cartItem.shipping_method,
-			variants: cartItem.variants.map((v) => ({
-				variant: v.variant,
-				// update only the matching size in the matching variant
-				quantity: v.variant.color_name === variantEntry.variant.color_name ? { ...v.quantity, [sizeName]: newQty } : v.quantity,
-			})),
-		};
+		const payload = buildUpdatedPayload(cartItem, variantEntry.skuId, newQty);
 
 		try {
 			await updateCart({ payload });
@@ -297,21 +248,11 @@ export default function CartDrawer() {
 		}
 	};
 
-	const handleRemove = async (cartItem: CartItem, variantEntry: VariantEntry, sizeName: string) => {
-		const rowKey = `${cartItem.id}-${variantEntry.variant.color_name}-${sizeName}`;
+	const handleRemove = async (cartItem: CartItem, variantEntry: VariantEntry) => {
+		const rowKey = `${cartItem.id}-${variantEntry.skuId}`;
 		setLoadingKey(rowKey);
 
-		// set qty to 0 for this size; filter it out visually via activeRowCount
-		const payload = {
-			product_id: cartItem.product_id,
-			product_name: cartItem.product_name,
-			product_image: cartItem.product_image,
-			shipping_method: cartItem.shipping_method,
-			variants: cartItem.variants.map((v) => ({
-				variant: v.variant,
-				quantity: v.variant.color_name === variantEntry.variant.color_name ? { ...v.quantity, [sizeName]: 0 } : v.quantity,
-			})),
-		};
+		const payload = buildUpdatedPayload(cartItem, variantEntry.skuId, 0);
 
 		try {
 			await updateCart({ payload });
@@ -366,9 +307,9 @@ export default function CartDrawer() {
 						<div className="space-y-0.5 pt-1">
 							<AnimatePresence>
 								{cartItems.map((cartItem) =>
-									cartItem.variants.map((variantEntry, vIdx) => (
+									(cartItem.variants || []).map((variantEntry) => (
 										<VariantRow
-											key={`${cartItem.id}-${variantEntry.variant.color_name}-${vIdx}`}
+											key={`${cartItem.id}-${variantEntry.skuId}`}
 											cartItem={cartItem}
 											variantEntry={variantEntry}
 											loadingKey={loadingKey}

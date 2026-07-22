@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import LoadingSkeleton from '@/components/common/loader/LoadingSkeleton';
 import ProductImageGallery from './ProductImageGallery';
 import ProductInfo from './ProductInfo';
 import ProductTabs from './ProductTabs';
@@ -15,18 +14,25 @@ import ProductDetailsSkeleton from '@/components/common/loader/ProductDetailsSke
 
 /* ================= TYPES ================= */
 
-export interface VariantSize {
-	size_name: string;
-	price: string;
-	stock: string;
+export interface VariantOptionItem {
+	id: string;
+	value: string;
+	image?: string;
 }
 
-export interface Variant {
-	color_name: string;
-	image: string;
-	active: boolean;
+export interface VariantGroup {
+	groupId: string;
+	label: string;
+	options: VariantOptionItem[];
+	hasImages: boolean;
+}
+
+export interface VariantOption {
 	skuId: number;
-	sizes: VariantSize[];
+	price: number;
+	stock: number;
+	selections: Record<string, string>; // groupId -> optionId
+	label: string;
 }
 
 export interface ProductDetails {
@@ -65,6 +71,10 @@ export interface ProductDetails {
 
 		props_list: Record<string, string>;
 
+		prop_imgs?: {
+			prop_img: { properties: string; url: string }[];
+		};
+
 		seller_info: {
 			nick: string;
 			shop_name: string;
@@ -86,14 +96,9 @@ export interface ProductDetails {
 const mapProductData = (response: ProductDetails) => {
 	const product = response.item;
 
-	console.log('product', product);
-
 	const galleryImages = Array.isArray(product.item_imgs) ? product.item_imgs.map((img) => img?.url).filter((url): url is string => Boolean(url)) : [];
 
-	const image = product.pic_url || galleryImages[0] || '/images/product-placeholder.png';
-
 	const specifications: Record<string, string> = {};
-
 	if (Array.isArray(product.props)) {
 		product.props.forEach((prop) => {
 			if (prop?.name && prop?.value) {
@@ -102,20 +107,68 @@ const mapProductData = (response: ProductDetails) => {
 		});
 	}
 
-	const variants: Variant[] = Array.isArray(product.skus?.sku)
-		? product.skus.sku.map((sku) => ({
-				color_name: sku.properties_name,
-				image,
-				active: true,
-				skuId: sku.sku_id,
-				sizes: [
-					{
-						size_name: 'Default',
-						price: String(sku.price),
-						stock: String(sku.quantity),
-					},
-				],
-			}))
+	// ---- Parse props_list into groups ----
+	const propsList: Record<string, string> = product.props_list || {};
+	const groupsMap: Record<string, { label: string; options: Record<string, string> }> = {};
+
+	Object.entries(propsList).forEach(([key, val]) => {
+		const [groupId, optId] = key.split(':');
+		const [label, value] = val.split(':');
+		if (!groupsMap[groupId]) groupsMap[groupId] = { label, options: {} };
+		groupsMap[groupId].options[optId] = value;
+	});
+
+	// ---- Parse prop_imgs -> "groupId:optId" -> image url ----
+	const imageMap: Record<string, string> = {};
+	product.prop_imgs?.prop_img?.forEach((p) => {
+		if (p?.properties && p?.url) imageMap[p.properties] = p.url;
+	});
+
+	// Drop meaningless groups (single option that's just "#NA" / "NA" / empty)
+	const isMeaningless = (opts: Record<string, string>) => {
+		const vals = Object.values(opts);
+		return vals.length <= 1 && /^#?NA$/i.test(vals[0] || '');
+	};
+
+	const variantGroups: VariantGroup[] = Object.entries(groupsMap)
+		.filter(([, g]) => !isMeaningless(g.options))
+		.map(([groupId, g]) => {
+			const options: VariantOptionItem[] = Object.entries(g.options).map(([id, value]) => ({
+				id,
+				value,
+				image: imageMap[`${groupId}:${id}`],
+			}));
+			return {
+				groupId,
+				label: g.label,
+				options,
+				hasImages: options.some((o) => !!o.image),
+			};
+		});
+
+	// ---- Build per-SKU variant options ----
+	const variantOptions: VariantOption[] = Array.isArray(product.skus?.sku)
+		? product.skus.sku.map((sku) => {
+				const selections: Record<string, string> = {};
+				sku.properties.split(';').forEach((pair) => {
+					const [groupId, optId] = pair.split(':');
+					selections[groupId] = optId;
+				});
+
+				const label = Object.entries(selections)
+					.filter(([groupId]) => variantGroups.some((g) => g.groupId === groupId))
+					.map(([groupId, optId]) => groupsMap[groupId]?.options[optId])
+					.filter(Boolean)
+					.join(' / ');
+
+				return {
+					skuId: sku.sku_id,
+					price: sku.price,
+					stock: sku.quantity,
+					selections,
+					label: label || 'Default',
+				};
+			})
 		: [];
 
 	return {
@@ -133,12 +186,8 @@ const mapProductData = (response: ProductDetails) => {
 		image: product.pic_url,
 		galleryImages,
 
-		colors: variants.map((v) => ({
-			name: v.color_name,
-			image: v.image,
-		})),
-
-		variants,
+		variantGroups,
+		variantOptions,
 		specifications,
 		description: product.desc,
 
@@ -146,6 +195,7 @@ const mapProductData = (response: ProductDetails) => {
 		unit: product.unit,
 		location: product.location,
 		video: product.video?.url,
+		weight: product.weight,
 	};
 };
 
@@ -172,41 +222,42 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 		return mapProductData(data);
 	}, [JSON.stringify(data)]);
 
-	const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-	const [selectedColorQty, setSelectedColorQty] = useState<Record<number, Record<string, number>>>({});
+	const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-	const updateColorQty = (colorIndex: number, size: string, type: 'inc' | 'dec', stock: number) => {
-		setSelectedColorQty((prev) => {
-			const colorQty = prev[colorIndex] || {};
-			const current = colorQty[size] || 0;
+	// cart qty keyed by skuId
+	const [selectedQty, setSelectedQty] = useState<Record<number, number>>({});
+
+	const updateQty = (skuId: number, type: 'inc' | 'dec', stock: number) => {
+		setSelectedQty((prev) => {
+			const current = prev[skuId] || 0;
 
 			if (type === 'inc' && current < stock) {
-				return { ...prev, [colorIndex]: { ...colorQty, [size]: current + 1 } };
+				return { ...prev, [skuId]: current + 1 };
 			}
 			if (type === 'dec' && current > 0) {
 				const updated = current - 1;
-				const newColorQty = { ...colorQty };
+				const next = { ...prev };
 				if (updated === 0) {
-					delete newColorQty[size];
+					delete next[skuId];
 				} else {
-					newColorQty[size] = updated;
+					next[skuId] = updated;
 				}
-				const newState = { ...prev, [colorIndex]: newColorQty };
-				if (Object.keys(newColorQty).length === 0) {
-					delete newState[colorIndex];
-				}
-				return newState;
+				return next;
 			}
 			return prev;
 		});
 	};
 
+	// when a color/image variant is selected, sync the main gallery image
+	const handleVariantImageSelect = (image?: string) => {
+		if (!image || !product) return;
+		const idx = product.galleryImages.findIndex((img) => img === image);
+		if (idx >= 0) setSelectedImageIndex(idx);
+	};
+
 	if (isLoading || !product) {
 		return <ProductDetailsSkeleton />;
 	}
-
-	const selectedVariant = product.variants[selectedColorIndex];
-	const mainImage = selectedVariant?.image || product.image;
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12 py-2">
@@ -217,12 +268,8 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 					<ProductImageGallery
 						images={product.galleryImages}
 						productName={product.name}
-						selectedImageIndex={selectedColorIndex + 1}
-						onSelectImage={(index) => {
-							if (index > 0) {
-								setSelectedColorIndex(index - 1);
-							}
-						}}
+						selectedImageIndex={selectedImageIndex}
+						onSelectImage={setSelectedImageIndex}
 					/>
 				</div>
 
@@ -235,22 +282,21 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 							price: product.price,
 							currency: product.currency,
 							solded: product.sold,
-							description: product.description,
-							colors: product.colors,
-							image: mainImage,
-							variants: product.variants,
 							rating: product.rating,
 							reviewCount: product.reviewCount,
+							variantGroups: product.variantGroups,
+							variantOptions: product.variantOptions,
 						}}
-						selectedColorQty={selectedColorQty}
-						updateColorQty={updateColorQty}
+						selectedQty={selectedQty}
+						updateQty={updateQty}
+						onVariantImageSelect={handleVariantImageSelect}
 					/>
 				</div>
 				<div className="md:hidden col-span-12">
 					<CartSection
 						product={{
 							...product,
-							selectedColorQty,
+							selectedQty,
 						}}
 					/>
 				</div>
@@ -267,7 +313,7 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 				<CartSection
 					product={{
 						...product,
-						selectedColorQty,
+						selectedQty,
 					}}
 				/>
 			</div>
