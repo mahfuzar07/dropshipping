@@ -209,7 +209,7 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 	const mainImage = selectedVariant?.image || product.image;
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12">
+		<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:mb-20 mb-12 py-2">
 			{/* LEFT */}
 			<div className="md:col-span-9 col-span-1 grid grid-cols-1 md:grid-cols-12 gap-6">
 				{/* IMAGE */}
