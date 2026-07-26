@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -50,6 +51,8 @@ interface Order {
 	status: string;
 	status_display: string;
 	created_at: string;
+	discount?: number | string;
+	coupon_code?: string;
 	address?: {
 		full_name: string;
 		phone: string;
@@ -59,6 +62,45 @@ interface Order {
 		district: string;
 		postal_code: string;
 	};
+}
+
+function normalizeAdminItemVariants(variants: any[]): Array<{ label: string; quantity: number; price: number }> {
+	const parsed: Array<{ label: string; quantity: number; price: number }> = [];
+	if (!Array.isArray(variants)) return parsed;
+
+	variants.forEach((v: any) => {
+		if (!v) return;
+
+		// Format A: Flat SKU-based
+		if (typeof v.quantity === 'number') {
+			parsed.push({
+				label: v.label || 'Standard',
+				quantity: v.quantity,
+				price: Number(v.price || 0),
+			});
+		}
+		// Format B: Nested structure
+		else if (v.quantity && typeof v.quantity === 'object') {
+			const colorName = v.variant?.color_name || 'Standard';
+			const sizes = Array.isArray(v.variant?.sizes) ? v.variant.sizes : [];
+
+			Object.entries(v.quantity).forEach(([sizeName, qty]) => {
+				const qtyNum = Number(qty);
+				if (qtyNum <= 0) return;
+
+				const sizeDetail = sizes.find((s: any) => s.size_name === sizeName);
+				const priceNum = Number(sizeDetail?.price || 0);
+
+				parsed.push({
+					label: colorName ? `${colorName} - ${sizeName}` : sizeName,
+					quantity: qtyNum,
+					price: priceNum,
+				});
+			});
+		}
+	});
+
+	return parsed;
 }
 
 export default function AdminOrderManagementPage() {
@@ -508,6 +550,19 @@ export default function AdminOrderManagementPage() {
 													<p className="font-bold text-slate-800 text-sm">{item.product_name}</p>
 													<p className="text-xs text-slate-400">ID: {item.product_id}</p>
 												</Link>
+												{(() => {
+													const itemVars = normalizeAdminItemVariants(item.variants);
+													if (itemVars.length === 0) return null;
+													return (
+														<div className="mt-1.5 space-y-1 pl-2 border-l-2 border-orange-200">
+															{itemVars.map((v, vIdx) => (
+																<p key={vIdx} className="text-xs text-slate-500 font-medium">
+																	{v.label} · Qty: <span className="font-bold text-slate-700">{v.quantity}</span> · ৳{v.price.toLocaleString()} each
+																</p>
+															))}
+														</div>
+													);
+												})()}
 											</div>
 											<div className="text-right">
 												<p className="text-xs font-bold text-[#F16A38]">৳{Number(item.item_total || 0).toLocaleString()}</p>
@@ -515,20 +570,66 @@ export default function AdminOrderManagementPage() {
 										</div>
 									))
 								) : (
-									<div className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg">
-										<div>
-											<p className="font-bold text-slate-800 text-sm">{selectedOrder.product_name || 'Legacy Order Product'}</p>
-											<p className="text-xs text-slate-400">ID: {selectedOrder.product_id}</p>
+									<div className="flex flex-col p-3 bg-slate-50 border rounded-lg gap-2">
+										<div className="flex justify-between items-center">
+											<div>
+												<p className="font-bold text-slate-800 text-sm">{selectedOrder.product_name || 'Legacy Order Product'}</p>
+												<p className="text-xs text-slate-400">ID: {selectedOrder.product_id}</p>
+											</div>
+											<div className="text-right">
+												<p className="text-xs font-bold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</p>
+											</div>
 										</div>
-										<div className="text-right">
-											<p className="text-xs font-bold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</p>
-										</div>
+										{(() => {
+											const itemVars = normalizeAdminItemVariants(selectedOrder.variants);
+											if (itemVars.length === 0) return null;
+											return (
+												<div className="space-y-1 pl-2 border-l-2 border-orange-200">
+													{itemVars.map((v, vIdx) => (
+														<p key={vIdx} className="text-xs text-slate-500 font-medium">
+															{v.label} · Qty: <span className="font-bold text-slate-700">{v.quantity}</span> · ৳{v.price.toLocaleString()} each
+														</p>
+													))}
+												</div>
+											);
+										})()}
 									</div>
 								)}
 							</div>
-							<div className="flex justify-between items-center border-t pt-3.5 mt-4">
-								<span className="font-bold text-slate-700">Grand Total</span>
-								<span className="text-lg font-extrabold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString()}</span>
+							<div className="border-t pt-3.5 mt-4 space-y-2 text-xs font-medium">
+								<div className="flex justify-between text-slate-500">
+									<span>Subtotal</span>
+									<span>৳{(Number(selectedOrder.total_price || 0) - Number(selectedOrder.shipping_charge || 0) + Number(selectedOrder.discount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+								</div>
+								<div className="flex justify-between text-slate-500">
+									<span>Shipping Charge ({selectedOrder.shipping_method?.toUpperCase() || 'AIR'})</span>
+									<span>৳{Number(selectedOrder.shipping_charge || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+								</div>
+								{Number(selectedOrder.discount || 0) > 0 && (
+									<div className="flex justify-between text-emerald-600">
+										<span>Discount ({selectedOrder.coupon_code || 'Coupon'})</span>
+										<span>-৳{Number(selectedOrder.discount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+									</div>
+								)}
+								<div className="flex justify-between text-slate-500">
+									<span>Payment Method</span>
+									<span className="capitalize">{selectedOrder.payment_method || 'COD'}</span>
+								</div>
+								<Separator className="my-1.5" />
+								<div className="flex justify-between items-center font-bold text-sm text-slate-800">
+									<span>Grand Total</span>
+									<span className="text-lg font-extrabold text-[#F16A38]">৳{Number(selectedOrder.total_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+								</div>
+								<div className="mt-2.5 bg-slate-50 border border-slate-100 rounded-lg p-2.5 space-y-1 text-[11px] text-slate-600">
+									<div className="flex justify-between">
+										<span>Immediate Payment (70% Paid)</span>
+										<span className="font-semibold text-slate-700">৳{(Number(selectedOrder.total_price || 0) * 0.7).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+									</div>
+									<div className="flex justify-between">
+										<span>Payment upon Delivery (30% COD)</span>
+										<span className="font-semibold text-slate-700">৳{(Number(selectedOrder.total_price || 0) * 0.3).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+									</div>
+								</div>
 							</div>
 						</div>
 

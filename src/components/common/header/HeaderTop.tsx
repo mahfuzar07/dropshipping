@@ -34,8 +34,31 @@ export default function HeaderTop() {
 			return (
 				total +
 				item.variants.reduce((sum: number, v: any) => {
-					if (!v?.quantity || typeof v.quantity !== 'object') return sum;
-					return sum + Object.values(v.quantity).filter((q: any) => q > 0).length;
+					if (typeof v?.quantity === 'number') {
+						return sum + v.quantity;
+					} else if (v?.quantity && typeof v.quantity === 'object') {
+						return sum + Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
+					}
+					return sum;
+				}, 0)
+			);
+		}, 0);
+	}, [data, isAuthenticated]);
+
+	const cartTotal = useMemo(() => {
+		if (!isAuthenticated || !Array.isArray(data?.data)) return 0;
+		return data.data.reduce((total: number, item: any) => {
+			if (!Array.isArray(item?.variants)) return total;
+			return (
+				total +
+				item.variants.reduce((sum: number, v: any) => {
+					const qty = typeof v?.quantity === 'number' 
+						? v.quantity 
+						: (v?.quantity && typeof v.quantity === 'object')
+							? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
+							: 0;
+					const price = Number(v?.price || 0);
+					return sum + qty * price;
 				}, 0)
 			);
 		}, 0);
@@ -107,14 +130,15 @@ export default function HeaderTop() {
 							</div>
 						</div>
 
-						<div className="flex items-center">
-							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-primary text-white rounded-full flex items-center justify-center">
+						<div className="flex items-center gap-1">
+							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
 								<ShoppingBag size={24} strokeWidth={1.5} className="" />
 							</div>
 
-							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-sm md:block hidden text-white font-semibold">Cart</p>
-								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
+							<div className="relative cursor-pointer flex flex-col items-start leading-none" onClick={() => openDrawer({ drawerType: 'cart' })}>
+								<p className="text-[11px] md:block hidden text-white/80 font-medium">Cart ({cartCount} item{cartCount !== 1 ? 's' : ''})</p>
+								<p className="text-xs md:block hidden text-white font-bold mt-0.5">৳{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center md:hidden">
 									{cartCount}
 								</div>
 							</div>

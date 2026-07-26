@@ -58,10 +58,12 @@ export default function CartSection({ product }: { product: any }) {
 
 	const totalQty = selectedEntries.reduce((sum, [, qty]) => sum + qty, 0);
 
-	const productTotal = selectedEntries.reduce((total, [skuId, qty]) => {
-		const variant = variantOptions.find((v) => v.skuId === Number(skuId));
-		return total + qty * (variant?.price || 0);
-	}, 0);
+	const productTotal = variantOptions.length === 0
+		? totalQty * (product?.price || 0)
+		: selectedEntries.reduce((total, [skuId, qty]) => {
+				const variant = variantOptions.find((v) => v.skuId === Number(skuId));
+				return total + qty * (variant?.price || 0);
+			}, 0);
 
 	// Per-SKU weight isn't available from the API right now (only a single
 	// `weight` string on the product). Falling back to that for every unit.
@@ -90,16 +92,28 @@ export default function CartSection({ product }: { product: any }) {
 		price: variant.price,
 		selections: variant.selections,
 		quantity: qty,
+		weight: weightPerUnitKg,
 	});
 
-	const getSelectedVariantsPayload = () =>
-		selectedEntries
+	const getSelectedVariantsPayload = () => {
+		if (variantOptions.length === 0) {
+			return [{
+				skuId: 0,
+				label: 'Standard',
+				price: product?.price || 0,
+				selections: {},
+				quantity: totalQty,
+				weight: weightPerUnitKg,
+			}];
+		}
+		return selectedEntries
 			.map(([skuId, qty]) => {
 				const variant = variantOptions.find((v) => v.skuId === Number(skuId));
 				if (!variant) return null;
 				return buildVariantPayload(variant, qty);
 			})
 			.filter(Boolean);
+	};
 
 	const submitCart = async (redirectToCheckout: boolean) => {
 		if (totalQty === 0) {

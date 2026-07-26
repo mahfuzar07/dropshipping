@@ -62,7 +62,8 @@ type OrderPayload = {
 /* ================= COMPONENT ================= */
 
 export default function Step3Payment() {
-	const { payment, setPayment, nextStep, prevStep, address, shipping, appliedCoupon, setAppliedCoupon, setDiscount } = useCheckoutStore();
+	const { payment, setPayment, nextStep, prevStep, address, shipping, appliedCoupon, setAppliedCoupon, setDiscount, setPlacedOrder } =
+		useCheckoutStore();
 	const router = useRouter();
 	const [errors, setErrors] = useState<ErrorState>({});
 	const [payType, setPayType] = useState<PayType>('card');
@@ -116,8 +117,27 @@ export default function Step3Payment() {
 		}
 
 		try {
+			const dynamicShippingCost = ((data as any)?.data || []).reduce((sum: number, item: any) => {
+				const SHIPPING_RATES = { air: 780, sea: 170 };
+				const method = (item.shipping_method as 'air' | 'sea') || 'air';
+				const rate = SHIPPING_RATES[method];
+				return (
+					sum +
+					(item.variants || []).reduce((s: number, v: any) => {
+						const qty =
+							typeof v?.quantity === 'number'
+								? v.quantity
+								: v?.quantity && typeof v.quantity === 'object'
+									? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
+									: 0;
+						const weight = Number(v.weight || 0.5);
+						return s + qty * weight * rate;
+					}, 0)
+				);
+			}, 0);
+
 			const payload: OrderPayload = {
-				shipping_charge: shipping?.price ?? 0,
+				shipping_charge: shipping?.price ?? dynamicShippingCost,
 				address_id: (typeof address === 'number' ? address : (address as any)?.id) ?? 0,
 				payment_method: payType,
 				coupon_code: appliedCoupon?.code || '',
@@ -125,12 +145,15 @@ export default function Step3Payment() {
 
 			console.log('Order payload:', payload);
 
-			const isSuccess = await addNewOrder({payload}); // replace with real API
+			const response: any = await addNewOrder({ payload });
 
-			if (!isSuccess) {
+			if (!response || !response.success || !Array.isArray(response.data) || response.data.length === 0) {
 				router.push('/order/failed');
 				return;
 			}
+
+			const createdOrder = response.data[0];
+			setPlacedOrder(createdOrder);
 
 			// Clear coupon state on success
 			setAppliedCoupon(null);

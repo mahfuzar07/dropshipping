@@ -23,7 +23,7 @@ import { CartItemSkeleton } from '../../loader/CartItemSkeleton';
 
 type VariantEntry = {
 	skuId: number;
-	label: string; 
+	label: string;
 	price: number;
 	selections: Record<string, string>; // groupId -> optionId, for reference/debugging
 	quantity: number; // flat qty for this SKU
@@ -197,7 +197,21 @@ export default function CartDrawer() {
 		}, 0);
 	}, [cartItems]);
 
-	const grandTotal = useMemo(() => getGrandTotal(cartItems), [cartItems]);
+	const subtotal = useMemo(() => getGrandTotal(cartItems), [cartItems]);
+
+	const shippingTotal = useMemo(() => {
+		const SHIPPING_RATES = { air: 780, sea: 170 };
+		return cartItems.reduce((sum, item) => {
+			const rate = SHIPPING_RATES[item.shipping_method || 'air'];
+			return sum + (item.variants || []).reduce((s, v: any) => {
+				const qty = Number(v.quantity || 0);
+				const weight = Number(v.weight || 0.5);
+				return s + qty * weight * rate;
+			}, 0);
+		}, 0);
+	}, [cartItems]);
+
+	const grandTotal = subtotal + shippingTotal;
 
 	// Auto-close when last item is removed
 	const prevRowCount = useRef(activeRowCount);
@@ -325,12 +339,18 @@ export default function CartDrawer() {
 
 				{/* Footer */}
 				{activeRowCount > 0 && (
-					<div className="border-t px-6 py-3 space-y-4 bg-white">
-						<div className="flex justify-between font-hanken">
-							<span className="text-sm text-muted-foreground">
-								{activeRowCount} item{activeRowCount > 1 ? 's' : ''}
-							</span>
-							<span className="text-lg font-semibold">৳{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+					<div className="border-t px-6 py-3 space-y-3 bg-white font-hanken text-xs">
+						<div className="flex justify-between text-muted-foreground">
+							<span>Subtotal ({activeRowCount} item{activeRowCount > 1 ? 's' : ''})</span>
+							<span>৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+						</div>
+						<div className="flex justify-between text-muted-foreground">
+							<span>Shipping Charge</span>
+							<span>৳{shippingTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+						</div>
+						<div className="flex justify-between font-bold text-sm border-t pt-2">
+							<span>Grand Total</span>
+							<span className="text-primary">৳{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 						</div>
 
 						<div className="flex items-center justify-end gap-2">

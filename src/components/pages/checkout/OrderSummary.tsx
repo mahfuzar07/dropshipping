@@ -228,36 +228,84 @@ type CartResponse = {
 
 /* ================= HELPERS ================= */
 
+type NormalizedVariantRow = {
+	skuId: string | number;
+	label: string;
+	price: number;
+	quantity: number;
+	weight: number;
+	image?: string;
+};
+
+function normalizeCartVariants(variants: any[], product_image?: string): NormalizedVariantRow[] {
+	if (!Array.isArray(variants)) return [];
+	const rows: NormalizedVariantRow[] = [];
+
+	variants.forEach((v: any) => {
+		if (!v) return;
+
+		// Check if it's Format A (Flat SKU-based)
+		if (typeof v.quantity === 'number') {
+			rows.push({
+				skuId: v.skuId ?? '',
+				label: v.label ?? '',
+				price: Number(v.price || 0),
+				quantity: v.quantity,
+				weight: Number(v.weight || 0.5),
+				image: v.image,
+			});
+		}
+		// Format B (Old Nested structure)
+		else if (v.quantity && typeof v.quantity === 'object') {
+			const colorName = v.variant?.color_name || '';
+			const variantImg = v.variant?.image || product_image;
+			const sizes = Array.isArray(v.variant?.sizes) ? v.variant.sizes : [];
+			const weight = Number(v.variant?.weight_kg || v.variant?.weight || 0.5);
+
+			Object.entries(v.quantity).forEach(([sizeName, qty]) => {
+				const qtyNum = Number(qty);
+				if (qtyNum <= 0) return;
+
+				const sizeDetail = sizes.find((s: any) => s.size_name === sizeName);
+				const priceNum = Number(sizeDetail?.price || 0);
+
+				rows.push({
+					skuId: sizeDetail?.id || `${colorName}-${sizeName}`,
+					label: colorName ? `${colorName} - ${sizeName}` : sizeName,
+					price: priceNum,
+					quantity: qtyNum,
+					weight: weight,
+					image: variantImg,
+				});
+			});
+		}
+	});
+
+	return rows;
+}
+
 // total qty across all variants of one cart item
-const getItemTotalQty = (variants: VariantEntry[]): number =>
-	variants.reduce((sum, v) => {
-		return sum + Object.values(v.quantity).reduce((s, q) => s + q, 0);
-	}, 0);
+const getItemTotalQty = (variants: any[], product_image?: string): number => {
+	const normalized = normalizeCartVariants(variants, product_image);
+	return normalized.reduce((sum, v) => sum + v.quantity, 0);
+};
 
 // total price for one cart item
-const getItemTotal = (variants: VariantEntry[]): number =>
-	variants.reduce((total, v) => {
-		return (
-			total +
-			Object.entries(v.quantity).reduce((sum, [sizeName, qty]) => {
-				const size = v.variant.sizes.find((s) => s.size_name === sizeName);
-				return sum + qty * Number(size?.price || 0);
-			}, 0)
-		);
-	}, 0);
+const getItemTotal = (variants: any[], product_image?: string): number => {
+	const normalized = normalizeCartVariants(variants, product_image);
+	return normalized.reduce((sum, v) => sum + v.quantity * v.price, 0);
+};
 
 // grand subtotal across all cart items
-const getSubtotal = (items: CartItem[]): number => items.reduce((sum, item) => sum + getItemTotal(item.variants), 0);
+const getSubtotal = (items: any[]): number => {
+	return items.reduce((sum, item) => sum + getItemTotal(item.variants, item.product_image), 0);
+};
 
-// variant label: "典雅灰 × 2, 奶茶色 × 1"
-const getVariantLabel = (variants: VariantEntry[]): string =>
-	variants
-		.filter((v) => Object.values(v.quantity).some((q) => q > 0))
-		.map((v) => {
-			const qty = Object.values(v.quantity).reduce((s, q) => s + q, 0);
-			return `${v.variant.color_name} × ${qty}`;
-		})
-		.join(', ');
+// variant label
+const getVariantLabel = (variants: any[], product_image?: string): string => {
+	const normalized = normalizeCartVariants(variants, product_image);
+	return normalized.map((v) => `${v.label} × ${v.quantity}`).join(', ');
+};
 
 /* ================= COMPONENT ================= */
 
@@ -291,10 +339,30 @@ export default function OrderSummary() {
 	const cartItems = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
 
 	const subtotal = useMemo(() => getSubtotal(cartItems), [cartItems]);
-	const shipPrice = shipping?.price ?? 0;
+
+	const cartShippingCost = useMemo(() => {
+		const SHIPPING_RATES = { air: 780, sea: 170 };
+		return cartItems.reduce((sum, item) => {
+			const rate = SHIPPING_RATES[item.shipping_method || 'air'];
+			return sum + (item.variants || []).reduce((s, v: any) => {
+				const qty = typeof v?.quantity === 'number'
+					? v.quantity
+					: (v?.quantity && typeof v.quantity === 'object')
+						? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
+						: 0;
+				const weight = Number(v.weight || 0.5);
+				return s + qty * weight * rate;
+			}, 0);
+		}, 0);
+	}, [cartItems]);
+
+	const shipPrice = shipping?.price ?? cartShippingCost;
 	const discount = orderSummary?.discount ?? 0;
-	const total = subtotal - discount + shipPrice;
+	const total = Math.max(0, subtotal - discount + shipPrice);
 	const itemCount = cartItems.length;
+
+	const payNow = Math.round(total * 0.7);
+	const payOnDelivery = total - payNow;
 
 	const handleApplyCoupon = async () => {
 		const code = couponInput.trim().toUpperCase();
@@ -381,9 +449,9 @@ export default function OrderSummary() {
 						{isLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>}
 
 						{cartItems.map((item) => {
-							const itemTotal = getItemTotal(item.variants);
-							const totalQty = getItemTotalQty(item.variants);
-							const variantLabel = getVariantLabel(item.variants);
+							const itemTotal = getItemTotal(item.variants, item.product_image);
+							const totalQty = getItemTotalQty(item.variants, item.product_image);
+							const variantLabel = getVariantLabel(item.variants, item.product_image);
 
 							return (
 								<div key={item.id} className="flex items-start justify-between gap-3">
@@ -435,14 +503,14 @@ export default function OrderSummary() {
 									<div className="text-xs">
 										<p className="font-bold tracking-wider">{appliedCoupon.code}</p>
 										<p className="text-[10px] opacity-90">
-											{appliedCoupon.discount_type === 'percent' 
-												? `${Number(appliedCoupon.discount_value)}% Off` 
+											{appliedCoupon.discount_type === 'percent'
+												? `${Number(appliedCoupon.discount_value)}% Off`
 												: `৳${Number(appliedCoupon.discount_value).toLocaleString()} Off`} applied
 										</p>
 									</div>
 								</div>
-								<button 
-									onClick={handleRemoveCoupon} 
+								<button
+									onClick={handleRemoveCoupon}
 									className="text-[11px] font-bold text-red-500 hover:text-red-700 hover:underline cursor-pointer"
 								>
 									Remove
@@ -498,6 +566,17 @@ export default function OrderSummary() {
 						<div className="flex justify-between font-bold text-[15px]">
 							<span>Total</span>
 							<span className="text-primary">৳{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+						</div>
+
+						<div className="mt-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5 space-y-1 font-hanken text-[12px]">
+							<div className="flex justify-between text-slate-700">
+								<span>Immediate Payment (70%)</span>
+								<span className="font-semibold text-slate-800">৳{payNow.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+							</div>
+							<div className="flex justify-between text-slate-600">
+								<span>Payment upon Delivery (30%)</span>
+								<span className="font-semibold text-slate-800">৳{payOnDelivery.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+							</div>
 						</div>
 					</div>
 				</CardContent>

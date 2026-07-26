@@ -29,12 +29,14 @@ interface CheckoutState {
 	payment: Payment;
 	orderSummary: OrderSummary;
 	appliedCoupon: any | null;
+	placedOrder: any | null;
 
 	setAddress: (id: number) => void;
 	setShipping: (shippingInfo: ShippingInterface | null) => void;
 	setPayment: (data: Partial<Payment>) => void;
 	setAppliedCoupon: (coupon: any | null) => void;
 	setDiscount: (discount: number) => void;
+	setPlacedOrder: (order: any | null) => void;
 
 	nextStep: () => void;
 	prevStep: () => void;
@@ -48,6 +50,7 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
 	address: null,
 	shipping: null,
 	appliedCoupon: null,
+	placedOrder: null,
 
 	payment: {
 		cardName: '',
@@ -65,6 +68,7 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
 	setPayment: (data) => set((s) => ({ payment: { ...s.payment, ...data } })),
 	setAppliedCoupon: (coupon) => set({ appliedCoupon: coupon }),
 	setDiscount: (discount) => set((s) => ({ orderSummary: { ...s.orderSummary, discount } })),
+	setPlacedOrder: (order) => set({ placedOrder: order }),
 
 	nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 3) })),
 	prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) })),

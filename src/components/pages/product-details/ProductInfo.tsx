@@ -78,8 +78,8 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 	const resolveVariant = (overrideGroupId?: string, overrideOptId?: string) => {
 		return product.variantOptions.find((v) =>
 			product.variantGroups.every((g) => {
-				const wanted = g.groupId === overrideGroupId ? overrideOptId : selections[g.groupId];
-				return v.selections[g.groupId] === wanted;
+				const wanted = String(g.groupId === overrideGroupId ? overrideOptId : selections[g.groupId]);
+				return String(v.selections[g.groupId] || '') === wanted;
 			}),
 		);
 	};
@@ -178,16 +178,17 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 								const variant = resolveVariant(group.groupId, selections[group.groupId]);
 								if (!variant) return null;
 								const qty = selectedQty[variant.skuId] || 0;
-								const outOfStock = variant.stock === 0;
+								const stockNum = typeof variant.stock === 'number' ? variant.stock : (Number(variant.stock) || 0);
+								const outOfStock = stockNum <= 0;
 								return (
 									<div className="flex items-center justify-between mt-3 border rounded-lg px-4 py-3">
 										<div className="text-sm">
 											{getCurrencySymbol()}
-											{variant.price} · stock {variant.stock}
+											{variant.price} · stock {stockNum}
 										</div>
 										{qty === 0 ? (
 											<button
-												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+												onClick={() => updateQty(variant.skuId, 'inc', stockNum)}
 												disabled={outOfStock}
 												className="px-3 py-1 rounded bg-orange-500 text-white text-xs font-medium disabled:opacity-40"
 											>
@@ -196,15 +197,15 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 										) : (
 											<div className="flex items-center gap-2">
 												<button
-													onClick={() => updateQty(variant.skuId, 'dec', variant.stock)}
+													onClick={() => updateQty(variant.skuId, 'dec', stockNum)}
 													className="w-6 h-6 flex items-center justify-center border rounded"
 												>
 													<Minus size={13} />
 												</button>
 												<span className="w-5 text-center font-medium text-orange-500">{qty}</span>
 												<button
-													onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
-													disabled={qty >= variant.stock}
+													onClick={() => updateQty(variant.skuId, 'inc', stockNum)}
+													disabled={qty >= stockNum}
 													className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
 												>
 													<Plus size={13} />
@@ -232,7 +233,8 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 						if (!variant) return null;
 
 						const qty = selectedQty[variant.skuId] || 0;
-						const outOfStock = variant.stock === 0;
+						const stockNum = typeof variant.stock === 'number' ? variant.stock : (Number(variant.stock) || 0);
+						const outOfStock = stockNum <= 0;
 
 						return (
 							<div
@@ -251,26 +253,26 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 									{qty === 0 ? (
 										<div className="flex flex-col items-end gap-0.5">
 											<button
-												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
+												onClick={() => updateQty(variant.skuId, 'inc', stockNum)}
 												disabled={outOfStock}
 												className="px-3 py-1 rounded bg-orange-500 text-white text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
 											>
 												{outOfStock ? 'Sold out' : 'Add'}
 											</button>
-											{!outOfStock && <span className="text-[11px] text-gray-400">{variant.stock}</span>}
+											{!outOfStock && <span className="text-[11px] text-gray-400">{stockNum}</span>}
 										</div>
 									) : (
 										<div className="flex items-center gap-2">
 											<button
-												onClick={() => updateQty(variant.skuId, 'dec', variant.stock)}
+												onClick={() => updateQty(variant.skuId, 'dec', stockNum)}
 												className="w-6 h-6 flex items-center justify-center border rounded"
 											>
 												<Minus size={13} />
 											</button>
 											<span className="w-5 text-center font-medium text-orange-500">{qty}</span>
 											<button
-												onClick={() => updateQty(variant.skuId, 'inc', variant.stock)}
-												disabled={qty >= variant.stock}
+												onClick={() => updateQty(variant.skuId, 'inc', stockNum)}
+												disabled={qty >= stockNum}
 												className="w-6 h-6 flex items-center justify-center border rounded disabled:opacity-30"
 											>
 												<Plus size={13} />
@@ -283,6 +285,44 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 					})}
 				</div>
 			))}
+
+			{/* ===== Default Quantity Picker for non-variant products ===== */}
+			{(product.variantGroups.length === 0 || product.variantOptions.length === 0) && (
+				<div className="w-full rounded-lg overflow-hidden border p-4 bg-gray-50 flex items-center justify-between">
+					<div className="text-sm font-medium">
+						Quantity
+					</div>
+					<div className="flex items-center gap-2">
+						{(() => {
+							const qty = selectedQty[0] || 0;
+							return qty === 0 ? (
+								<button
+									onClick={() => updateQty(0, 'inc', 9999)}
+									className="px-4 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold"
+								>
+									Add to Cart
+								</button>
+							) : (
+								<div className="flex items-center gap-2 bg-white border rounded-lg p-1">
+									<button
+										onClick={() => updateQty(0, 'dec', 9999)}
+										className="w-8 h-8 flex items-center justify-center border rounded-md hover:bg-slate-50"
+									>
+										<Minus size={14} />
+									</button>
+									<span className="w-6 text-center font-bold text-orange-500">{qty}</span>
+									<button
+										onClick={() => updateQty(0, 'inc', 9999)}
+										className="w-8 h-8 flex items-center justify-center border rounded-md hover:bg-slate-50"
+									>
+										<Plus size={14} />
+									</button>
+								</div>
+							);
+						})()}
+					</div>
+				</div>
+			)}
 
 			{/* ===== ✅ নতুন: এতক্ষণে সিলেক্ট করা সব SKU-র summary, রং পাল্টালেও হারাবে না ===== */}
 			{selectedSummary.length > 0 && (

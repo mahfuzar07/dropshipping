@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Heart, User, ShoppingBasket, Menu, ChevronDown, Smartphone, Headset, Globe, Truck, Bell } from 'lucide-react';
 
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
@@ -87,6 +87,51 @@ export default function StoreHeader() {
 	const CATEGORIES = categoriesData?.categories || [];
 
 	const normalizedCategories = normalizeCategories(CATEGORIES);
+
+	const { data: cartData } = useAppData<any, 'single'>({
+		key: [QueriesKey.CART_DATA],
+		api: apiEndpoint.cart.GET_CART(),
+		auth: true,
+		responseType: 'single',
+		enabled: isAuthenticated,
+	});
+
+	const cartCount = useMemo(() => {
+		if (!isAuthenticated || !Array.isArray(cartData?.data)) return 0;
+		return cartData.data.reduce((total: number, item: any) => {
+			if (!Array.isArray(item?.variants)) return total;
+			return (
+				total +
+				item.variants.reduce((sum: number, v: any) => {
+					if (typeof v?.quantity === 'number') {
+						return sum + v.quantity;
+					} else if (v?.quantity && typeof v.quantity === 'object') {
+						return sum + Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
+					}
+					return sum;
+				}, 0)
+			);
+		}, 0);
+	}, [cartData, isAuthenticated]);
+
+	const cartTotal = useMemo(() => {
+		if (!isAuthenticated || !Array.isArray(cartData?.data)) return 0;
+		return cartData.data.reduce((total: number, item: any) => {
+			if (!Array.isArray(item?.variants)) return total;
+			return (
+				total +
+				item.variants.reduce((sum: number, v: any) => {
+					const qty = typeof v?.quantity === 'number' 
+						? v.quantity 
+						: (v?.quantity && typeof v.quantity === 'object')
+							? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
+							: 0;
+					const price = Number(v?.price || 0);
+					return sum + qty * price;
+				}, 0)
+			);
+		}, 0);
+	}, [cartData, isAuthenticated]);
 
 	return (
 		<>
@@ -233,10 +278,16 @@ export default function StoreHeader() {
 									<NotificationContent />
 								</HoverPopover>
 
-								<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-									<ShoppingBasket size={26} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground" />
-									<div className="absolute -right-1 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-orange-300 flex items-center justify-center">
-										3
+								<div className="relative cursor-pointer flex items-center gap-2" onClick={() => openDrawer({ drawerType: 'cart' })}>
+									<div className="relative">
+										<ShoppingBasket size={26} strokeWidth={1.2} className="text-muted-foreground hover:text-foreground" />
+										<div className="absolute -right-1 -top-2 h-4.5 w-4.5 rounded-full text-[10px] text-white bg-orange-300 flex items-center justify-center">
+											{cartCount}
+										</div>
+									</div>
+									<div className="hidden md:flex flex-col text-left leading-none font-play">
+										<span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">My Cart</span>
+										<span className="text-xs font-bold text-slate-700 mt-0.5">৳{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 									</div>
 								</div>
 							</div>

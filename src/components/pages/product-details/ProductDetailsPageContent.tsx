@@ -95,6 +95,7 @@ export interface ProductDetails {
 
 const mapProductData = (response: ProductDetails) => {
 	const product = response.item;
+	console.log('Mapping product data:', response);
 
 	const galleryImages = Array.isArray(product.item_imgs) ? product.item_imgs.map((img) => img?.url).filter((url): url is string => Boolean(url)) : [];
 

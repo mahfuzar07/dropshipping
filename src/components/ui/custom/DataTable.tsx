@@ -672,7 +672,9 @@ export default function DataTable<T extends { id: any; created_at?: string; upda
 							{columnsConfig
 								.filter((c) => c.filterable)
 								.map((col) => {
-									const currentVal = columnFilters[col.key as string] ?? '';
+									const currentVal = columnFilters[col.key as string] !== undefined
+										? columnFilters[col.key as string]
+										: (col.filterType === 'date-range' || col.filterType === 'number-range' ? {} : '');
 
 									return (
 										<div key={col.key as string} className="space-y-1.5">
@@ -682,8 +684,11 @@ export default function DataTable<T extends { id: any; created_at?: string; upda
 
 											{col.filterType === 'select' ? (
 												<Select
-													value={currentVal}
-													onValueChange={(v) => handleFilterChange(col.key as string, v)}
+													value={currentVal || "ALL_VALS"}
+													onValueChange={(v) => {
+														const filterVal = v === 'ALL_VALS' ? '' : v;
+														handleFilterChange(col.key as string, filterVal);
+													}}
 												>
 													<SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800">
 														<SelectValue placeholder="All" />
