@@ -3,13 +3,14 @@ import ProductDetailsPageContent from '@/components/pages/product-details/Produc
 import { getProductDetails } from '@/lib/api/product';
 
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 export async function generateMetadata({ params }: { params: Promise<{ productId: number }> }): Promise<Metadata> {
 	const { productId } = await params;
 	const product = await getProductDetails(productId);
 
-	if (!product) {
+	if (!product?.item) {
 		return {
 			title: 'Product Not Found',
 			robots: { index: false, follow: false },
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
 	}
 
 	const item = product.item;
+
 	const description = item.desc ? item.desc.replace(/<[^>]*>/g, '').slice(0, 160) : `Buy ${item.title} at the best price.`;
 	const image = item.pic_url || item.item_imgs?.[0]?.url;
 
@@ -44,6 +46,20 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
 export default async function ProductDetailsPage({ params }: { params: Promise<{ productId: number }> }) {
 	const { productId } = await params;
 	const product = await getProductDetails(productId);
+
+	if (!product?.item) {
+		return (
+			<div className="bg-slate-50 min-h-screen flex items-center justify-center">
+				<div className="text-center px-4">
+					<h2 className="text-xl font-semibold text-slate-800">Product Loading Failed</h2>
+					<p className="text-slate-500 mt-2">Upstream service is busy right now. Please try again in a moment.</p>
+					<a href={`/product/${productId}`} className="inline-block mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm">
+						Retry
+					</a>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="bg-slate-50">
