@@ -336,9 +336,7 @@ export default function AdminCustomerManagementPage() {
 				onSortingChange={setSorting}
 				onFiltersChange={(filters) => {
 					setColumnFilters(filters);
-					if (filters.search !== undefined) {
-						setGlobalSearch(filters.search);
-					}
+					setGlobalSearch(filters.search !== undefined ? filters.search : '');
 				}}
 				onRefresh={refetch}
 				onCreate={handleAddCustomer}

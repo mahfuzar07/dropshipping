@@ -481,11 +481,22 @@ export default function DataTable<T extends { id: any; created_at?: string; upda
 				<div className="relative flex-1 min-w-[280px]">
 					<Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
 					<Input
-						placeholder="Search in table..."
+						placeholder="Search in table (Press Enter, min 3 chars)..."
 						value={globalSearch}
 						onChange={(e) => {
 							setGlobalSearch(e.target.value);
-							handleFilterChange('search', e.target.value);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === 'Enter') {
+								const term = globalSearch.trim();
+								if (term === '') {
+									handleFilterChange('search', '');
+								} else if (term.length < 3) {
+									toast.error('Search query must be at least 3 characters long');
+								} else {
+									handleFilterChange('search', term);
+								}
+							}
 						}}
 						className="pl-10 h-10 w-full rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-primary"
 					/>
@@ -668,115 +679,149 @@ export default function DataTable<T extends { id: any; created_at?: string; upda
 						exit={{ height: 0, opacity: 0 }}
 						className="overflow-hidden"
 					>
-						<div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-end shadow-sm">
-							{columnsConfig
-								.filter((c) => c.filterable)
-								.map((col) => {
-									const currentVal = columnFilters[col.key as string] !== undefined
-										? columnFilters[col.key as string]
-										: (col.filterType === 'date-range' || col.filterType === 'number-range' ? {} : '');
+						<div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+							<div className="p-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+								{columnsConfig
+									.filter((c) => c.filterable)
+									.map((col) => {
+										const currentVal = columnFilters[col.key as string] !== undefined
+											? columnFilters[col.key as string]
+											: (col.filterType === 'date-range' || col.filterType === 'number-range' ? {} : '');
 
-									return (
-										<div key={col.key as string} className="space-y-1.5">
-											<label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-												{col.label}
-											</label>
+										return (
+											<div key={col.key as string} className="space-y-1.5 w-full">
+												<label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+													{col.label}
+												</label>
 
-											{col.filterType === 'select' ? (
-												<Select
-													value={currentVal || "ALL_VALS"}
-													onValueChange={(v) => {
-														const filterVal = v === 'ALL_VALS' ? '' : v;
-														handleFilterChange(col.key as string, filterVal);
-													}}
-												>
-													<SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800">
-														<SelectValue placeholder="All" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="ALL_VALS">All</SelectItem>
-														{col.filterOptions?.map((opt) => (
-															<SelectItem key={opt.value} value={opt.value}>
-																{opt.label}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											) : col.filterType === 'date-range' ? (
-												<div className="flex gap-2 items-center">
+												{col.filterType === 'select' ? (
+													<Select
+														value={currentVal || "ALL_VALS"}
+														onValueChange={(v) => {
+															const filterVal = v === 'ALL_VALS' ? '' : v;
+															handleFilterChange(col.key as string, filterVal);
+														}}
+													>
+														<SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-slate-800 text-sm px-3 focus:ring-1 focus:ring-primary w-full bg-white dark:bg-slate-900">
+															<SelectValue placeholder="All" />
+														</SelectTrigger>
+														<SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+															<SelectItem value="ALL_VALS">All</SelectItem>
+															{col.filterOptions?.map((opt) => (
+																<SelectItem key={opt.value} value={opt.value}>
+																	{opt.label}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												) : col.filterType === 'date-range' ? (
+													<div className="flex gap-2 items-center w-full">
+														<div className="relative flex-1 min-w-0">
+															<Input
+																type="date"
+																value={currentVal.start ?? ''}
+																onChange={(e) =>
+																	handleFilterChange(col.key as string, {
+																		...currentVal,
+																		start: e.target.value,
+																	})
+																}
+																className="rounded-xl border-slate-200 dark:border-slate-800 text-xs px-2 h-10 pr-8 w-full bg-white dark:bg-slate-900"
+															/>
+															{currentVal.start && (
+																<button
+																	type="button"
+																	onClick={() =>
+																		handleFilterChange(col.key as string, {
+																			...currentVal,
+																			start: '',
+																		})
+																	}
+																	className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 bg-white dark:bg-slate-900 px-0.5"
+																>
+																	<X className="h-3.5 w-3.5" />
+																</button>
+															)}
+														</div>
+														<span className="text-slate-400 text-xs shrink-0">to</span>
+														<div className="relative flex-1 min-w-0">
+															<Input
+																type="date"
+																value={currentVal.end ?? ''}
+																onChange={(e) =>
+																	handleFilterChange(col.key as string, {
+																		...currentVal,
+																		end: e.target.value,
+																	})
+																}
+																className="rounded-xl border-slate-200 dark:border-slate-800 text-xs px-2 h-10 pr-8 w-full bg-white dark:bg-slate-900"
+															/>
+															{currentVal.end && (
+																<button
+																	type="button"
+																	onClick={() =>
+																		handleFilterChange(col.key as string, {
+																			...currentVal,
+																			end: '',
+																		})
+																	}
+																	className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 bg-white dark:bg-slate-900 px-0.5"
+																>
+																	<X className="h-3.5 w-3.5" />
+																</button>
+															)}
+														</div>
+													</div>
+												) : col.filterType === 'number-range' ? (
+													<div className="flex gap-2 items-center w-full">
+														<Input
+															placeholder="Min"
+															type="number"
+															value={currentVal.min ?? ''}
+															onChange={(e) =>
+																handleFilterChange(col.key as string, {
+																	...currentVal,
+																	min: e.target.value,
+																})
+															}
+															className="rounded-xl border-slate-200 dark:border-slate-800 h-10 text-sm px-3 w-full bg-white dark:bg-slate-900"
+														/>
+														<span className="text-slate-400 text-xs shrink-0">-</span>
+														<Input
+															placeholder="Max"
+															type="number"
+															value={currentVal.max ?? ''}
+															onChange={(e) =>
+																handleFilterChange(col.key as string, {
+																	...currentVal,
+																	max: e.target.value,
+																})
+															}
+															className="rounded-xl border-slate-200 dark:border-slate-800 h-10 text-sm px-3 w-full bg-white dark:bg-slate-900"
+														/>
+													</div>
+												) : (
 													<Input
-														type="date"
-														value={currentVal.start ?? ''}
-														onChange={(e) =>
-															handleFilterChange(col.key as string, {
-																...currentVal,
-																start: e.target.value,
-															})
-														}
-														className="rounded-xl border-slate-200 dark:border-slate-800 text-xs px-2 h-9"
+														placeholder={`Filter ${col.label}...`}
+														value={currentVal}
+														onChange={(e) => handleFilterChange(col.key as string, e.target.value)}
+														className="rounded-xl border-slate-200 dark:border-slate-800 h-10 text-sm px-3 w-full bg-white dark:bg-slate-900"
 													/>
-													<span className="text-slate-400 text-xs">to</span>
-													<Input
-														type="date"
-														value={currentVal.end ?? ''}
-														onChange={(e) =>
-															handleFilterChange(col.key as string, {
-																...currentVal,
-																end: e.target.value,
-															})
-														}
-														className="rounded-xl border-slate-200 dark:border-slate-800 text-xs px-2 h-9"
-													/>
-												</div>
-											) : col.filterType === 'number-range' ? (
-												<div className="flex gap-2 items-center">
-													<Input
-														placeholder="Min"
-														type="number"
-														value={currentVal.min ?? ''}
-														onChange={(e) =>
-															handleFilterChange(col.key as string, {
-																...currentVal,
-																min: e.target.value,
-															})
-														}
-														className="rounded-xl border-slate-200 dark:border-slate-800 h-9"
-													/>
-													<span className="text-slate-400 text-xs">-</span>
-													<Input
-														placeholder="Max"
-														type="number"
-														value={currentVal.max ?? ''}
-														onChange={(e) =>
-															handleFilterChange(col.key as string, {
-																...currentVal,
-																max: e.target.value,
-															})
-														}
-														className="rounded-xl border-slate-200 dark:border-slate-800 h-9"
-													/>
-												</div>
-											) : (
-												<Input
-													placeholder={`Filter ${col.label}...`}
-													value={currentVal}
-													onChange={(e) => handleFilterChange(col.key as string, e.target.value)}
-													className="rounded-xl border-slate-200 dark:border-slate-800 h-9"
-												/>
-											)}
-										</div>
-									);
-								})}
+												)}
+											</div>
+										);
+									})}
+							</div>
 
-							{/* Clear & Save View Actions */}
-							<div className="flex gap-2 justify-end">
+							<div className="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+								<span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Filter Panel Active</span>
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={clearAllFilters}
-									className="text-slate-500 text-xs hover:bg-slate-100 rounded-xl"
+									className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl h-8 px-3"
 								>
-									Clear All
+									Clear All Filters
 								</Button>
 							</div>
 						</div>

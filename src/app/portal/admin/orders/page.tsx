@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,13 +104,72 @@ function normalizeAdminItemVariants(variants: any[]): Array<{ label: string; qua
 	return parsed;
 }
 
-export default function AdminOrderManagementPage() {
+const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'];
+const ALLOWED_SHIPPING_METHODS = ['air', 'sea'];
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$/;
+
+function isValidDate(str: string): boolean {
+	return DATE_REGEX.test(str) && !isNaN(Date.parse(str));
+}
+
+function isValidNumber(val: any): boolean {
+	const num = Number(val);
+	return !isNaN(num) && num >= 0;
+}
+
+function OrderManagementContent() {
 	const queryClient = useQueryClient();
-	const [pageIndex, setPageIndex] = useState(0);
-	const [pageSize, setPageSize] = useState(10);
-	const [globalSearch, setGlobalSearch] = useState('');
-	const [columnFilters, setColumnFilters] = useState<Record<string, any>>({});
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const searchParams = useSearchParams();
+
+	const [pageIndex, setPageIndex] = useState(() => {
+		const page = parseInt(searchParams.get('page') || '1', 10);
+		return isNaN(page) || page < 1 ? 0 : page - 1;
+	});
+	const [pageSize, setPageSize] = useState(() => {
+		const limit = parseInt(searchParams.get('limit') || '10', 10);
+		return isNaN(limit) || limit < 1 ? 10 : limit;
+	});
+	const [globalSearch, setGlobalSearch] = useState(() => {
+		return searchParams.get('search') || '';
+	});
+	const [columnFilters, setColumnFilters] = useState<Record<string, any>>(() => {
+		const filters: Record<string, any> = {};
+		
+		const status = searchParams.get('status');
+		if (status && ALLOWED_STATUSES.includes(status)) filters.status = status;
+		
+		const shippingMethod = searchParams.get('shipping_method');
+		if (shippingMethod && ALLOWED_SHIPPING_METHODS.includes(shippingMethod)) filters.shipping_method = shippingMethod;
+		
+		const priceMin = searchParams.get('total_price_min');
+		const priceMax = searchParams.get('total_price_max');
+		if (priceMin || priceMax) {
+			filters.total_price = {};
+			if (priceMin && isValidNumber(priceMin)) filters.total_price.min = priceMin;
+			if (priceMax && isValidNumber(priceMax)) filters.total_price.max = priceMax;
+		}
+		
+		const dateStart = searchParams.get('created_at_start');
+		const dateEnd = searchParams.get('created_at_end');
+		if (dateStart || dateEnd) {
+			filters.created_at = {};
+			if (dateStart && isValidDate(dateStart)) filters.created_at.start = dateStart.split('T')[0];
+			if (dateEnd && isValidDate(dateEnd)) filters.created_at.end = dateEnd.split('T')[0];
+		}
+		
+		return filters;
+	});
+	const [sorting, setSorting] = useState<SortingState>(() => {
+		const ordering = searchParams.get('ordering');
+		if (ordering) {
+			return ordering.split(',').map((item) => {
+				const desc = item.startsWith('-');
+				const id = desc ? item.substring(1) : item;
+				return { id, desc };
+			});
+		}
+		return [];
+	});
 
 	// Detail & Edit Modals State
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -167,23 +227,59 @@ export default function AdminOrderManagementPage() {
 	const queryParams = useMemo(() => {
 		const params = new URLSearchParams();
 		params.set('view', 'admin');
-		params.set('page', String(pageIndex + 1));
-		params.set('limit', String(pageSize));
+		
+		const page = pageIndex + 1;
+		if (isValidNumber(page)) {
+			params.set('page', String(page));
+		} else {
+			params.set('page', '1');
+		}
+		
+		if (isValidNumber(pageSize)) {
+			params.set('limit', String(pageSize));
+		} else {
+			params.set('limit', '10');
+		}
 
-		if (globalSearch) {
-			params.set('search', globalSearch);
+		if (globalSearch && globalSearch.trim()) {
+			params.set('search', globalSearch.trim());
 		}
 
 		Object.entries(columnFilters).forEach(([key, val]) => {
 			if (key === 'search') return;
 			if (val === 'ALL_VALS') return;
+			
 			if (typeof val === 'object' && val !== null) {
-				if (val.min) params.set(`${key}_min`, val.min);
-				if (val.max) params.set(`${key}_max`, val.max);
-				if (val.start) params.set(`${key}_start`, val.start);
-				if (val.end) params.set(`${key}_end`, val.end);
+				if (key === 'total_price') {
+					if (val.min !== undefined && val.min !== '' && isValidNumber(val.min)) {
+						params.set('total_price_min', String(val.min));
+					}
+					if (val.max !== undefined && val.max !== '' && isValidNumber(val.max)) {
+						params.set('total_price_max', String(val.max));
+					}
+				} else if (key === 'created_at') {
+					if (val.start !== undefined && val.start !== '' && isValidDate(val.start)) {
+						params.set('created_at_start', `${val.start}T00:00:00`);
+					}
+					if (val.end !== undefined && val.end !== '' && isValidDate(val.end)) {
+						params.set('created_at_end', `${val.end}T23:59:59`);
+					}
+				}
 			} else {
-				params.set(key, String(val));
+				const strVal = String(val).trim();
+				if (strVal !== '') {
+					if (key === 'status') {
+						if (ALLOWED_STATUSES.includes(strVal)) {
+							params.set('status', strVal);
+						}
+					} else if (key === 'shipping_method') {
+						if (ALLOWED_SHIPPING_METHODS.includes(strVal)) {
+							params.set('shipping_method', strVal);
+						}
+					} else {
+						params.set(key, strVal);
+					}
+				}
 			}
 		});
 
@@ -194,6 +290,15 @@ export default function AdminOrderManagementPage() {
 
 		return params.toString();
 	}, [pageIndex, pageSize, globalSearch, columnFilters, sorting]);
+
+	// Sync states to browser URL query parameters
+	useEffect(() => {
+		const currentSearch = window.location.search.substring(1);
+		if (queryParams !== currentSearch) {
+			const newUrl = `${window.location.pathname}?${queryParams}`;
+			window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+		}
+	}, [queryParams]);
 
 	// Fetch dynamic orders list from backend
 	const {
@@ -434,13 +539,15 @@ export default function AdminOrderManagementPage() {
 				pageIndex={pageIndex}
 				pageSize={pageSize}
 				onPageChange={setPageIndex}
-				onPageSizeChange={setPageSize}
+				onPageSizeChange={(size) => {
+					setPageSize(size);
+					setPageIndex(0);
+				}}
 				onSortingChange={setSorting}
 				onFiltersChange={(filters) => {
 					setColumnFilters(filters);
-					if (filters.search !== undefined) {
-						setGlobalSearch(filters.search);
-					}
+					setGlobalSearch(filters.search !== undefined ? filters.search : '');
+					setPageIndex(0);
 				}}
 				onRefresh={refetch}
 				onCreate={() => setIsCreateOpen(true)}
@@ -989,4 +1096,12 @@ export default function AdminOrderManagementPage() {
 			toast.error('Failed to update status');
 		}
 	}
+}
+
+export default function AdminOrderManagementPage() {
+	return (
+		<Suspense fallback={<div className="p-8 text-center text-slate-500 font-play">Loading order panel...</div>}>
+			<OrderManagementContent />
+		</Suspense>
+	);
 }

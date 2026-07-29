@@ -2,30 +2,8 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-	TrendingUp,
-	Users,
-	ShoppingCart,
-	DollarSign,
-	Clock,
-	RotateCcw,
-	Truck,
-	ShieldAlert,
-	CheckCircle,
-	ArrowUpRight,
-	Calendar
-} from 'lucide-react';
-import {
-	ResponsiveContainer,
-	AreaChart,
-	Area,
-	XAxis,
-	YAxis,
-	Tooltip,
-	LineChart,
-	Line,
-	CartesianGrid
-} from 'recharts';
+import { TrendingUp, Users, ShoppingCart, DollarSign, Clock, RotateCcw, Truck, ShieldAlert, CheckCircle, ArrowUpRight, Calendar } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, LineChart, Line, CartesianGrid } from 'recharts';
 import { useAppData } from '@/hooks/use-appdata';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
@@ -48,15 +26,15 @@ export default function AdminDashboardPage() {
 		key: [QueriesKey.USER_ORDERS, 'admin-dashboard-orders'],
 		api: `${apiEndpoint.orders.ORDERS()}?view=admin&limit=1000`,
 		auth: true,
-		responseType: 'single'
+		responseType: 'single',
 	});
 
 	// Fetch all customers
 	const { data: customersResponse, isLoading: isCustomersLoading } = useAppData<any, 'single'>({
 		key: [QueriesKey.ADMIN_CUSTOMERS, 'admin-dashboard-customers'],
-		api: `/api/user/users/?limit=1000`,
+		api: `/api/user/customer/`,
 		auth: true,
-		responseType: 'single'
+		responseType: 'single',
 	});
 
 	const orders: Order[] = ordersResponse?.data || ordersResponse?.results || [];
@@ -66,10 +44,10 @@ export default function AdminDashboardPage() {
 	const stats = useMemo(() => {
 		const now = new Date();
 		const todayStr = now.toISOString().split('T')[0];
-		
+
 		const oneWeekAgo = new Date();
 		oneWeekAgo.setDate(now.getDate() - 7);
-		
+
 		const oneMonthAgo = new Date();
 		oneMonthAgo.setDate(now.getDate() - 30);
 
@@ -88,7 +66,7 @@ export default function AdminDashboardPage() {
 			returned: 0,
 		};
 
-		orders.forEach(o => {
+		orders.forEach((o) => {
 			const oDate = new Date(o.created_at);
 			const oDateStr = o.created_at.split('T')[0];
 			const price = Number(o.total_price || 0);
@@ -115,7 +93,7 @@ export default function AdminDashboardPage() {
 			todaySales,
 			weeklySales,
 			monthlySales,
-			pipeline
+			pipeline,
 		};
 	}, [orders]);
 
@@ -123,7 +101,7 @@ export default function AdminDashboardPage() {
 	const revenueData = useMemo(() => {
 		const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 		const monthlyStats: Record<string, { revenue: number; orders: number }> = {};
-		
+
 		// Initialize last 6 months
 		const now = new Date();
 		for (let i = 5; i >= 0; i--) {
@@ -131,8 +109,8 @@ export default function AdminDashboardPage() {
 			const monthLabel = months[d.getMonth()];
 			monthlyStats[monthLabel] = { revenue: 0, orders: 0 };
 		}
-		
-		orders.forEach(o => {
+
+		orders.forEach((o) => {
 			const date = new Date(o.created_at);
 			const monthLabel = months[date.getMonth()];
 			if (monthlyStats[monthLabel]) {
@@ -140,33 +118,33 @@ export default function AdminDashboardPage() {
 				monthlyStats[monthLabel].orders += 1;
 			}
 		});
-		
+
 		return Object.entries(monthlyStats).map(([month, data]) => ({
 			month,
 			revenue: data.revenue,
-			orders: data.orders
+			orders: data.orders,
 		}));
 	}, [orders]);
 
 	const customerGrowthData = useMemo(() => {
 		const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 		const monthlyStats: Record<string, number> = {};
-		
+
 		const now = new Date();
 		for (let i = 5; i >= 0; i--) {
 			const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
 			const monthLabel = months[d.getMonth()];
 			monthlyStats[monthLabel] = 0;
 		}
-		
-		customers.forEach(c => {
+
+		customers.forEach((c) => {
 			const date = new Date(c.date_joined);
 			const monthLabel = months[date.getMonth()];
 			if (monthlyStats[monthLabel] !== undefined) {
 				monthlyStats[monthLabel] += 1;
 			}
 		});
-		
+
 		// Cumulative count
 		let sum = Math.max(0, customers.length - Object.values(monthlyStats).reduce((a, b) => a + b, 0));
 		return Object.entries(monthlyStats).map(([month, count]) => {
@@ -179,7 +157,7 @@ export default function AdminDashboardPage() {
 		return new Date().toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'long',
-			day: 'numeric'
+			day: 'numeric',
 		});
 	}, []);
 
@@ -291,7 +269,7 @@ export default function AdminDashboardPage() {
 						{ label: 'Shipped', count: stats.pipeline.shipped, color: 'text-indigo-600 bg-indigo-50', icon: Truck },
 						{ label: 'Delivered', count: stats.pipeline.delivered, color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle },
 						{ label: 'Cancelled', count: stats.pipeline.cancelled, color: 'text-rose-600 bg-rose-50', icon: ShieldAlert },
-						{ label: 'Returned', count: stats.pipeline.returned, color: 'text-rose-650 bg-rose-50', icon: RotateCcw }
+						{ label: 'Returned', count: stats.pipeline.returned, color: 'text-rose-650 bg-rose-50', icon: RotateCcw },
 					].map((item) => (
 						<div key={item.label} className="bg-white p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-2 shadow-sm">
 							<div className={`p-2 rounded-lg ${item.color}`}>
