@@ -2,7 +2,7 @@
 
 import { Product } from '@/components/pages/home-page/NewLaunch';
 import { motion } from 'framer-motion';
-import { Star, Truck } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -17,10 +17,24 @@ const formatPrice = (price: any) => {
 	return `৳${priceStr}`;
 };
 
+// The top-level `price` field can be stale/inconsistent with the actual SKU prices
+// (seen in real data: price = 52.36 while priceRange, which mirrors skus.sku[].price, = 68-69).
+// priceRange entries look like [minOrderQty, price], so pull out just the prices.
+const getDisplayPrice = (product: any) => {
+	const range = Array.isArray(product?.priceRange) ? product.priceRange : null;
+	if (range && range.length > 0) {
+		const prices = range.map((entry: any) => parseFloat(entry?.[1])).filter((n: number) => !isNaN(n));
+		if (prices.length > 0) {
+			const min = Math.min(...prices);
+			const max = Math.max(...prices);
+			return min === max ? formatPrice(min) : `${formatPrice(min)} - ${formatPrice(max)}`;
+		}
+	}
+	return formatPrice(product?.price);
+};
+
 export default function ProductCard({ product }: { product: Product }) {
 	if (!product) return null;
-
-	console.log('Rendering ProductCard for:', product);
 
 	return (
 		<motion.div
@@ -31,16 +45,13 @@ export default function ProductCard({ product }: { product: Product }) {
 			className="group cursor-pointer bg-white overflow-hidden rounded-md h-full flex flex-col transition-all duration-300 shadow"
 		>
 			{/* Image Container - Fixed aspect ratio */}
-			<Link
-				href={`/product/${product.num_iid}`}
-				rel="noopener noreferrer"
-				className="font-semibold text-[15px] leading-tight hover:text-orange-600 transition-colors line-clamp-2"
-			>
-				<div className="relative  aspect-square bg-white overflow-hidden flex-shrink-0 rounded">
+			<Link href={`/product/${product.num_iid}`} rel="noopener noreferrer" className="flex flex-col h-full">
+				<div className="relative aspect-square bg-white overflow-hidden flex-shrink-0 rounded">
 					<Image
 						src={product?.pic_url || '/placeholder.png'}
 						alt={product?.title || 'Product'}
 						fill
+						sizes="(max-width: 768px) 50vw, 25vw"
 						className="object-cover md:p-5 p-3 transition-transform duration-600 ease-in-out group-hover:scale-105"
 					/>
 				</div>
@@ -50,17 +61,17 @@ export default function ProductCard({ product }: { product: Product }) {
 					{/* Price */}
 					<div className="mt-auto mb-1">
 						<h3 className="text-sm md:text-xl font-bold text-primary flex items-center font-hanken">
-							<span className="mr-0.5">{formatPrice(product.price)}</span>
+							<span className="mr-0.5">{getDisplayPrice(product)}</span>
 						</h3>
 					</div>
 					{/* Title */}
-					<h3 className="text-xs md:text-sm font-semibold line-clamp-2 leading-tight flex-grow mb-1.5">{product?.title}</h3>
+					<h3 className="text-xs md:text-sm font-semibold line-clamp-2 leading-tight flex-grow mb-1.5 group-hover:text-orange-600 transition-colors">
+						{product?.title}
+					</h3>
 
 					{/* Rating & Sold */}
 					<div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-						{product.sales !== undefined && product.sales !== null && (
-							<p className='font-medium text-xs'>{product.sales} sold</p>
-						)}
+						{product.sales !== undefined && product.sales !== null && <p className="font-medium text-xs">{product.sales} sold</p>}
 					</div>
 
 					{/* Delivery Info */}

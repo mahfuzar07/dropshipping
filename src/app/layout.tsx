@@ -19,6 +19,7 @@ import 'swiper/css/navigation';
 // import { loadSiteConfigs } from '@/config/config';
 import getFullImageUrl from '@/lib/utils/getFullImageUrl';
 import { loadSiteConfigs } from '@/config/config';
+import ScrollToTop from '@/components/common/elements/Scrolltotop';
 
 /* -------------------------------------------------------------------------- */
 /*                                   FONTS                                    */
@@ -108,6 +109,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
 				<NextAuthProvider>
 					<ReactQueryProvider>
+						<ScrollToTop />
 						{children}
 						<DrawerWrapper />
 						<ModalWrapper />

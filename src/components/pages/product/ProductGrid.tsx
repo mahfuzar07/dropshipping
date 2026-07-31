@@ -4,7 +4,6 @@ import EmptyState from '@/components/common/elements/empty-state/EmptyState';
 import ProductCard from '@/components/common/elements/product-card/ProductCard';
 import { motion } from 'framer-motion';
 
-
 export function ProductGrid({ products }: { products: any[] }) {
 	if (!products || products.length === 0) {
 		return <EmptyState title="Nothing here yet" subtitle="We’re preparing something lovely for this category." />;

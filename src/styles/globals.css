@@ -11,7 +11,7 @@
 	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
-	--primary: #FF5A1F;
+	--primary: #ff5a1f;
 	--primary-foreground: oklch(0.985 0 0);
 	--secondary: oklch(0.97 0 0);
 	--secondary-foreground: oklch(0.205 0 0);
@@ -36,8 +36,6 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
-
-
 
 	/* Custom Store color variables */
 	--store-secondary: #e7eeef;
@@ -139,7 +137,7 @@
 	--color-dashboard-sidebar-background: oklch(0.18 0.02 240);
 	--color-dashboard-muted: oklch(0.4 0.02 240);
 	--color-dashboard-muted-foreground: oklch(0.6 0.02 240);
-	--color-dashboard-primary: #F16A38;
+	--color-dashboard-primary: #f16a38;
 }
 
 @layer base {
@@ -148,6 +146,7 @@
 	}
 	body {
 		@apply bg-background text-foreground overflow-x-hidden;
+		overflow-anchor: none;
 	}
 	/* scrollbar width */
 	::-webkit-scrollbar {
