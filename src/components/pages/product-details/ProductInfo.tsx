@@ -50,8 +50,6 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 	const imageGroups = product.variantGroups.filter((g) => g.hasImages);
 	const tableGroups = product.variantGroups.filter((g) => !g.hasImages);
 
-	// ✅ এখন ALL গ্রুপের (image + table) ডিফল্ট সিলেকশন ট্র্যাক করা হচ্ছে,
-	// শুধু image group না — যাতে একাধিক table group থাকলেও সঠিক SKU রেজলভ হয়
 	const [selections, setSelections] = useState<Record<string, string>>(() => {
 		const init: Record<string, string> = {};
 		product.variantGroups.forEach((g) => {
@@ -73,8 +71,6 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 		.filter(Boolean)
 		.join(' ');
 
-	// ✅ সব গ্রুপকে একসাথে বিবেচনা করে সঠিক SKU খোঁজা হয় (override গ্রুপ ছাড়া বাকি
-	// সব গ্রুপে বর্তমান selections মিলতে হবে, আগের মতো "true" ধরে নেওয়া হয় না)
 	const resolveVariant = (overrideGroupId?: string, overrideOptId?: string) => {
 		return product.variantOptions.find((v) =>
 			product.variantGroups.every((g) => {
@@ -86,8 +82,6 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 
 	const totalQty = Object.values(selectedQty).reduce((s, q) => s + q, 0);
 
-	// ✅ এখন পর্যন্ত qty > 0 থাকা সব SKU-র লিস্ট, রং/সাইজ যাই সিলেক্টেড থাকুক না কেন —
-	// এটা ইউজারকে দেখাবে যে আগের সিলেকশনগুলো হারায়নি, cart-এ ঠিকই আছে
 	const selectedSummary = Object.entries(selectedQty)
 		.filter(([, qty]) => qty > 0)
 		.map(([skuId, qty]) => {
@@ -123,7 +117,7 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 			</div>
 
 			<div className="flex items-center gap-3">
-				<div className="text-4xl font-bold font-hanken text-orange-600">
+				<div className="text-3xl font-bold font-hanken text-orange-600">
 					{getCurrencySymbol()}
 					{product.price.toLocaleString()}
 				</div>
@@ -136,7 +130,6 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 
 			{/* ===== Image-based groups (Color) ===== */}
 			{imageGroups.map((group) => {
-				// শুধু এই গ্রুপে টেবিল-গ্রুপ না থাকলে এখানেই qty control বসিয়ে দিচ্ছি (বাগ ৩ ফিক্স)
 				const showInlineQty = tableGroups.length === 0;
 				return (
 					<div key={group.groupId}>
@@ -178,7 +171,7 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 								const variant = resolveVariant(group.groupId, selections[group.groupId]);
 								if (!variant) return null;
 								const qty = selectedQty[variant.skuId] || 0;
-								const stockNum = typeof variant.stock === 'number' ? variant.stock : (Number(variant.stock) || 0);
+								const stockNum = typeof variant.stock === 'number' ? variant.stock : Number(variant.stock) || 0;
 								const outOfStock = stockNum <= 0;
 								return (
 									<div className="flex items-center justify-between mt-3 border rounded-lg px-4 py-3">
@@ -233,7 +226,7 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 						if (!variant) return null;
 
 						const qty = selectedQty[variant.skuId] || 0;
-						const stockNum = typeof variant.stock === 'number' ? variant.stock : (Number(variant.stock) || 0);
+						const stockNum = typeof variant.stock === 'number' ? variant.stock : Number(variant.stock) || 0;
 						const outOfStock = stockNum <= 0;
 
 						return (
@@ -286,12 +279,9 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 				</div>
 			))}
 
-			{/* ===== Default Quantity Picker for non-variant products ===== */}
 			{(product.variantGroups.length === 0 || product.variantOptions.length === 0) && (
 				<div className="w-full rounded-lg overflow-hidden border p-4 bg-gray-50 flex items-center justify-between">
-					<div className="text-sm font-medium">
-						Quantity
-					</div>
+					<div className="text-sm font-medium">Quantity</div>
 					<div className="flex items-center gap-2">
 						{(() => {
 							const qty = selectedQty[0] || 0;
@@ -324,7 +314,6 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 				</div>
 			)}
 
-			{/* ===== ✅ নতুন: এতক্ষণে সিলেক্ট করা সব SKU-র summary, রং পাল্টালেও হারাবে না ===== */}
 			{selectedSummary.length > 0 && (
 				<div className="border rounded-lg p-3 space-y-2 bg-gray-50">
 					<h4 className="text-sm font-semibold text-gray-700">Selected items</h4>
