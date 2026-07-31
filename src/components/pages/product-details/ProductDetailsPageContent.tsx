@@ -309,7 +309,7 @@ export default function ProductDetailsPageContent({ productId, initialProduct }:
 			</div>
 
 			{/* RIGHT */}
-			<div className="md:col-span-3 col-span-1 sticky top-18 self-start hidden md:block">
+			<div className="md:col-span-3 col-span-1 hidden md:block">
 				<CartSection
 					product={{
 						...product,
