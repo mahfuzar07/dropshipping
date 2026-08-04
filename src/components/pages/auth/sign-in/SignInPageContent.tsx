@@ -1,20 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-
-import { useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
+import { useAuthStore } from '@/z-store/global/useAuthStore';
 
 export default function SignInPageContent() {
-	const { data: session, status } = useSession();
-
 	const [showPassword, setShowPassword] = useState(false);
 	const [email, setEmail] = useState('user101@gmail.com');
 	const [password, setPassword] = useState('12345678');
@@ -22,25 +19,19 @@ export default function SignInPageContent() {
 	const [error, setError] = useState('');
 	const router = useRouter();
 
+	const loginCustomer = useAuthStore((s) => s.loginCustomer);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
 		setError('');
 
 		try {
-			const result = await signIn('credentials', {
-				email,
-				password,
-				redirect: false,
-			});
-
-			if (result?.error) {
-				setError('Invalid email or password');
-			} else {
-				router.push('/'); // Redirect to home or dashboard
-			}
+			await loginCustomer({ phone: email, password });
+			router.push('/');
+			router.refresh();
 		} catch (err) {
-			setError('An error occurred. Please try again.');
+			setError('Invalid email or password');
 		} finally {
 			setIsLoading(false);
 		}
