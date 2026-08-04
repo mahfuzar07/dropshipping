@@ -1,12 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { User, ShoppingBag, Heart, MapPin, Settings, LogOut } from 'lucide-react';
 import React from 'react';
-import { redirect } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
 type Props = {
 	isAuthenticated: boolean;
-	user: { phone: string; name?: string } | null;
+	user: {
+		phone?: string | null;
+		email?: string | null;
+		name?: string;
+	} | null;
 	logout: () => void;
 };
 
@@ -49,8 +52,8 @@ export default function ProfileContent({ isAuthenticated, user, logout }: Props)
 						</div>
 
 						<div className="min-w-0">
-							<p className="text-sm font-medium text-foreground truncate">{user?.name ?? 'My Account'}</p>
-							<p className="text-xs text-muted-foreground mt-0.5 font-quicksand">{user?.phone}</p>
+							<p className="text-sm font-medium text-foreground truncate">{user?.name || 'My Account'}</p>
+							<p className="text-xs text-muted-foreground mt-0.5 font-quicksand truncate">{user?.phone || user?.email || ''}</p>
 						</div>
 					</div>
 				</div>
@@ -71,7 +74,7 @@ export default function ProfileContent({ isAuthenticated, user, logout }: Props)
 								<Icon size={15} className="text-muted-foreground group-hover:text-twinkle-teal" />
 							</span>
 							<span className="flex-1 text-[14px] text-left text-muted-foreground group-hover:text-twinkle-teal transition-colors">{label}</span>
-							{badge && <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-twinkle-teal text-white border">{badge}</span>}
+							{badge ? <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-twinkle-teal text-white border">{badge}</span> : null}
 						</button>
 					))}
 				</nav>

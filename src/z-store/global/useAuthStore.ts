@@ -34,13 +34,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 	checkAuth: async () => {
 		try {
-			const res = await authApi.get(apiEndpoint.users.PROFILE());
-			const profile = res.data;
-			profile.name = profile.first_name || profile.last_name 
-				? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim()
-				: '';
+			const res = await authApi.get(apiEndpoint.auth.AUTH_SESSION());
+
+			const profileData = res.data?.user?.profile_data;
+
+			if (!profileData) {
+				set({ user: null, isAuthenticated: false, hasHydrated: true });
+				return;
+			}
+
+			const name = profileData.first_name || profileData.last_name ? `${profileData.first_name ?? ''} ${profileData.last_name ?? ''}`.trim() : '';
+
 			set({
-				user: profile,
+				user: { ...profileData, name },
 				isAuthenticated: true,
 				hasHydrated: true,
 			});

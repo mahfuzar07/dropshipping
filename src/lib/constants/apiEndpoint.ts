@@ -12,6 +12,7 @@ export const apiEndpoint = {
 		verifyMe: '/auth/verify-me',
 		signOut: '/auth/logout',
 		refreshToken: '/auth/refresh-token',
+		AUTH_SESSION: () => '/api/auth/session',
 	},
 	settings: {
 		siteSettings: '/api/order/site-settings/',
@@ -25,6 +26,7 @@ export const apiEndpoint = {
 		OTP_SEND: () => `api/user/send-otp/`,
 		PASSWORD_RESET: () => `api/user/reset-password/`,
 		PROFILE: () => '/api/user/profile/',
+
 		CHANGE_PASSWORD: () => '/api/user/change-password/',
 		NOTIFICATIONS: () => '/api/user/notifications/',
 		DELIVERY_ADDRESS: '/api/user/delivery-addresses',

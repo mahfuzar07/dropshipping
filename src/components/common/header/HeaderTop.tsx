@@ -1,6 +1,7 @@
 'use client';
 import { Search, User, ShoppingBasket, Menu, Bell, Heart, Truck, ShieldCheck, ShoppingCart, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
 import { useAppData } from '@/hooks/use-appdata';
@@ -12,10 +13,9 @@ import HoverPopover from '@/components/ui/custom/HoverPopover';
 import ProfileContent from './dropdown-content/ProfileContent';
 import SearchBar from '../elements/SearchBar';
 
-
-
 export default function HeaderTop() {
-	const { openDrawer, openModal } = useLayoutStore();
+	const router = useRouter();
+	const { openDrawer } = useLayoutStore();
 
 	const { logout, isAuthenticated, user } = useAuthStore();
 
@@ -52,11 +52,12 @@ export default function HeaderTop() {
 			return (
 				total +
 				item.variants.reduce((sum: number, v: any) => {
-					const qty = typeof v?.quantity === 'number' 
-						? v.quantity 
-						: (v?.quantity && typeof v.quantity === 'object')
-							? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
-							: 0;
+					const qty =
+						typeof v?.quantity === 'number'
+							? v.quantity
+							: v?.quantity && typeof v.quantity === 'object'
+								? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
+								: 0;
 					const price = Number(v?.price || 0);
 					return sum + qty * price;
 				}, 0)
@@ -70,15 +71,6 @@ export default function HeaderTop() {
 				<div className="grid grid-cols-12 items-center gap-5">
 					{/* Left - Logo + mobile menu btn */}
 					<div className="md:col-span-3 hidden md:block">
-						{/* <button className="md:hidden block">
-							<div
-								onClick={() => openDrawer({ drawerType: 'mobile-side-menu' })}
-								className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center md:hidden"
-							>
-								<Menu size={20} strokeWidth={1.5} className="" />
-							</div>
-						</button> */}
-
 						<div
 							className={`
 								relative hidden md:block overflow-hidden rounded-xl
@@ -110,20 +102,13 @@ export default function HeaderTop() {
 
 					{/* Right Icons */}
 					<div className="flex md:col-span-3 col-span-6 items-center md:justify-end justify-end gap-1 md:gap-5 2xl:gap-7">
-						{/* <div
-							className="w-8.5 h-8.5 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center relative cursor-pointer md:hidden"
-							onClick={() => openDrawer({ drawerType: 'search' })}
-						>
-							<Search size={20} strokeWidth={1.5} className="" />
-						</div> */}
-
 						<div className="flex items-center">
 							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-primary text-white rounded-full flex items-center justify-center">
 								<Heart size={24} strokeWidth={1.5} className="" />
 							</div>
 
 							<div className="relative cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-sm md:block hidden text-white font-semibold">Wishlist</p>
+								<p className="text-xs md:block hidden text-white font-semibold">Wishlist</p>
 								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									0
 								</div>
@@ -131,39 +116,50 @@ export default function HeaderTop() {
 						</div>
 
 						<div className="flex items-center gap-1">
-							<div className="w-8.5 h-8.5 md:w-10 md:h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer" onClick={() => openDrawer({ drawerType: 'cart' })}>
+							<div
+								className="w-8.5 h-8.5 md:w-10 md:h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer"
+								onClick={() => openDrawer({ drawerType: 'cart' })}
+							>
 								<ShoppingBag size={24} strokeWidth={1.5} className="" />
 							</div>
 
 							<div className="relative cursor-pointer flex flex-col items-start leading-none" onClick={() => openDrawer({ drawerType: 'cart' })}>
-								<p className="text-[11px] md:block hidden text-white/80 font-medium">Cart ({cartCount} item{cartCount !== 1 ? 's' : ''})</p>
-								<p className="text-xs md:block hidden text-white font-bold mt-0.5">৳{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center md:hidden">
+								<p className="text-xs md:block hidden text-white font-semibold">Cart</p>
+								<div className="absolute -right-1 md:-right-4 -top-4 h-4 w-4 md:h-5 md:w-5 rounded-full text-[10px] text-white bg-primary ring-2 ring-white flex items-center justify-center">
 									{cartCount}
 								</div>
 							</div>
 						</div>
 
-						<HoverPopover
-							align="right"
-							className="mt-5 min-w-[250px] flex"
-							trigger={
-								<div
-									onClick={!isAuthenticated ? () => openModal({ modalType: 'auth-modal', modalData: 'login' }) : undefined}
-									className="items-center text-white cursor-pointer flex justify-center"
-								>
-									<div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center">
-										<User size={24} strokeWidth={1.5} className="" />
+						{isAuthenticated ? (
+							<HoverPopover
+								align="right"
+								className="mt-5 min-w-[250px] flex"
+								trigger={
+									<div className="items-center text-white cursor-pointer flex justify-center">
+										<div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center">
+											<User size={24} strokeWidth={1.5} className="" />
+										</div>
+										<div className="md:flex hidden font-semibold flex-col leading-tight font-fredoka">
+											<p className="text-xs">Welcome</p>
+											<p className="leading-tight text-sm"> My Profile</p>
+										</div>
 									</div>
-									<div className="md:flex hidden font-semibold flex-col leading-tight font-fredoka">
-										<p className="text-xs">{isAuthenticated ? 'Welcome' : 'Sign In'}</p>
-										<p className="leading-tight text-sm">{!isAuthenticated ? 'My Account' : (user?.phone ?? 'Account')}</p>
-									</div>
+								}
+							>
+								<ProfileContent isAuthenticated={isAuthenticated} user={user} logout={logout} />
+							</HoverPopover>
+						) : (
+							<div onClick={() => router.push('/sign-in')} className="items-center text-white cursor-pointer flex justify-center">
+								<div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center">
+									<User size={24} strokeWidth={1.5} className="" />
 								</div>
-							}
-						>
-							<ProfileContent isAuthenticated={isAuthenticated} user={user} logout={logout} />
-						</HoverPopover>
+								<div className="md:flex hidden font-semibold flex-col leading-tight font-fredoka">
+									<p className="text-xs">Sign In</p>
+									<p className="leading-tight text-sm">Account</p>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

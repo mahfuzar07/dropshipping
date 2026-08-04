@@ -46,22 +46,15 @@ export default function SellerInfo({ seller }: SellerInfoProps) {
 
 				{/* Button */}
 				<div className="w-full lg:w-auto">
-					{shopUrl ? (
-						<Link
-							href={shopUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex w-full items-center justify-center gap-2 rounded-full bg-orange-300 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-orange-400 lg:w-auto"
-						>
-							Visit Store
-							<ChevronRight className="h-4 w-4" />
-						</Link>
-					) : (
-						<button className="flex w-full items-center justify-center gap-2 rounded-full bg-orange-300 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-orange-400 lg:w-auto">
-							Visit Store
-							<ChevronRight className="h-4 w-4" />
-						</button>
-					)}
+					<Link
+						href="/shop-details/1"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex w-full items-center justify-center gap-2 rounded-full bg-orange-300 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-orange-400 lg:w-auto"
+					>
+						Visit Store
+						<ChevronRight className="h-4 w-4" />
+					</Link>
 				</div>
 			</div>
 		</div>
