@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
 import { QueriesKey } from '@/lib/constants/queriesKey';
+import { useAppData } from '@/hooks/use-appdata';
+import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 
 interface VariantOption {
 	skuId: number;
@@ -25,11 +27,6 @@ interface VariantGroup {
 	hasImages: boolean;
 }
 
-const SHIPPING_RATES = {
-	air: { label: 'By Air', perKg: 780, priceDisplay: '৳780 / ৳1170 Per Kg' },
-	sea: { label: 'By Sea', perKg: 170, priceDisplay: '৳170 / ৳400 Per Kg' },
-} as const;
-
 // Parses strings like "500g" / "0.5kg" / "500" into kg. Adjust if the API
 // gives weight in a different unit/format.
 function parseWeightToKg(weight?: string): number {
@@ -42,6 +39,23 @@ function parseWeightToKg(weight?: string): number {
 }
 
 export default function CartSection({ product }: { product: any }) {
+	console.log('CartSection product:', product);
+	const { data: settingsData } = useAppData<any, 'single'>({
+		key: ['site-settings'],
+		api: apiEndpoint.settings.siteSettings,
+		auth: false,
+		responseType: 'single',
+	});
+	const siteSettings = settingsData?.data;
+
+	const airRate = Number(siteSettings?.shipping_charge_air ?? 0.0);
+	const seaRate = Number(siteSettings?.shipping_charge_sea ?? 0.0);
+
+	const shippingRates = {
+		air: { label: 'By Air', perKg: airRate, priceDisplay: `৳${airRate} Per Kg` },
+		sea: { label: 'By Sea', perKg: seaRate, priceDisplay: `৳${seaRate} Per Kg` },
+	};
+
 	const [selectedShipping, setSelectedShipping] = useState<'air' | 'sea'>('air');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const { isAuthenticated } = useAuthStore();
@@ -58,18 +72,19 @@ export default function CartSection({ product }: { product: any }) {
 
 	const totalQty = selectedEntries.reduce((sum, [, qty]) => sum + qty, 0);
 
-	const productTotal = variantOptions.length === 0
-		? totalQty * (product?.price || 0)
-		: selectedEntries.reduce((total, [skuId, qty]) => {
-				const variant = variantOptions.find((v) => v.skuId === Number(skuId));
-				return total + qty * (variant?.price || 0);
-			}, 0);
+	const productTotal =
+		variantOptions.length === 0
+			? totalQty * (product?.price || 0)
+			: selectedEntries.reduce((total, [skuId, qty]) => {
+					const variant = variantOptions.find((v) => v.skuId === Number(skuId));
+					return total + qty * (variant?.price || 0);
+				}, 0);
 
 	// Per-SKU weight isn't available from the API right now (only a single
 	// `weight` string on the product). Falling back to that for every unit.
 	const weightPerUnitKg = parseWeightToKg(product?.weight);
 
-	const shippingRate = SHIPPING_RATES[selectedShipping];
+	const shippingRate = shippingRates[selectedShipping];
 	const shippingCharge = totalQty > 0 ? Math.round(shippingRate.perKg * weightPerUnitKg * totalQty) : 0;
 
 	const grandTotal = productTotal + shippingCharge;
@@ -97,14 +112,16 @@ export default function CartSection({ product }: { product: any }) {
 
 	const getSelectedVariantsPayload = () => {
 		if (variantOptions.length === 0) {
-			return [{
-				skuId: 0,
-				label: 'Standard',
-				price: product?.price || 0,
-				selections: {},
-				quantity: totalQty,
-				weight: weightPerUnitKg,
-			}];
+			return [
+				{
+					skuId: 0,
+					label: 'Standard',
+					price: product?.price || 0,
+					selections: {},
+					quantity: totalQty,
+					weight: weightPerUnitKg,
+				},
+			];
 		}
 		return selectedEntries
 			.map(([skuId, qty]) => {
@@ -178,7 +195,7 @@ export default function CartSection({ product }: { product: any }) {
 						</div>
 						<div>
 							<p className="font-semibold text-gray-800">By Air</p>
-							<p className="text-xs text-gray-600 mt-0.5">{SHIPPING_RATES.air.priceDisplay}</p>
+							<p className="text-xs text-gray-600 mt-0.5">{shippingRates.air.priceDisplay}</p>
 						</div>
 					</div>
 				</div>
@@ -197,7 +214,7 @@ export default function CartSection({ product }: { product: any }) {
 						</div>
 						<div>
 							<p className="font-semibold text-gray-800">By Sea</p>
-							<p className="text-xs text-gray-600 mt-0.5">{SHIPPING_RATES.sea.priceDisplay}</p>
+							<p className="text-xs text-gray-600 mt-0.5">{shippingRates.sea.priceDisplay}</p>
 						</div>
 					</div>
 				</div>

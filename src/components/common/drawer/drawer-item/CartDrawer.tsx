@@ -176,6 +176,14 @@ export default function CartDrawer() {
 	const [loadingKey, setLoadingKey] = useState<string | null>(null);
 	const { isDrawerOpen, closeDrawer } = useLayoutStore();
 
+	const { data: settingsData } = useAppData<any, 'single'>({
+		key: ['site-settings'],
+		api: apiEndpoint.settings.siteSettings,
+		auth: false,
+		responseType: 'single',
+	});
+	const siteSettings = settingsData?.data;
+
 	const { data, isLoading } = useAppData<CartResponse, 'single'>({
 		key: [QueriesKey.CART_DATA],
 		api: apiEndpoint.cart.GET_CART(),
@@ -200,7 +208,9 @@ export default function CartDrawer() {
 	const subtotal = useMemo(() => getGrandTotal(cartItems), [cartItems]);
 
 	const shippingTotal = useMemo(() => {
-		const SHIPPING_RATES = { air: 780, sea: 170 };
+		const airRate = Number(siteSettings?.shipping_charge_air ?? 0.0);
+		const seaRate = Number(siteSettings?.shipping_charge_sea ?? 0.0);
+		const SHIPPING_RATES = { air: airRate, sea: seaRate };
 		return cartItems.reduce((sum, item) => {
 			const rate = SHIPPING_RATES[item.shipping_method || 'air'];
 			return sum + (item.variants || []).reduce((s, v: any) => {
@@ -209,7 +219,7 @@ export default function CartDrawer() {
 				return s + qty * weight * rate;
 			}, 0);
 		}, 0);
-	}, [cartItems]);
+	}, [cartItems, siteSettings]);
 
 	const grandTotal = subtotal + shippingTotal;
 

@@ -16,22 +16,24 @@ export default function OrderSuccessPageContent() {
 
 	const orderId = placedOrder?.order_number || 'ORD-' + Math.random().toString(36).slice(2, 8).toUpperCase();
 	const paymentMethod = placedOrder?.payment_method === 'card' ? 'Online Card Payment' : 'Cash on Delivery (COD)';
-	
-	const total = placedOrder?.total_price 
-		? Number(placedOrder.total_price) 
-		: (placedOrder?.items || []).reduce((sum: number, item: any) => sum + (Number(item.item_total) || 0), 0) + (shipping?.price ?? 0) - (orderSummary?.discount ?? 0);
-	
+
+	const total = placedOrder?.total_price
+		? Number(placedOrder.total_price)
+		: (placedOrder?.items || []).reduce((sum: number, item: any) => sum + (Number(item.item_total) || 0), 0) +
+			(shipping?.price ?? 0) -
+			(orderSummary?.discount ?? 0);
+
 	const shipPrice = placedOrder?.shipping_charge ? Number(placedOrder.shipping_charge) : (shipping?.price ?? 0);
 	const discount = placedOrder?.discount ? Number(placedOrder.discount) : (orderSummary?.discount ?? 0);
 	const subtotal = total - shipPrice + discount;
 
-	const customerName = user?.first_name 
-		? `${user.first_name} ${user.last_name || ''}`.trim() 
-		: (address ? 'Customer' : 'Guest');
-		
+	const customerName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : address ? 'Customer' : 'Guest';
+
 	const email = user?.email || 'your@email.com';
-	const shippingLabel = placedOrder?.shipping_method 
-		? (placedOrder.shipping_method === 'air' ? 'By Air Shipping' : 'By Sea Shipping') 
+	const shippingLabel = placedOrder?.shipping_method
+		? placedOrder.shipping_method === 'air'
+			? 'By Air Shipping'
+			: 'By Sea Shipping'
 		: (shipping?.label ?? 'Not selected');
 
 	const payNow = Math.round(total * 0.7);
@@ -110,10 +112,10 @@ export default function OrderSuccessPageContent() {
 
 			<div className="flex gap-3 justify-center">
 				<Button asChild className="bg-primary hover:bg-orange-600 text-white font-semibold px-6 rounded-lg">
-					<Link href="/portal/customer/orders">View My Orders</Link>
+					<Link href="/customer/orders">View My Orders</Link>
 				</Button>
 				<Button asChild variant="outline" className="px-6 rounded-lg">
-					<Link href="/shop">Continue Shopping</Link>
+					<Link href="/">Continue Shopping</Link>
 				</Button>
 			</div>
 		</div>

@@ -31,6 +31,8 @@ export default function AdminSettingsPage() {
 	const [storeName, setStoreName] = useState('Update Tech Dropshipping');
 	const [contactEmail, setContactEmail] = useState('support@updatetech.com');
 	const [vatPercent, setVatPercent] = useState('5');
+	const [shippingChargeAir, setShippingChargeAir] = useState('00');
+	const [shippingChargeSea, setShippingChargeSea] = useState('00');
 
 	// Exchange Rates
 	const [cnyRate, setCnyRate] = useState('17.00');
@@ -71,6 +73,8 @@ export default function AdminSettingsPage() {
 			setSmtpDomain(siteSettings.smtp_domain || '');
 			setSmsToken(siteSettings.sms_api_token || '');
 			setWhatsappNotifications(siteSettings.whatsapp_notifications ?? true);
+			setShippingChargeAir(siteSettings.shipping_charge_air?.toString() || '00');
+			setShippingChargeSea(siteSettings.shipping_charge_sea?.toString() || '00');
 		}
 	}, [siteSettings]);
 
@@ -106,6 +110,8 @@ export default function AdminSettingsPage() {
 				store_name: storeName,
 				contact_email: contactEmail,
 				vat_percent: parseFloat(vatPercent) || 0,
+				shipping_charge_air: parseFloat(shippingChargeAir) || 0,
+				shipping_charge_sea: parseFloat(shippingChargeSea) || 0,
 			});
 			toast.success('Store profile and tax rules updated successfully!');
 			refetchSettings();
@@ -269,6 +275,17 @@ export default function AdminSettingsPage() {
 										</div>
 									</div>
 
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Shipping Charge per KG (Air) (৳)</label>
+											<Input type="number" value={shippingChargeAir} onChange={e => setShippingChargeAir(e.target.value)} />
+										</div>
+										<div>
+											<label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Shipping Charge per KG (Sea) (৳)</label>
+											<Input type="number" value={shippingChargeSea} onChange={e => setShippingChargeSea(e.target.value)} />
+										</div>
+									</div>
+
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-4">
 										<div>
 											<label className="block text-xs font-semibold text-slate-500 mb-2 uppercase">Website Logo</label>
@@ -428,11 +445,11 @@ export default function AdminSettingsPage() {
 											<h4 className="font-semibold text-sm text-slate-800">WhatsApp Dispatch notifications</h4>
 											<p className="text-xs text-slate-400">Trigger WhatsApp notifications automatically on order dispatch.</p>
 										</div>
-										<input 
-											type="checkbox" 
-											checked={whatsappNotifications} 
+										<input
+											type="checkbox"
+											checked={whatsappNotifications}
 											onChange={e => setWhatsappNotifications(e.target.checked)}
-											className="rounded border-slate-300 text-indigo-600 h-4 w-4" 
+											className="rounded border-slate-300 text-indigo-600 h-4 w-4"
 										/>
 									</div>
 									<div className="flex justify-end pt-2">

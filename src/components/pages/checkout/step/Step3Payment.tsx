@@ -68,6 +68,14 @@ export default function Step3Payment() {
 	const [errors, setErrors] = useState<ErrorState>({});
 	const [payType, setPayType] = useState<PayType>('card');
 
+	const { data: settingsData } = useAppData<any, 'single'>({
+		key: ['site-settings'],
+		api: apiEndpoint.settings.siteSettings,
+		auth: false,
+		responseType: 'single',
+	});
+	const siteSettings = settingsData?.data;
+
 	const { data, isLoading } = useAppData<CartResponse, 'single'>({
 		key: [QueriesKey.CART_DATA],
 		api: apiEndpoint.cart.GET_CART(),
@@ -118,7 +126,9 @@ export default function Step3Payment() {
 
 		try {
 			const dynamicShippingCost = ((data as any)?.data || []).reduce((sum: number, item: any) => {
-				const SHIPPING_RATES = { air: 780, sea: 170 };
+				const airRate = Number(siteSettings?.shipping_charge_air ?? 0.0);
+				const seaRate = Number(siteSettings?.shipping_charge_sea ?? 0.0);
+				const SHIPPING_RATES = { air: airRate, sea: seaRate };
 				const method = (item.shipping_method as 'air' | 'sea') || 'air';
 				const rate = SHIPPING_RATES[method];
 				return (
@@ -130,7 +140,7 @@ export default function Step3Payment() {
 								: v?.quantity && typeof v.quantity === 'object'
 									? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
 									: 0;
-						const weight = Number(v.weight || 0.5);
+						const weight = Number(v.variant?.weightKg || v.weight || 0.5);
 						return s + qty * weight * rate;
 					}, 0)
 				);

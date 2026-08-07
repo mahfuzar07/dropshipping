@@ -336,25 +336,42 @@ export default function OrderSummary() {
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
 
+	const { data: settingsData } = useAppData<any, 'single'>({
+		key: ['site-settings'],
+		api: apiEndpoint.settings.siteSettings,
+		auth: false,
+		responseType: 'single',
+	});
+	const siteSettings = settingsData?.data;
+
 	const cartItems = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
 
 	const subtotal = useMemo(() => getSubtotal(cartItems), [cartItems]);
 
-	const cartShippingCost = useMemo(() => {
-		const SHIPPING_RATES = { air: 780, sea: 170 };
-		return cartItems.reduce((sum, item) => {
+	const { totalWeight, cartShippingCost } = useMemo(() => {
+		const airRate = Number(siteSettings?.shipping_charge_air ?? 0.0);
+		const seaRate = Number(siteSettings?.shipping_charge_sea ?? 0.0);
+		const SHIPPING_RATES = { air: airRate, sea: seaRate };
+
+		let weightAcc = 0;
+		let costAcc = 0;
+
+		cartItems.forEach((item) => {
 			const rate = SHIPPING_RATES[item.shipping_method || 'air'];
-			return sum + (item.variants || []).reduce((s, v: any) => {
+			(item.variants || []).forEach((v: any) => {
 				const qty = typeof v?.quantity === 'number'
 					? v.quantity
 					: (v?.quantity && typeof v.quantity === 'object')
 						? Object.values(v.quantity).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0)
 						: 0;
-				const weight = Number(v.weight || 0.5);
-				return s + qty * weight * rate;
-			}, 0);
-		}, 0);
-	}, [cartItems]);
+				const weight = Number(v.variant?.weightKg || v.weight || 0.5);
+				weightAcc += qty * weight;
+				costAcc += qty * weight * rate;
+			});
+		});
+
+		return { totalWeight: weightAcc, cartShippingCost: costAcc };
+	}, [cartItems, siteSettings]);
 
 	const shipPrice = shipping?.price ?? cartShippingCost;
 	const discount = orderSummary?.discount ?? 0;
@@ -557,7 +574,7 @@ export default function OrderSummary() {
 						)}
 
 						<div className="flex justify-between text-[13px]">
-							<span className="text-muted-foreground">Shipping</span>
+							<span className="text-muted-foreground">Shipping {totalWeight > 0 ? `(${totalWeight.toFixed(2)} KG)` : ''}</span>
 							<span className={!shipPrice ? 'text-muted-foreground' : ''}>{shipPrice ? `৳${shipPrice.toLocaleString()}` : 'Select method'}</span>
 						</div>
 
