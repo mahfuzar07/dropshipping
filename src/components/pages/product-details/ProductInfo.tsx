@@ -198,7 +198,7 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 											{variant.label}
 										</span>
 									</div>
-									<div>
+									<div className="font-play font-semibold">
 										{getCurrencySymbol()}
 										{variant.price}
 									</div>
