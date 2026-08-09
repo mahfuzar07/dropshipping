@@ -1,7 +1,5 @@
 'use client';
 import { create } from 'zustand';
-import { api, authApi } from '@/lib/axiosInstance';
-import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 
 interface AuthState {
 	user: any | null;
@@ -34,16 +32,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 	checkAuth: async () => {
 		try {
-			const res = await authApi.get(apiEndpoint.auth.AUTH_SESSION());
+			const { getSession } = await import('next-auth/react');
+			const session = (await getSession()) as any;
 
-			const profileData = res.data?.user?.profile_data;
+			if (!session?.accessToken && !session?.user) {
+				set({ user: null, isAuthenticated: false, hasHydrated: true });
+				return;
+			}
+
+			const profileData = session?.user?.profile_data || session?.user;
 
 			if (!profileData) {
 				set({ user: null, isAuthenticated: false, hasHydrated: true });
 				return;
 			}
 
-			const name = profileData.first_name || profileData.last_name ? `${profileData.first_name ?? ''} ${profileData.last_name ?? ''}`.trim() : '';
+			const name =
+				profileData.first_name || profileData.last_name
+					? `${profileData.first_name ?? ''} ${profileData.last_name ?? ''}`.trim()
+					: profileData.email?.split('@')[0] || 'User';
 
 			set({
 				user: { ...profileData, name },
