@@ -1,4 +1,4 @@
-import { Boxes, CreditCard, Headset, ShieldCheck, MapPinCheck, Compass, ChevronRight, Phone } from 'lucide-react';
+import { Boxes, ShieldCheck, MapPinCheck, Compass, ChevronRight, Phone, Mail, MapPin, Plane, Ship } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
@@ -10,47 +10,52 @@ const quickLinks = [
 	{ label: 'All Products', href: '/products' },
 	{ label: 'Track Order', href: '/track-order' },
 	{ label: 'Contact Us', href: '/contact' },
-	{ label: 'FAQ', href: '/faq' },
 ];
 
-// Legal & Policies — Brand column-এর জায়গায়, কারণ dropshipping-এ এগুলো জানা কাস্টমারের জন্য জরুরি
+// Legal & Policies
 const legalLinks = [
 	{ label: 'Terms & Conditions', href: '/terms' },
 	{ label: 'Privacy Policy', href: '/privacy-policy' },
-	{ label: 'Return & Refund', href: '/return-refund' },
+	{ label: 'Return & Refund', href: '/return-refund-policy' },
 	{ label: 'Customs & Shipping Charge', href: '/shipping-charge' },
 ];
 
-const cities = ['Dhaka', 'Chittagong (Chattogram)', 'Khulna', 'Rajshahi', 'Sylhet', 'Barisal', 'Mymensingh', 'Rangpur'];
-
-// ⚠️ আগের কোডে এই URL গুলোতে literal space ছিল ("Brand Name.com.bd") — invalid URL,
-// browser resolve করতে পারবে না। নিজের আসল domain বসিয়ে replace করে দাও।
-const payments = [
-	'https://www.brandname.com.bd/assets/images/payment/paypal.svg',
-	'https://www.brandname.com.bd/assets/images/payment/visa.svg',
-	'https://www.brandname.com.bd/assets/images/payment/mastercard.svg',
-];
+const cities = ['Dhaka', 'Chittagong (Chattogram)', 'Khulna', 'Rajshahi', 'Sylhet', 'Barisal'];
 
 const shippingOptions = [
-	{ title: 'Express Shipping', desc: 'Fast Delivery from China', icon: '⚡' },
-	{ title: 'Standard Shipping', desc: '10+ Business Days', icon: '📦' },
+	{ title: 'Ship by Air', desc: 'Fast Delivery from China', icon: Plane },
+	{ title: 'Ship by Sea', desc: '10+ Business Days', icon: Ship },
+];
+
+// পেমেন্ট মেথড লোগো — src গুলো placeholder, নিজের আসল লোগো ফাইল/URL বসিয়ে দাও
+// পরামর্শ: প্রতিটা লোগো একই aspect ratio-তে (যেমন সাদা ব্যাকগ্রাউন্ডে PNG/SVG, ট্রান্সপারেন্ট) রাখলে গ্রিডটা সবচেয়ে পরিষ্কার দেখাবে
+const paymentMethods = [
+	{ name: 'Visa', src: '/images/payments/visa.svg' },
+	{ name: 'Mastercard', src: '/images/payments/mastercard.svg' },
+	{ name: 'American Express', src: '/images/payments/amex.svg' },
+	{ name: 'bKash', src: '/images/payments/bkash.svg' },
+	{ name: 'Nagad', src: '/images/payments/nagad.svg' },
+	{ name: 'Rocket', src: '/images/payments/rocket.svg' },
+	{ name: 'Upay', src: '/images/payments/upay.svg' },
+	{ name: 'Dutch-Bangla Bank', src: '/images/payments/dbbl.svg' },
 ];
 
 function FooterHeading({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
 	return (
-		<h3 className="flex items-center gap-2.5 pb-3 mb-4 border-b border-gray-100">
-			<span className="flex items-center justify-center w-7 h-7 rounded-md bg-amber-50 text-amber-600 shrink-0">{icon}</span>
-			<span className="text-[13px] font-semibold tracking-wider text-gray-800 uppercase">{children}</span>
+		<h3 className="flex items-center gap-2.5 pb-3.5 mb-5 border-b border-gray-100">
+			<span className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 text-amber-600 shrink-0">{icon}</span>
+			<span className="text-sm font-bold tracking-wide text-gray-800 uppercase">{children}</span>
 		</h3>
 	);
 }
 
 function FooterLinkList({ items }: { items: { label: string; href: string }[] }) {
 	return (
-		<ul className="space-y-3 text-[13px] text-gray-500">
+		<ul className="space-y-3.5 text-sm text-gray-500">
 			{items.map((item, i) => (
 				<li key={i}>
-					<Link href={item.href} className="inline-flex items-center gap-1 transition-colors hover:text-amber-600 group">
+					<Link href={item.href} className="inline-flex items-center gap-1.5 transition-colors hover:text-amber-600 group">
+						<ChevronRight size={13} className="text-gray-300 group-hover:text-amber-500 transition-colors" />
 						<span>{item.label}</span>
 					</Link>
 				</li>
@@ -63,135 +68,141 @@ export default function Footer() {
 	return (
 		<footer className="bg-white md:mt-16 mt-6 md:pb-0 pb-16 text-gray-600">
 			{/* Main Footer */}
-			<div className="container mx-auto px-4 md:px-6 pt-14 pb-10">
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-10">
+			<div className="container mx-auto px-4 md:px-6 pt-16 pb-10">
+				<div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
 					{/* QUICK LINKS */}
 					<div>
-						<FooterHeading icon={<Compass size={15} strokeWidth={2.25} />}>Quick Links</FooterHeading>
+						<FooterHeading icon={<Compass size={16} strokeWidth={2.25} />}>Quick Links</FooterHeading>
 						<FooterLinkList items={quickLinks} />
 					</div>
 
 					{/* LEGAL & POLICIES */}
 					<div>
-						<FooterHeading icon={<ShieldCheck size={15} strokeWidth={2.25} />}>Legal & Policies</FooterHeading>
+						<FooterHeading icon={<ShieldCheck size={16} strokeWidth={2.25} />}>Legal & Policies</FooterHeading>
 						<FooterLinkList items={legalLinks} />
-					</div>
-
-					{/* PAYMENT */}
-					<div>
-						<FooterHeading icon={<CreditCard size={15} strokeWidth={2.25} />}>Payment</FooterHeading>
-						<div className="flex flex-col gap-3">
-							{payments.map((src, i) => (
-								<div key={i} className="flex items-center h-8 px-3 py-1.5 border border-gray-100 rounded-md w-fit bg-gray-50/50">
-									<img src={src} alt="Payment method" className="h-full w-auto object-contain" />
-								</div>
-							))}
-						</div>
 					</div>
 
 					{/* SHIPPING */}
 					<div>
-						<FooterHeading icon={<Boxes size={15} strokeWidth={2.25} />}>Shipping</FooterHeading>
-						<div className="space-y-4">
-							{shippingOptions.map((item, i) => (
-								<div key={i} className="flex gap-3">
-									<div className="flex items-center justify-center w-9 h-9 text-lg rounded-lg bg-amber-50 shrink-0">{item.icon}</div>
-									<div>
-										<p className="text-[13px] font-medium text-gray-800">{item.title}</p>
-										<p className="text-[12px] text-gray-500">{item.desc}</p>
+						<FooterHeading icon={<Boxes size={16} strokeWidth={2.25} />}>Shipping</FooterHeading>
+						<div className="space-y-5">
+							{shippingOptions.map((item, i) => {
+								const Icon = item.icon;
+								return (
+									<div key={i} className="flex gap-3">
+										<div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600 shrink-0">
+											<Icon size={18} strokeWidth={2.25} />
+										</div>
+										<div>
+											<p className="text-sm font-semibold text-gray-800">{item.title}</p>
+											<p className="text-[13px] text-gray-500">{item.desc}</p>
+										</div>
 									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					</div>
 
 					{/* CITIES */}
 					<div>
-						<FooterHeading icon={<MapPinCheck size={15} strokeWidth={2.25} />}>Cities Covered</FooterHeading>
-						<ul className="space-y-3 text-[13px] text-gray-500">
+						<FooterHeading icon={<MapPinCheck size={16} strokeWidth={2.25} />}>Cities Covered</FooterHeading>
+						<ul className="space-y-3.5 text-sm text-gray-500">
 							{cities.map((city, i) => (
 								<li key={i}>{city}</li>
 							))}
 							<li>
 								<Link
 									href="/shipping-charge"
-									className="inline-flex items-center gap-1 text-[13px] font-medium text-amber-600 hover:text-amber-700 hover:gap-1.5 transition-all"
+									className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 hover:text-amber-700 hover:gap-1.5 transition-all"
 								>
 									View more cities
-									<ChevronRight size={14} />
+									<ChevronRight size={15} />
 								</Link>
 							</li>
 						</ul>
 					</div>
+				</div>
+			</div>
 
-					{/* SUPPORT */}
-					<div className="col-span-2 md:col-span-1">
-						<FooterHeading icon={<Headset size={15} strokeWidth={2.25} />}>24/7 Support</FooterHeading>
-
-						<div className="p-4 mb-5 border bg-amber-50/60 border-amber-100 rounded-xl">
-							<div className="flex gap-3">
-								<span className="text-xl leading-none">💬</span>
-								<div>
-									<p className="text-[13px] font-semibold text-gray-800">24/7 Customer Support</p>
-									<p className="text-[12px] text-gray-500 mt-0.5">Get your texts and emails answered in your native language</p>
+			{/* Company / Support / Payment strip */}
+			<div className="border-t border-gray-100 bg-gray-50/60">
+				<div className="container mx-auto px-4 md:px-6 py-14">
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+						{/* Company info */}
+						<div>
+							<div className="flex items-center gap-2.5 mb-5">
+								<div className="flex items-center justify-center w-9 h-9 text-lg font-bold text-white rounded-lg bg-orange-500">X</div>
+								<span className="text-lg font-bold text-gray-900">Xianmart</span>
+							</div>
+							<div className="space-y-3.5 text-sm text-gray-500">
+								{/* ⚠️ আসল অফিসের ঠিকানা দিয়ে replace করে দাও */}
+								<div className="flex items-start gap-2.5">
+									<MapPin size={16} className="text-amber-600 shrink-0 mt-0.5" />
+									<span>House 12, Road 5, Sector 9, Uttara, Dhaka 1230</span>
+								</div>
+								<div className="flex items-center gap-2.5">
+									<Mail size={16} className="text-amber-600 shrink-0" />
+									<a href="mailto:support@xianmart.com.bd" className="hover:text-amber-600 transition-colors">
+										support@xianmart.com.bd
+									</a>
 								</div>
 							</div>
 						</div>
 
-						<div className="mb-5">
-							<p className="text-[12px] text-gray-500 mb-1">Customer Services</p>
-							<a href="tel:+8809638001086" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-amber-600 hover:text-amber-700">
-								<Phone size={14} />
+						{/* 24/7 Support */}
+						<div>
+							<p className="text-sm font-bold text-gray-800 mb-4">24/7 Support</p>
+							<p className="flex items-center gap-2 text-sm text-gray-500 mb-4 leading-relaxed">
+								<span className="text-base leading-none">⏱️</span>
+								We&apos;re here for you 24/7, around the clock.
+							</p>
+							<a href="tel:+8809638001086" className="inline-flex items-center gap-2 text-base font-bold text-amber-600 hover:text-amber-700">
+								<Phone size={18} />
 								+880 9638 001086
 							</a>
 						</div>
 
+						{/* Payment methods */}
 						<div>
-							<p className="text-[12px] text-gray-500 mb-2">Download our app</p>
-							<div className="grid grid-cols-2 gap-2">
-								<div className="relative w-full h-9">
-									<Image
-										src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
-										alt="Download on the App Store"
-										fill
-										className="object-contain object-left"
-									/>
-								</div>
-								<div className="relative w-full h-9">
-									<Image
-										src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-										alt="Get it on Google Play"
-										fill
-										className="object-contain object-left"
-									/>
-								</div>
+							<p className="text-sm font-bold text-gray-800 mb-4">Payment Method We Accept</p>
+							<div className="grid grid-cols-4 gap-2.5">
+								{paymentMethods.map((p, i) => (
+									<div
+										key={i}
+										className="relative flex items-center justify-center h-12 px-2.5 bg-white border border-gray-200 rounded-lg"
+										title={p.name}
+									>
+										{/* ⚠️ src placeholder — নিজের পেমেন্ট লোগোর আসল URL/পাথ বসিয়ে দাও */}
+										<Image src={p.src} alt={p.name} fill sizes="80px" className="object-contain p-2" />
+									</div>
+								))}
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Trust */}
+			{/* Trust badges */}
 			<div className="bg-gray-50/70 border-y border-gray-100">
-				<div className="container mx-auto px-4 md:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+				<div className="container mx-auto px-4 md:px-6 py-6 flex flex-wrap items-center justify-between gap-4">
 					<div className="flex items-center gap-6">
-						<img src="https://www.brandname.com.bd/assets/images/pci-dss.png" alt="PCI-DSS certified" className="h-8 opacity-80" />
+						<img src="https://www.brandname.com.bd/assets/images/pci-dss.png" alt="PCI-DSS certified" className="h-9 opacity-80" />
 						<div className="flex items-center gap-2">
-							<img src="https://www.brandname.com.bd/assets/images/iso.png" alt="ISO certified" className="h-8 opacity-80" />
-							<span className="text-[12px] font-semibold text-gray-500">ISO 27001:2022</span>
+							<img src="https://www.brandname.com.bd/assets/images/iso.png" alt="ISO certified" className="h-9 opacity-80" />
+							<span className="text-[13px] font-semibold text-gray-500">ISO 27001:2022</span>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2 px-3.5 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm">
-						<span className="text-base leading-none">🇧🇩</span>
-						<span className="text-[13px] font-medium text-gray-700">Bangladesh</span>
+					<div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-full shadow-sm">
+						<span className="text-lg leading-none">🇧🇩</span>
+						<span className="text-sm font-medium text-gray-700">Bangladesh</span>
 					</div>
 				</div>
 			</div>
 
 			{/* Bottom */}
 			<div className="border-t border-gray-100">
-				<div className="container mx-auto px-4 md:px-6 py-5 flex flex-col md:flex-row justify-between md:items-center gap-4 text-[12px] text-gray-400">
+				<div className="container mx-auto px-4 md:px-6 py-6 flex flex-col md:flex-row justify-between md:items-center gap-4 text-[13px] text-gray-400">
 					<div>Copyright © 2026 Xianmart. All rights reserved.</div>
 
 					<div className="flex flex-wrap gap-x-6 gap-y-2">
