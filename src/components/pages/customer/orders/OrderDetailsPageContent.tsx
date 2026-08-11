@@ -4,14 +4,16 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, MapPin, CreditCard, Calendar, Truck, Printer } from 'lucide-react';
+import { ShoppingBag, MapPin, CreditCard, Calendar, ImageOff, Printer } from 'lucide-react';
 import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { useAppData } from '@/hooks/use-appdata';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { authApi } from '@/lib/axiosInstance';
-import { Separator } from '@/components/ui/separator';
+
+// Adjust this import path to wherever OrderTimeline.tsx actually lives in your project.
+import OrderTimeline, { type OrderStatus, type HistoryItem } from './OrderTimeline';
 
 interface VariantItem {
 	variant: {
@@ -52,6 +54,7 @@ interface Order {
 	payment_method?: string;
 	status: string;
 	status_display?: string;
+	status_history?: HistoryItem[];
 	total_price: string;
 	discount?: string | number;
 	coupon_code?: string;
@@ -60,21 +63,18 @@ interface Order {
 
 const getStatusInfo = (status: string, statusDisplay?: string) => {
 	const statusMap: Record<string, { text: string; className: string; iconColor: string }> = {
-		pending: {
-			text: 'Pending',
-			className: 'bg-yellow-100 text-yellow-800 border-yellow-400',
-			iconColor: 'text-yellow-500',
-		},
-		delivered: {
-			text: 'Delivered',
-			className: 'bg-green-100 text-green-800 border-green-400',
-			iconColor: 'text-green-500',
-		},
-		canceled: {
-			text: 'Canceled',
-			className: 'bg-red-100 text-red-800 border-red-400',
-			iconColor: 'text-red-500',
-		},
+		pending: { text: 'Pending', className: 'bg-yellow-100 text-yellow-800 border-yellow-400', iconColor: 'text-yellow-500' },
+		confirmed: { text: 'Confirmed', className: 'bg-blue-100 text-blue-800 border-blue-400', iconColor: 'text-blue-500' },
+		processing: { text: 'Processing', className: 'bg-blue-100 text-blue-800 border-blue-400', iconColor: 'text-blue-500' },
+		shipped: { text: 'Shipped', className: 'bg-indigo-100 text-indigo-800 border-indigo-400', iconColor: 'text-indigo-500' },
+		rescheduled: { text: 'Rescheduled', className: 'bg-purple-100 text-purple-800 border-purple-400', iconColor: 'text-purple-500' },
+		delivered: { text: 'Delivered', className: 'bg-green-100 text-green-800 border-green-400', iconColor: 'text-green-500' },
+		completed: { text: 'Completed', className: 'bg-green-100 text-green-800 border-green-400', iconColor: 'text-green-500' },
+		canceled: { text: 'Canceled', className: 'bg-red-100 text-red-800 border-red-400', iconColor: 'text-red-500' },
+		cancelled: { text: 'Cancelled', className: 'bg-red-100 text-red-800 border-red-400', iconColor: 'text-red-500' },
+		returned: { text: 'Returned', className: 'bg-rose-100 text-rose-800 border-rose-400', iconColor: 'text-rose-500' },
+		refunded: { text: 'Refunded', className: 'bg-sky-100 text-sky-800 border-sky-400', iconColor: 'text-sky-500' },
+		failed: { text: 'Failed', className: 'bg-orange-100 text-orange-800 border-orange-400', iconColor: 'text-orange-500' },
 	};
 
 	const key = status?.toLowerCase() || '';
@@ -86,6 +86,27 @@ const getStatusInfo = (status: string, statusDisplay?: string) => {
 		}
 	);
 };
+
+// Maps whatever casing/spelling the API sends ("canceled", "Delivered", ...)
+// onto the OrderTimeline component's strict OrderStatus keys.
+const STATUS_ALIASES: Record<string, OrderStatus> = {
+	pending: 'PENDING',
+	confirmed: 'CONFIRMED',
+	processing: 'PROCESSING',
+	shipped: 'SHIPPED',
+	rescheduled: 'RESCHEDULED',
+	delivered: 'DELIVERED',
+	completed: 'COMPLETED',
+	cancelled: 'CANCELLED',
+	canceled: 'CANCELLED',
+	returned: 'RETURNED',
+	refunded: 'REFUNDED',
+	failed: 'FAILED',
+};
+
+function toTimelineStatus(status: string): OrderStatus {
+	return STATUS_ALIASES[status?.toLowerCase()?.trim()] || 'PENDING';
+}
 
 type NormalizedVariantRow = {
 	skuId: string | number;
@@ -118,7 +139,7 @@ function normalizeOrderVariants(items: any[], orderFallback: any): NormalizedVar
 					const sizeMatch = v.label.match(/Size:\s*([^,]+)/i);
 					if (colorMatch) color = colorMatch[1].trim();
 					if (sizeMatch) size = sizeMatch[1].trim();
-					
+
 					if (!colorMatch && !sizeMatch && v.label.includes('/')) {
 						const parts = v.label.split('/');
 						if (parts[0]) color = parts[0].trim();
@@ -182,6 +203,28 @@ function normalizeOrderVariants(items: any[], orderFallback: any): NormalizedVar
 	return rows;
 }
 
+function OrderDetailsSkeleton() {
+	return (
+		<div className="px-4 md:px-6 py-8 md:py-12 font-hanken animate-pulse">
+			<div className="flex items-center gap-4 mb-10">
+				<div className="w-20 h-20 rounded-2xl bg-slate-200" />
+				<div className="space-y-2">
+					<div className="h-6 w-48 bg-slate-200 rounded" />
+					<div className="h-4 w-36 bg-slate-200 rounded" />
+				</div>
+			</div>
+			<div className="h-40 bg-slate-100 rounded-3xl mb-8" />
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+				<div className="lg:col-span-7 h-80 bg-slate-100 rounded-2xl" />
+				<div className="lg:col-span-5 space-y-3">
+					<div className="h-56 bg-slate-100 rounded-2xl" />
+					<div className="h-32 bg-slate-100 rounded-2xl" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function OrderDetailsPageContent({ orderId }: { orderId: string }) {
 	const { data: orderResponse, isLoading } = useAppData<any, 'single'>({
 		key: [QueriesKey.USER_ORDERS, orderId],
@@ -196,27 +239,18 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 
 	const order: Order | null = orderResponse?.data || orderResponse;
 
-	// Extract and normalize order variants
 	const normalizedVariants = useMemo(() => {
 		if (!order) return [];
 		return normalizeOrderVariants(order.items || [], order);
 	}, [order]);
 
-	// Calculate totals from normalized variants
-	const totalQuantity = useMemo(() => {
-		return normalizedVariants.reduce((sum, v) => sum + v.quantity, 0);
-	}, [normalizedVariants]);
-
-	const subtotal = useMemo(() => {
-		return normalizedVariants.reduce((sum, v) => sum + v.quantity * v.price, 0);
-	}, [normalizedVariants]);
+	const totalQuantity = useMemo(() => normalizedVariants.reduce((sum, v) => sum + v.quantity, 0), [normalizedVariants]);
+	const subtotal = useMemo(() => normalizedVariants.reduce((sum, v) => sum + v.quantity * v.price, 0), [normalizedVariants]);
 
 	const handlePrintLabel = async (orderId: string | number) => {
 		const toastId = toast.loading('Generating shipping label PDF from backend...');
 		try {
-			const response = await authApi.get(`/api/order/orders/${orderId}/print-label/`, {
-				responseType: 'blob',
-			});
+			const response = await authApi.get(`/api/order/orders/${orderId}/print-label/`, { responseType: 'blob' });
 			const blob = new Blob([response.data], { type: 'application/pdf' });
 			const url = window.URL.createObjectURL(blob);
 			window.open(url, '_blank');
@@ -229,9 +263,7 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 	const handlePrintInvoice = async (orderId: string | number) => {
 		const toastId = toast.loading('Generating invoice PDF from backend...');
 		try {
-			const response = await authApi.get(`/api/order/orders/${orderId}/print-invoice/`, {
-				responseType: 'blob',
-			});
+			const response = await authApi.get(`/api/order/orders/${orderId}/print-invoice/`, { responseType: 'blob' });
 			const blob = new Blob([response.data], { type: 'application/pdf' });
 			const url = window.URL.createObjectURL(blob);
 			window.open(url, '_blank');
@@ -242,14 +274,7 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 	};
 
 	if (isLoading || !order) {
-		return (
-			<div className="min-h-[60vh] flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full mx-auto mb-4" />
-					<p className="text-muted-foreground">Loading order details...</p>
-				</div>
-			</div>
-		);
+		return <OrderDetailsSkeleton />;
 	}
 
 	const { text: statusText, className: statusClass, iconColor } = getStatusInfo(order.status, order.status_display);
@@ -260,10 +285,10 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 	return (
 		<div className="px-4 md:px-6 py-8 md:py-12 font-hanken">
 			{/* Header */}
-			<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+			<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
 					<div className="flex items-center gap-4">
-						<div className="bg-gradient-to-br from-orange-200 to-amber-500 w-20 h-20 flex items-center justify-center rounded-2xl">
+						<div className="bg-gradient-to-br from-orange-200 to-amber-500 w-20 h-20 flex items-center justify-center rounded-2xl shadow-sm">
 							<ShoppingBag className="text-white w-10 h-10" />
 						</div>
 						<div>
@@ -273,17 +298,19 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 								<Calendar className="w-4 h-4" />
 								<span>
 									Placed on{' '}
-									{new Date(order.created_at).toLocaleDateString('en-US', {
-										year: 'numeric',
-										month: 'long',
-										day: 'numeric',
-									})}
+									{Number.isNaN(new Date(order.created_at).getTime())
+										? '—'
+										: new Date(order.created_at).toLocaleDateString('en-US', {
+												year: 'numeric',
+												month: 'long',
+												day: 'numeric',
+											})}
 								</span>
 							</div>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex flex-wrap items-center gap-3">
 						<Button onClick={() => handlePrintLabel(order.id)} className="bg-slate-900 text-white hover:bg-slate-800 font-semibold gap-1.5">
 							<Printer className="w-4 h-4" /> Print Label
 						</Button>
@@ -300,6 +327,13 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 				</div>
 			</motion.div>
 
+			{/* Order Progress Timeline — row layout collapses to a vertical stepper on
+			    mobile automatically (see OrderTimeline's internal md: breakpoints),
+			    so no extra responsive wiring is needed here. */}
+			<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+				<OrderTimeline status={toTimelineStatus(order.status)} history={order.status_history} direction="row" />
+			</motion.div>
+
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 				{/* ==================== LEFT: Ordered Items ==================== */}
 				<div className="lg:col-span-7 space-y-3">
@@ -314,14 +348,13 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 						<div className="divide-y divide-border">
 							{normalizedVariants.map((variantItem, index) => {
 								const imageUrl = variantItem.image || variantItem.product_image || '';
-								const color = variantItem.color;
-								const size = variantItem.size;
+								const { color, size } = variantItem;
 								const qty = variantItem.quantity;
 								const unitPrice = variantItem.price;
 
 								return (
 									<motion.div
-										key={index}
+										key={variantItem.skuId ?? index}
 										initial={{ opacity: 0, y: 15 }}
 										animate={{ opacity: 1, y: 0 }}
 										transition={{ delay: index * 0.06 }}
@@ -329,7 +362,13 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 									>
 										{/* Product Image */}
 										<div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded-xl overflow-hidden border">
-											{imageUrl && <Image src={imageUrl} alt={variantItem.product_name} fill className="object-cover" />}
+											{imageUrl ? (
+												<Image src={imageUrl} alt={variantItem.product_name} fill sizes="96px" className="object-cover" />
+											) : (
+												<div className="w-full h-full flex items-center justify-center text-muted-foreground">
+													<ImageOff size={20} />
+												</div>
+											)}
 										</div>
 
 										{/* Product Details */}
@@ -402,7 +441,7 @@ export default function OrderDetailsPageContent({ orderId }: { orderId: string }
 								<span className="text-primary">৳{grandTotal.toLocaleString()}</span>
 							</div>
 
-							<div className="mt-3 bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1.5 text-xs text-slate-650">
+							<div className="mt-3 bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1.5 text-xs text-slate-600">
 								<div className="flex justify-between">
 									<span>Immediate Payment (70% Paid)</span>
 									<span className="font-semibold text-slate-800">৳{(grandTotal * 0.7).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>

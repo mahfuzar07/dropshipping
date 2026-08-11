@@ -32,8 +32,6 @@ interface UserProfile {
 	state?: string;
 	postal_code?: string;
 	country: string;
-	dob?: string;
-	gender?: string;
 }
 
 type ProfileForm = Omit<UserProfile, 'id'>;
@@ -48,8 +46,6 @@ const EMPTY_FORM: ProfileForm = {
 	state: '',
 	postal_code: '',
 	country: '',
-	dob: '',
-	gender: '',
 };
 
 /* ======================
@@ -68,25 +64,13 @@ const FIELDS: Array<{
 	{ key: 'last_name', label: 'Last name', placeholder: 'Doe', icon: User },
 	{ key: 'email', label: 'Email', placeholder: 'jane@example.com', icon: Mail, type: 'email' },
 	{ key: 'phone', label: 'Phone', placeholder: '+880 1XXX-XXXXXX', icon: Phone, type: 'tel' },
-	{
-		key: 'gender',
-		label: 'Gender',
-		placeholder: 'Select gender',
-		icon: VenetianMask,
-		as: 'select',
-		options: [
-			{ label: 'Male', value: 'male' },
-			{ label: 'Female', value: 'female' },
-			{ label: 'Other', value: 'other' },
-			{ label: 'Prefer not to say', value: 'unspecified' },
-		],
-	},
-	{ key: 'dob', label: 'Date of birth', placeholder: '', icon: Calendar, type: 'date' },
+
+
 	{ key: 'address', label: 'Address', placeholder: 'House 12, Road 4', icon: MapPin },
 	{ key: 'city', label: 'City', placeholder: 'Dhaka', icon: Building2 },
 	{ key: 'state', label: 'State / Division', placeholder: 'Dhaka', icon: Building2 },
-	{ key: 'postal_code', label: 'Postal code', placeholder: '5800', icon: Hash },
 	{ key: 'country', label: 'Country', placeholder: 'Bangladesh', icon: Globe },
+	{ key: 'postal_code', label: 'Postal code', placeholder: '5800', icon: Hash },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -127,8 +111,6 @@ export default function ProfilePageContent() {
 			state: profile.state || '',
 			postal_code: profile.postal_code || '',
 			country: profile.country || '',
-			dob: profile.dob || '',
-			gender: profile.gender || '',
 		});
 	}, [profileData]);
 

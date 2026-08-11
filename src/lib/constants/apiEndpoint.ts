@@ -81,4 +81,10 @@ export const apiEndpoint = {
 		REMOVE_FROM_CART: (id: string | number) => `/api/cart/${id}/`,
 		UPDATE_CART: (id: string | number) => `/api/cart/${id}/`,
 	},
+	wishlist: {
+		WISHLIST: () => '/api/wishlist/',
+		ADD_TO_WISHLIST: () => '/api/wishlist/',
+		REMOVE_FROM_WISHLIST: (id: string | number) => `/api/wishlist/${id}/`,
+	},
+
 };

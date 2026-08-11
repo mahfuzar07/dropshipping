@@ -120,7 +120,7 @@ export default function AddressForm({ modalData }: Props) {
 		data.append('address', formData.address);
 		data.append('address_line2', formData.addressLine2 ?? '');
 		data.append('postal_code', formData.postalCode);
-		data.append('is_default', formData.isDefault);
+		data.append('is_default', String(formData.isDefault)); // ✅ FIX: boolean কে string এ কনভার্ট করা হয়েছে
 
 		if (isEdit) {
 			updateAddress({ id: Number(formData.id), payload: data });

@@ -4,6 +4,7 @@ export const QueriesKey = {
 	CHECKOUT_PROCESS: 'checkout-process',
 	ADDRESS_LIST: 'address-list',
 	ORDER_LIST: 'order-list',
+	WISHLIST: 'wishlist',
 	ORDER_DETAIL: 'order-detail',
 	NEW_ORDERS: 'new-orders',
 	DELIVERY_ADDRESS: 'delivery-address',

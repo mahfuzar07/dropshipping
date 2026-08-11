@@ -17,9 +17,6 @@ const formatPrice = (price: any) => {
 	return `৳${priceStr}`;
 };
 
-// The top-level `price` field can be stale/inconsistent with the actual SKU prices
-// (seen in real data: price = 52.36 while priceRange, which mirrors skus.sku[].price, = 68-69).
-// priceRange entries look like [minOrderQty, price], so pull out just the prices.
 const getDisplayPrice = (product: any) => {
 	const range = Array.isArray(product?.priceRange) ? product.priceRange : null;
 	if (range && range.length > 0) {

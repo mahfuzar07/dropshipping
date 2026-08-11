@@ -84,17 +84,19 @@ const specialStatusConfig: Record<
 	},
 };
 
+const SPECIAL_STATUSES = new Set<SpecialStatus>(['CANCELLED', 'RETURNED', 'REFUNDED', 'FAILED']);
+
 /* =========================================================
-   SPECIAL BANNER (cancelled / refunded / failed)
+   SPECIAL BANNER (cancelled / returned / refunded / failed)
 ========================================================= */
 
-function SpecialBanner({ status }: { status: 'CANCELLED' | 'REFUNDED' | 'FAILED' }) {
+function SpecialBanner({ status }: { status: SpecialStatus }) {
 	const cfg = specialStatusConfig[status];
 	const Icon = cfg.icon;
 
 	return (
 		<div className={`rounded-3xl border p-8 ${cfg.wrapClass}`}>
-			<div className="flex flex-col sm:flex-row items-center gap-5">
+			<div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
 				<div className={`w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 ${cfg.iconClass}`}>
 					<Icon className="w-10 h-10" />
 				</div>
@@ -110,7 +112,7 @@ function SpecialBanner({ status }: { status: 'CANCELLED' | 'REFUNDED' | 'FAILED'
 }
 
 /* =========================================================
-   ROW LAYOUT (horizontal stepper)
+   ROW LAYOUT (horizontal stepper — collapses to vertical on mobile)
 ========================================================= */
 
 function RowTimeline({ activeIndex, history }: { activeIndex: number; history: HistoryItem[] }) {
@@ -124,7 +126,7 @@ function RowTimeline({ activeIndex, history }: { activeIndex: number; history: H
 
 				{/* Progress Line */}
 				<div
-					className="hidden md:block absolute top-7 left-0 h-0.5 rounded-full bg-orange-400 from-amber-300 via-orange-400 to-orange-500 transition-all duration-700 ease-out"
+					className="hidden md:block absolute top-7 left-0 h-0.5 rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-orange-500 transition-all duration-700 ease-out"
 					style={{ width: `${progress}%` }}
 				/>
 
@@ -142,7 +144,7 @@ function RowTimeline({ activeIndex, history }: { activeIndex: number; history: H
 							<div
 								key={step.key}
 								className={`
-									flex md:flex-col items-center gap-4 md:gap-3
+									flex md:flex-col items-center gap-4 md:gap-3 relative
 									${index === 0 ? 'md:items-start' : ''}
 									${index === timelineConfig.length - 1 ? 'md:items-end' : ''}
 									${index !== 0 && index !== timelineConfig.length - 1 ? 'md:items-center' : ''}
@@ -152,7 +154,7 @@ function RowTimeline({ activeIndex, history }: { activeIndex: number; history: H
 								{index !== timelineConfig.length - 1 && (
 									<div
 										className={`
-											md:hidden absolute left-[23px] mt-14 w-[2px] h-16
+											md:hidden absolute left-[23px] top-14 w-[2px] h-16
 											${isCompleted ? 'bg-orange-400' : 'bg-muted'}
 										`}
 									/>
@@ -240,9 +242,7 @@ function ColumnTimeline({ activeIndex, history }: { activeIndex: number; history
 								{/* vertical connector */}
 								{!isLast && (
 									<div className="relative w-px flex-1 min-h-[28px] my-1">
-										{/* grey base */}
 										<div className="absolute inset-0 bg-muted rounded-full" />
-										{/* filled portion */}
 										{isCompleted && <div className="absolute inset-0 bg-gradient-to-b from-orange-400 to-orange-300 rounded-full" />}
 									</div>
 								)}
@@ -251,7 +251,6 @@ function ColumnTimeline({ activeIndex, history }: { activeIndex: number; history
 							{/* right: text */}
 							<div className={`flex-1 pb-6 ${isLast ? 'pb-1' : ''}`}>
 								<div className="flex items-start justify-between gap-3 pt-1">
-									{/* label + subtitle */}
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-2 flex-wrap">
 											<p className={`font-semibold text-sm leading-tight ${isCompleted ? 'text-amber-600' : 'text-muted-foreground'}`}>
@@ -269,7 +268,6 @@ function ColumnTimeline({ activeIndex, history }: { activeIndex: number; history
 										</p>
 									</div>
 
-									{/* date — right aligned */}
 									{(historyItem?.date || (isCompleted && !isActive)) && (
 										<p className="text-[11px] text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">{historyItem?.date || 'Completed'}</p>
 									)}
@@ -288,12 +286,13 @@ function ColumnTimeline({ activeIndex, history }: { activeIndex: number; history
 ========================================================= */
 
 const OrderTimeline = ({ status, history = [], direction = 'row' }: OrderTimelineProps) => {
-	// terminal special states
-	if (status === ORDER_STATUSES.CANCELLED || status === ORDER_STATUSES.REFUNDED || status === ORDER_STATUSES.FAILED) {
-		return <SpecialBanner status={status as 'CANCELLED' | 'REFUNDED' | 'FAILED'} />;
+	if (SPECIAL_STATUSES.has(status as SpecialStatus)) {
+		return <SpecialBanner status={status as SpecialStatus} />;
 	}
 
-	const activeIndex = timelineConfig.findIndex((item) => item.key === status);
+	const effectiveStatus = status === 'COMPLETED' ? 'DELIVERED' : status;
+	const foundIndex = timelineConfig.findIndex((item) => item.key === effectiveStatus);
+	const activeIndex = foundIndex === -1 ? 0 : foundIndex;
 
 	if (direction === 'column') {
 		return <ColumnTimeline activeIndex={activeIndex} history={history} />;
