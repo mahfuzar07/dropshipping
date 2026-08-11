@@ -1,40 +1,30 @@
-import { Boxes, CreditCard, Headset, LayoutPanelTop, MapPinCheck, MessageCircleWarning, ChevronRight, Phone } from 'lucide-react';
+import { Boxes, CreditCard, Headset, ShieldCheck, MapPinCheck, Compass, ChevronRight, Phone } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import React from 'react';
 
+// সহজ ও প্রাসঙ্গিক Quick Links — শুধু যা ইউজারের দরকার হতে পারে
 const quickLinks = [
-	'About Us',
-	'Contact Us',
-	'Quotation Request',
-	'Intellectual Property',
-	'Sitemap',
-	'Track Order',
-	'Customs Tariffs & Fees',
-	'Shipping Policy',
-	'Micro Influencer',
-	'Brand Name Membership',
-	'Brand Name Warranty',
-	'Healthcare Disclaimer',
+	{ label: 'Home', href: '/' },
+	{ label: 'About Us', href: '/about' },
+	{ label: 'All Products', href: '/products' },
+	{ label: 'Track Order', href: '/track-order' },
+	{ label: 'Contact Us', href: '/contact' },
+	{ label: 'FAQ', href: '/faq' },
 ];
 
-const brandLinks = [
-	'Download App',
-	'Brands List',
-	'Customer Reviews',
-	'Return Policy',
-	'Blog',
-	'FAQ',
-	'About Ucredit',
-	'Brand Name Affiliates',
-	'Brand Name Gift Cards',
+// Legal & Policies — Brand column-এর জায়গায়, কারণ dropshipping-এ এগুলো জানা কাস্টমারের জন্য জরুরি
+const legalLinks = [
+	{ label: 'Terms & Conditions', href: '/terms' },
+	{ label: 'Privacy Policy', href: '/privacy-policy' },
+	{ label: 'Return & Refund', href: '/return-refund' },
+	{ label: 'Customs & Shipping Charge', href: '/shipping-charge' },
 ];
 
-const cities = ['Dhaka', 'Chittagong (Chattogram)', 'Khulna', 'Rajshahi', 'Sylhet', 'Barisal (Bagerhat)', 'Mymensingh', 'Rangpur'];
-
-const stores = ['USA', 'UK', 'Japan', 'Hong Kong', 'Korea', 'China', 'Turkey', 'Europe'];
+const cities = ['Dhaka', 'Chittagong (Chattogram)', 'Khulna', 'Rajshahi', 'Sylhet', 'Barisal', 'Mymensingh', 'Rangpur'];
 
 // ⚠️ আগের কোডে এই URL গুলোতে literal space ছিল ("Brand Name.com.bd") — invalid URL,
-// browser resolve করতে পারবে না। আসল domain বসিয়ে replace করে দাও।
+// browser resolve করতে পারবে না। নিজের আসল domain বসিয়ে replace করে দাও।
 const payments = [
 	'https://www.brandname.com.bd/assets/images/payment/paypal.svg',
 	'https://www.brandname.com.bd/assets/images/payment/visa.svg',
@@ -42,7 +32,7 @@ const payments = [
 ];
 
 const shippingOptions = [
-	{ title: 'Express Shipping', desc: 'Fast Delivery', icon: '⚡' },
+	{ title: 'Express Shipping', desc: 'Fast Delivery from China', icon: '⚡' },
 	{ title: 'Standard Shipping', desc: '10+ Business Days', icon: '📦' },
 ];
 
@@ -55,14 +45,14 @@ function FooterHeading({ icon, children }: { icon: React.ReactNode; children: Re
 	);
 }
 
-function FooterLinkList({ items }: { items: string[] }) {
+function FooterLinkList({ items }: { items: { label: string; href: string }[] }) {
 	return (
 		<ul className="space-y-3 text-[13px] text-gray-500">
 			{items.map((item, i) => (
 				<li key={i}>
-					<a href="#" className="inline-flex items-center gap-1 transition-colors hover:text-amber-600 group">
-						<span>{item}</span>
-					</a>
+					<Link href={item.href} className="inline-flex items-center gap-1 transition-colors hover:text-amber-600 group">
+						<span>{item.label}</span>
+					</Link>
 				</li>
 			))}
 		</ul>
@@ -77,14 +67,14 @@ export default function Footer() {
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-10">
 					{/* QUICK LINKS */}
 					<div>
-						<FooterHeading icon={<MessageCircleWarning size={15} strokeWidth={2.25} />}>Quick Links</FooterHeading>
+						<FooterHeading icon={<Compass size={15} strokeWidth={2.25} />}>Quick Links</FooterHeading>
 						<FooterLinkList items={quickLinks} />
 					</div>
 
-					{/* BRAND */}
+					{/* LEGAL & POLICIES */}
 					<div>
-						<FooterHeading icon={<LayoutPanelTop size={15} strokeWidth={2.25} />}>Brand</FooterHeading>
-						<FooterLinkList items={brandLinks} />
+						<FooterHeading icon={<ShieldCheck size={15} strokeWidth={2.25} />}>Legal & Policies</FooterHeading>
+						<FooterLinkList items={legalLinks} />
 					</div>
 
 					{/* PAYMENT */}
@@ -123,13 +113,13 @@ export default function Footer() {
 								<li key={i}>{city}</li>
 							))}
 							<li>
-								<a
-									href="#"
+								<Link
+									href="/shipping-charge"
 									className="inline-flex items-center gap-1 text-[13px] font-medium text-amber-600 hover:text-amber-700 hover:gap-1.5 transition-all"
 								>
 									View more cities
 									<ChevronRight size={14} />
-								</a>
+								</Link>
 							</li>
 						</ul>
 					</div>
@@ -199,33 +189,21 @@ export default function Footer() {
 				</div>
 			</div>
 
-			{/* Stores */}
-			<div className="bg-white">
-				<div className="container mx-auto px-4 md:px-6 py-6">
-					<p className="text-[13px] font-semibold text-gray-800 mb-3">Brand Name Popular Stores</p>
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
-						{stores.map((store, i) => (
-							<React.Fragment key={i}>
-								<a href="#" className="text-gray-500 hover:text-amber-600 transition-colors">
-									Shop from {store}
-								</a>
-								{i !== stores.length - 1 && <span className="text-amber-300 select-none">•</span>}
-							</React.Fragment>
-						))}
-					</div>
-				</div>
-			</div>
-
 			{/* Bottom */}
 			<div className="border-t border-gray-100">
 				<div className="container mx-auto px-4 md:px-6 py-5 flex flex-col md:flex-row justify-between md:items-center gap-4 text-[12px] text-gray-400">
-					<div>Copyright © 2026 Brand Name Co. All rights reserved.</div>
+					<div>Copyright © 2026 Xianmart. All rights reserved.</div>
 
 					<div className="flex flex-wrap gap-x-6 gap-y-2">
-						{['Terms & Conditions', 'Privacy Policy', 'About Us', 'Contact Us'].map((item, i) => (
-							<a key={i} href="#" className="hover:text-gray-600 transition-colors">
-								{item}
-							</a>
+						{[
+							{ label: 'Terms & Conditions', href: '/terms' },
+							{ label: 'Privacy Policy', href: '/privacy-policy' },
+							{ label: 'About Us', href: '/about' },
+							{ label: 'Contact Us', href: '/contact' },
+						].map((item, i) => (
+							<Link key={i} href={item.href} className="hover:text-gray-600 transition-colors">
+								{item.label}
+							</Link>
 						))}
 					</div>
 				</div>
