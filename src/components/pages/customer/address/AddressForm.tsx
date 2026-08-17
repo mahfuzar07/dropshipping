@@ -74,7 +74,7 @@ export default function AddressForm({ modalData }: Props) {
 
 	const isEdit = Boolean(formData.id);
 
-	const { create: submitAddress } = useAppData<APIResponse, 'single'>({
+	const { create: submitAddress, isMutating: isCreating } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
 		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
@@ -89,7 +89,7 @@ export default function AddressForm({ modalData }: Props) {
 		},
 	});
 
-	const { update: updateAddress } = useAppData<APIResponse, 'single'>({
+	const { update: updateAddress, isMutating: isUpdating } = useAppData<APIResponse, 'single'>({
 		key: [QueriesKey.DELIVERY_ADDRESS_LIST],
 		api: apiEndpoint.users.DELIVERY_ADDRESS,
 		auth: true,
@@ -103,6 +103,8 @@ export default function AddressForm({ modalData }: Props) {
 			toast.error(error?.response?.data?.message || 'Failed to update address');
 		},
 	});
+
+	const isSaving = isCreating || isUpdating;
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -182,7 +184,7 @@ export default function AddressForm({ modalData }: Props) {
 				<Button type="button" variant="outline" onClick={closeModal}>
 					Cancel
 				</Button>
-				<Button type="submit">{isEdit ? 'Update Address' : 'Save Address'}</Button>
+				<Button type="submit" loading={isSaving}>{isEdit ? 'Update Address' : 'Save Address'}</Button>
 			</div>
 		</form>
 	);

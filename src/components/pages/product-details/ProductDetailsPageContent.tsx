@@ -11,6 +11,7 @@ import { QueriesKey } from '@/lib/constants/queriesKey';
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import ProductDetailsSkeleton from '@/components/common/loader/ProductDetailsSkeleton';
+import { useAuthStore } from '@/z-store/global/useAuthStore';
 
 /* ================= TYPES ================= */
 

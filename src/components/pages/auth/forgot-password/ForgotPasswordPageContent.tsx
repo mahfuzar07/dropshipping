@@ -143,10 +143,10 @@ export default function ForgotPasswordPageContent() {
 
 						<Button
 							type="submit"
-							disabled={isLoading}
+							loading={isLoading}
 							className="w-full h-11 bg-orange-300 hover:bg-orange-400 text-primary-foreground  font-semibold"
 						>
-							{isLoading ? 'Sending code...' : 'Send Verification Code'}
+							Send Verification Code
 						</Button>
 					</form>
 				</>
@@ -247,10 +247,11 @@ export default function ForgotPasswordPageContent() {
 
 						<Button
 							type="submit"
-							disabled={isLoading || newPassword !== confirmPassword || newPassword.length < 8}
+							disabled={newPassword !== confirmPassword || newPassword.length < 8}
+							loading={isLoading}
 							className="w-full h-11  text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							{isLoading ? 'Resetting...' : 'Reset Password'}
+							Reset Password
 						</Button>
 					</form>
 				</>
