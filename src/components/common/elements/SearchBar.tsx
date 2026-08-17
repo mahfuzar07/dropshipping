@@ -2,7 +2,7 @@
 
 import { Search, Clock, X, Loader2, CameraIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { apiEndpoint } from '@/lib/constants/apiEndpoint';
@@ -57,7 +57,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function SearchBar() {
+function SearchBarInner() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { drawerType, closeDrawer } = useLayoutStore();
@@ -384,5 +384,15 @@ export default function SearchBar() {
 				)}
 			</AnimatePresence>
 		</div>
+	);
+}
+
+export default function SearchBar() {
+	return (
+		<Suspense fallback={
+			<div className="relative w-full max-w-xl h-11 bg-slate-100/50 rounded-lg animate-pulse" />
+		}>
+			<SearchBarInner />
+		</Suspense>
 	);
 }

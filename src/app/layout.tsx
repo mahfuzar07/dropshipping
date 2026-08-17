@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Play, Hanken_Grotesk, Emilys_Candy } from 'next/font/google';
 
@@ -109,7 +109,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
 				<NextAuthProvider>
 					<ReactQueryProvider>
-						<ScrollToTop />
+						<Suspense fallback={null}>
+							<ScrollToTop />
+						</Suspense>
 						{children}
 						<DrawerWrapper />
 						<ModalWrapper />
