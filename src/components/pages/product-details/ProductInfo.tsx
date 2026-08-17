@@ -102,7 +102,7 @@ export default function ProductInfo({ product, selectedQty, updateQty, onVariant
 
 	return (
 		<div className="space-y-5">
-			<h1 className="text-xl lg:text-2xl font-semibold font-hanken">{product.name}</h1>
+			<h1 className="text-xl lg:text-2xl font-semibold font-hanken break-words [overflow-wrap:anywhere]">{product.name}</h1>
 
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">

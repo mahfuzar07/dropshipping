@@ -104,7 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 				))}
 			</head>
 
-			<body cz-shortcut-listen="true" className={`${play.variable} ${emily.variable} ${hanken.variable} antialiased`}>
+			<body cz-shortcut-listen="true" className={`!overflow-x-hidden ${play.variable} ${emily.variable} ${hanken.variable} antialiased`}>
 				<ClientAuthHydrator />
 
 				<NextAuthProvider>

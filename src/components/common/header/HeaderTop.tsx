@@ -91,7 +91,12 @@ export default function HeaderTop() {
 					</div>
 
 					{/* Center - Mobile brand */}
-					<div className="relative col-span-6 md:col-span-6 md:hidden md:h-15 h-11 w-full overflow-hidden rounded-xl mx-auto">
+					<div
+						className="relative col-span-6 md:col-span-6 md:hidden md:h-15 h-11 w-full overflow-hidden rounded-xl mx-auto"
+						onClick={() => {
+							window.location.href = '/';
+						}}
+					>
 						<Image src="/assets/brand.png" alt="brand" fill className="object-contain transition-transform duration-300 group-hover:scale-105" />
 					</div>
 

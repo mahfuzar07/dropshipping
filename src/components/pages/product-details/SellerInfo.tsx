@@ -30,7 +30,7 @@ export default function SellerInfo({ seller }: SellerInfoProps) {
 
 					{/* Seller Info */}
 					<div className="flex-1">
-						<h3 className="text-lg font-bold uppercase tracking-wide text-gray-800">{shopName}</h3>
+						<h3 className="md:text-lg text-sm font-bold uppercase tracking-wide text-gray-800 break-words [overflow-wrap:anywhere]">{shopName}</h3>
 
 						<div className="mt-4 grid grid-cols-2 gap-3 lg:flex lg:flex-wrap">
 							<Card icon={<Star className="h-4 w-4 fill-current text-teal-500" />} label="Product" value="4.7" />
