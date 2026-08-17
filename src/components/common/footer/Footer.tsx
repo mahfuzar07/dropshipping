@@ -1,3 +1,4 @@
+"use client";
 import { Boxes, ShieldCheck, MapPinCheck, Compass, ChevronRight, Phone, Mail, MapPin, Plane, Ship } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -130,9 +131,29 @@ export default function Footer() {
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 						{/* Company info */}
 						<div>
-							<div className="flex items-center gap-2.5 mb-5">
-								<div className="flex items-center justify-center w-9 h-9 text-lg font-bold text-white rounded-lg bg-orange-500">X</div>
-								<span className="text-lg font-bold text-gray-900">Xianmart</span>
+							<div
+								className={`
+								relative overflow-hidden rounded-xl
+								transition-all duration-300 ease-in-out h-20 w-50
+
+							`}
+								onClick={() => {
+									window.location.href = '/';
+								}}
+							>
+								<Image
+									src="/assets/brand.png"
+									alt="brand"
+									fill
+									className="
+		object-contain
+		py-2 mb-2
+		transition-transform duration-300
+		group-hover:scale-105
+		brightness-0
+		[filter:invert(60%)_sepia(95%)_saturate(1800%)_hue-rotate(355deg)_brightness(100%)_contrast(100%)]
+	"
+								/>
 							</div>
 							<div className="space-y-3.5 text-sm text-gray-500">
 								{/* ⚠️ আসল অফিসের ঠিকানা দিয়ে replace করে দাও */}
