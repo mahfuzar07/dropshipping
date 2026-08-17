@@ -3,7 +3,7 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { X, Minus, Plus, ShoppingCart, ArrowRight, Trash2, Loader2 } from 'lucide-react';
+import { X, Minus, Plus, ShoppingCart, ArrowRight, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,19 +16,14 @@ import { apiEndpoint } from '@/lib/constants/apiEndpoint';
 import { toast } from 'sonner';
 import { CartItemSkeleton } from '../../loader/CartItemSkeleton';
 
-/* =========================
-   Types — aligned to the SKU-based payload sent by CartSection
-   { skuId, label, price, selections, quantity }
-========================= */
-
 type VariantEntry = {
 	skuId: number;
 	label: string;
 	price: number;
-	selections: Record<string, string>; // groupId -> optionId, for reference/debugging
-	quantity: number; // flat qty for this SKU
-	image?: string; // optional, if backend/product provides a per-variant image
-	stock?: number; // optional, used to cap the "+" button if backend returns it
+	selections: Record<string, string>;
+	quantity: number;
+	image?: string;
+	stock?: number;
 };
 
 type CartItem = {
@@ -184,13 +179,15 @@ export default function CartDrawer() {
 	});
 	const siteSettings = settingsData?.data;
 
-	const { data, isLoading } = useAppData<CartResponse, 'single'>({
+	const { data, isLoading, isFetching } = useAppData<CartResponse, 'single'>({
 		key: [QueriesKey.CART_DATA],
 		api: apiEndpoint.cart.GET_CART(),
 		auth: true,
 		responseType: 'single',
 		onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to load cart'),
 	});
+
+	const showLoadingState = isLoading || isFetching;
 
 	const cartItems: CartItem[] = useMemo(() => {
 		return Array.isArray(data?.data) ? data.data : [];
@@ -213,11 +210,14 @@ export default function CartDrawer() {
 		const SHIPPING_RATES = { air: airRate, sea: seaRate };
 		return cartItems.reduce((sum, item) => {
 			const rate = SHIPPING_RATES[item.shipping_method || 'air'];
-			return sum + (item.variants || []).reduce((s, v: any) => {
-				const qty = Number(v.quantity || 0);
-				const weight = Number(v.weight || 0.5);
-				return s + qty * weight * rate;
-			}, 0);
+			return (
+				sum +
+				(item.variants || []).reduce((s, v: any) => {
+					const qty = Number(v.quantity || 0);
+					const weight = Number(v.weight || 0.5);
+					return s + qty * weight * rate;
+				}, 0)
+			);
 		}, 0);
 	}, [cartItems, siteSettings]);
 
@@ -313,9 +313,11 @@ export default function CartDrawer() {
 
 				{/* Body */}
 				<div className="flex-1 overflow-y-auto pb-4 px-1">
-					{isLoading ? (
-						<div className="flex items-center justify-center h-full">
-							<Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+					{showLoadingState ? (
+						<div className="space-y-0.5 pt-1">
+							{[...Array(2)].map((_, i) => (
+								<CartItemSkeleton key={i} />
+							))}
 						</div>
 					) : activeRowCount === 0 ? (
 						<div className="flex flex-col items-center justify-center h-full text-center p-6">
@@ -351,7 +353,9 @@ export default function CartDrawer() {
 				{activeRowCount > 0 && (
 					<div className="border-t px-6 py-3 space-y-3 bg-white font-hanken text-xs">
 						<div className="flex justify-between text-muted-foreground">
-							<span>Subtotal ({activeRowCount} item{activeRowCount > 1 ? 's' : ''})</span>
+							<span>
+								Subtotal ({activeRowCount} item{activeRowCount > 1 ? 's' : ''})
+							</span>
 							<span>৳{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
 						</div>
 						<div className="flex justify-between text-muted-foreground">
