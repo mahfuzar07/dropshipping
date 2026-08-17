@@ -139,7 +139,7 @@ export default function HeaderTop() {
 						{isAuthenticated ? (
 							<HoverPopover
 								align="right"
-								className="mt-5 min-w-[250px] flex"
+								className="md:mt-7 mt-3 min-w-[250px] flex"
 								trigger={
 									<div className="items-center text-white cursor-pointer flex justify-center">
 										<div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center">

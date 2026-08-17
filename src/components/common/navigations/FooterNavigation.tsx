@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutDashboard, Package, User } from 'lucide-react';
+import { Home, LayoutDashboard, Package, PackageSearch, User } from 'lucide-react';
 
 import { useAuthStore } from '@/z-store/global/useAuthStore';
 import { useLayoutStore } from '@/z-store/global/useLayoutStore';
@@ -41,6 +41,20 @@ export default function FooterNavigation() {
 						<span className="text-xs font-medium">Home</span>
 					</Link>
 
+					{/* Products */}
+					<Link
+						href="/product-list"
+						className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+							isActive('/product-list') ? 'text-primary' : 'text-muted-foreground/80'
+						}`}
+					>
+						<Package size={22} strokeWidth={1.8} />
+						<span className="text-xs font-medium">Products</span>
+					</Link>
+
+					{/* Empty Space */}
+					<div />
+
 					{/* Category */}
 					<button
 						onClick={() =>
@@ -54,29 +68,15 @@ export default function FooterNavigation() {
 						<span className="text-xs font-medium">Category</span>
 					</button>
 
-					{/* Empty Space */}
-					<div />
-
-					{/* Products */}
+					{/* order */}
 					<Link
-						href="/product-list"
+						href="/track-order"
 						className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-							isActive('/product-list') ? 'text-primary' : 'text-muted-foreground/80'
+							isActive('/track-order') ? 'text-primary' : 'text-muted-foreground/80'
 						}`}
 					>
-						<Package size={22} strokeWidth={1.8} />
-						<span className="text-xs font-medium">Products</span>
-					</Link>
-
-					{/* Account */}
-					<Link
-						href={isAuthenticated ? '/customer/profile' : '/sign-in'}
-						className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-							pathname.startsWith('/customer/profile') || pathname.startsWith('/sign-in') ? 'text-primary' : 'text-muted-foreground/80'
-						}`}
-					>
-						<User size={22} strokeWidth={1.8} />
-						<span className="text-xs font-medium">{isAuthenticated ? 'Account' : 'Login'}</span>
+						<PackageSearch size={20} />
+						<span className="text-xs font-medium">Track order</span>
 					</Link>
 				</div>
 			</div>

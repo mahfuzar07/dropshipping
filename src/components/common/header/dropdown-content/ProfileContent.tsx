@@ -25,7 +25,7 @@ function getInitials(name?: string) {
 
 const menuItems = [
 	{ label: 'My Profile', icon: User, href: '/customer/profile' },
-	{ label: 'My Orders', icon: ShoppingBag, href: '/customer/orders', badge: 3 },
+	{ label: 'My Orders', icon: ShoppingBag, href: '/customer/orders' },
 	{ label: 'Wishlist', icon: Heart, href: '/customer/wishlist' },
 	{ label: 'Addresses', icon: MapPin, href: '/customer/addresses' },
 	{ label: 'Settings', icon: Settings, href: '/customer/settings' },
@@ -62,7 +62,7 @@ export default function ProfileContent({ isAuthenticated, user, logout }: Props)
 				<nav className="flex-1 p-2">
 					<p className="text-[11px] tracking-[0.12em] uppercase text-[#2e2e38] font-medium px-3 pt-2 pb-1">Account</p>
 
-					{menuItems.map(({ label, icon: Icon, href, badge }) => (
+					{menuItems.map(({ label, icon: Icon, href }) => (
 						<button
 							key={href}
 							onClick={() => {
@@ -74,7 +74,6 @@ export default function ProfileContent({ isAuthenticated, user, logout }: Props)
 								<Icon size={15} className="text-muted-foreground group-hover:text-twinkle-teal" />
 							</span>
 							<span className="flex-1 text-[14px] text-left text-muted-foreground group-hover:text-twinkle-teal transition-colors">{label}</span>
-							{badge ? <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-twinkle-teal text-white border">{badge}</span> : null}
 						</button>
 					))}
 				</nav>
