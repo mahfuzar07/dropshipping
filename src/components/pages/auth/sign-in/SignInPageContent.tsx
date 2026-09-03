@@ -115,8 +115,12 @@ export default function SignInPageContent() {
 					</Link>
 				</div>
 
-				<Button type="submit" disabled={isLoading} className="w-full h-11 text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold">
-					{isLoading ? 'Signing in...' : 'Sign In'}
+				<Button
+					type="submit"
+					loading={isLoading}
+					className="w-full h-11 text-primary-foreground bg-orange-300 hover:bg-orange-400 font-semibold"
+				>
+					Sign In
 				</Button>
 			</form>
 

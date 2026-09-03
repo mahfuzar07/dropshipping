@@ -39,7 +39,6 @@ function parseWeightToKg(weight?: string): number {
 }
 
 export default function CartSection({ product }: { product: any }) {
-	console.log('CartSection product:', product);
 	const { data: settingsData } = useAppData<any, 'single'>({
 		key: ['site-settings'],
 		api: apiEndpoint.settings.siteSettings,

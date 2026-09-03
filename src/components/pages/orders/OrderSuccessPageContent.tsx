@@ -1,37 +1,65 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useCheckoutStore } from '@/z-store/checkout/useCheckoutStore';
 import { useAuthStore } from '@/z-store/global/useAuthStore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, ShieldCheck, CreditCard, ShoppingBag, Truck } from 'lucide-react';
+import { Mail, ShoppingBag, CreditCard, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useAppData } from '@/hooks/use-appdata';
 
 export default function OrderSuccessPageContent() {
-	const { address, orderSummary, shipping, placedOrder } = useCheckoutStore();
+	const { address, orderSummary, shipping, placedOrder, resetCheckout } = useCheckoutStore();
 	const { user } = useAuthStore();
+	const [isMounted, setIsMounted] = useState(false);
+
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	const { data: latestOrderResponse, isLoading: isOrderLoading } = useAppData<any, 'single'>({
+		key: ['latest-order'],
+		api: '/api/order/orders/?limit=1',
+		auth: true,
+		responseType: 'single',
+		enabled: isMounted && !placedOrder,
+	});
+
+	if (!isMounted || (isOrderLoading && !placedOrder)) {
+		return (
+			<div className="text-center py-12 max-w-xl mx-auto font-hanken animate-pulse">
+				<div className="w-[72px] h-[72px] rounded-full bg-slate-200 mx-auto mb-4" />
+				<div className="h-6 w-48 bg-slate-200 mx-auto mb-2 rounded" />
+				<div className="h-4 w-72 bg-slate-200 mx-auto mb-6 rounded" />
+				<div className="h-64 bg-slate-200 rounded-xl mb-6" />
+			</div>
+		);
+	}
+
+	const activeOrder = placedOrder || latestOrderResponse?.data?.[0] || latestOrderResponse?.results?.[0];
 
 	/* ================= VALUES & FALLBACKS ================= */
 
-	const orderId = placedOrder?.order_number || 'ORD-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-	const paymentMethod = placedOrder?.payment_method === 'card' ? 'Online Card Payment' : 'Cash on Delivery (COD)';
+	const orderId = activeOrder?.order_number || 'ORD-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+	const paymentMethod = activeOrder?.payment_method === 'card' ? 'Online Card Payment' : 'Cash on Delivery (COD)';
 
-	const total = placedOrder?.total_price
-		? Number(placedOrder.total_price)
-		: (placedOrder?.items || []).reduce((sum: number, item: any) => sum + (Number(item.item_total) || 0), 0) +
+	const total = activeOrder?.total_price
+		? Number(activeOrder.total_price)
+		: (activeOrder?.items || []).reduce((sum: number, item: any) => sum + (Number(item.item_total) || 0), 0) +
 			(shipping?.price ?? 0) -
 			(orderSummary?.discount ?? 0);
 
-	const shipPrice = placedOrder?.shipping_charge ? Number(placedOrder.shipping_charge) : (shipping?.price ?? 0);
-	const discount = placedOrder?.discount ? Number(placedOrder.discount) : (orderSummary?.discount ?? 0);
+	const shipPrice = activeOrder?.shipping_charge ? Number(activeOrder.shipping_charge) : (shipping?.price ?? 0);
+	const discount = activeOrder?.discount ? Number(activeOrder.discount) : (orderSummary?.discount ?? 0);
 	const subtotal = total - shipPrice + discount;
 
 	const customerName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : address ? 'Customer' : 'Guest';
 
 	const email = user?.email || 'your@email.com';
-	const shippingLabel = placedOrder?.shipping_method
-		? placedOrder.shipping_method === 'air'
+	const shippingLabel = activeOrder?.shipping_method
+		? activeOrder.shipping_method === 'air'
 			? 'By Air Shipping'
 			: 'By Sea Shipping'
 		: (shipping?.label ?? 'Not selected');
@@ -111,10 +139,10 @@ export default function OrderSuccessPageContent() {
 			</div>
 
 			<div className="flex gap-3 justify-center">
-				<Button asChild className="bg-primary hover:bg-orange-600 text-white font-semibold px-6 rounded-lg">
+				<Button asChild className="bg-primary hover:bg-orange-600 text-white font-semibold px-6 rounded-lg" onClick={resetCheckout}>
 					<Link href="/customer/orders">View My Orders</Link>
 				</Button>
-				<Button asChild variant="outline" className="px-6 rounded-lg">
+				<Button asChild variant="outline" className="px-6 rounded-lg" onClick={resetCheckout}>
 					<Link href="/">Continue Shopping</Link>
 				</Button>
 			</div>

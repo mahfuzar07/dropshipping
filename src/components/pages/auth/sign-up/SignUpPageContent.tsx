@@ -287,10 +287,11 @@ export default function SignUpPageContent() {
 
 						<Button
 							type="submit"
-							disabled={!email || !firstName || !allRequirementsMet || !agreedToTerms || isLoading}
+							disabled={!email || !firstName || !allRequirementsMet || !agreedToTerms}
+							loading={isLoading}
 							className="w-full h-11 bg-orange-300 hover:bg-orange-400 text-primary-foreground font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							{isLoading ? 'Creating Account...' : 'Sign Up'}
+							Sign Up
 						</Button>
 					</form>
 				</>

@@ -67,6 +67,7 @@ export default function Step3Payment() {
 	const router = useRouter();
 	const [errors, setErrors] = useState<ErrorState>({});
 	const [payType, setPayType] = useState<PayType>('card');
+	const [isPlacing, setIsPlacing] = useState(false);
 
 	const { data: settingsData } = useAppData<any, 'single'>({
 		key: ['site-settings'],
@@ -124,6 +125,7 @@ export default function Step3Payment() {
 			return; // ❗ শুধু UI error
 		}
 
+		setIsPlacing(true);
 		try {
 			const dynamicShippingCost = ((data as any)?.data || []).reduce((sum: number, item: any) => {
 				const airRate = Number(siteSettings?.shipping_charge_air ?? 0.0);
@@ -173,6 +175,8 @@ export default function Step3Payment() {
 			router.push('/order/success');
 		} catch (err) {
 			// router.push('/order/failed');
+		} finally {
+			setIsPlacing(false);
 		}
 	};
 	const cardField = (key: PaymentKeys, formatter?: (v: string) => string) => ({
@@ -267,7 +271,11 @@ export default function Step3Payment() {
 					<MoveLeft /> Back
 				</Button>
 
-				<Button className="flex-[2] h-12 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold tracking-wide" onClick={handleNext}>
+				<Button
+					className="flex-[2] h-12 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold tracking-wide"
+					onClick={handleNext}
+					loading={isPlacing}
+				>
 					Place Order
 				</Button>
 			</div>
